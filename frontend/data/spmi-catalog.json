@@ -198,10 +198,22 @@
       "spmiUse": "Basis sinkronisasi SDM awal, survei pemangku kepentingan, tracer alumni, dan segmentasi responden."
     },
     {
+      "key": "portal-orang-tua",
+      "source": "Portal > Orang Tua",
+      "siakadData": "Monitoring mahasiswa oleh wali/orang tua.",
+      "spmiUse": "Masukan layanan, komunikasi stakeholder, dan potensi sumber survei kepuasan keluarga mahasiswa."
+    },
+    {
+      "key": "portal-alumni",
+      "source": "Portal > Alumni",
+      "siakadData": "Profil alumni.",
+      "spmiUse": "Basis tracer study, survei alumni, outcome lulusan, dan bukti akreditasi."
+    },
+    {
       "key": "portal-kegiatan",
       "source": "Portal > Kegiatan",
-      "siakadData": "Aktivitas pengguna yang berkaitan dengan kegiatan akademik dan non-akademik.",
-      "spmiUse": "Bahan bukti implementasi, prestasi, dan indikator partisipasi kegiatan."
+      "siakadData": "Kalender akademik dan monitoring kalender akademik lintas periode.",
+      "spmiUse": "Sinkronisasi periode mutu, bukti kepatuhan jadwal, dan monitoring pelaksanaan standar akademik."
     },
     {
       "key": "ringkasan-akademik",
@@ -218,8 +230,26 @@
     {
       "key": "perkuliahan",
       "source": "Perkuliahan",
-      "siakadData": "Kurikulum, kelas, pengampu, KRS, nilai, KHS, dan transkrip.",
+      "siakadData": "Data kurikulum, data kelas, dan administrasi proses akademik.",
       "spmiUse": "Evaluasi standar pembelajaran, indikator akademik, dan bukti PPEPP."
+    },
+    {
+      "key": "perkuliahan-tugas-akhir",
+      "source": "Perkuliahan > Proposal Tugas Akhir",
+      "siakadData": "Proses proposal dan progres tugas akhir mahasiswa.",
+      "spmiUse": "Indikator kelulusan, masa studi, dan evaluasi efektivitas bimbingan."
+    },
+    {
+      "key": "perkuliahan-kegiatan",
+      "source": "Perkuliahan > Kegiatan Pendukung / Kuesioner",
+      "siakadData": "Kegiatan pendukung pembelajaran dan instrumen umpan balik akademik.",
+      "spmiUse": "Bukti implementasi, survei pembelajaran, dan evaluasi kepuasan akademik."
+    },
+    {
+      "key": "perkuliahan-lifecycle",
+      "source": "Perkuliahan > Berhenti Studi / Yudisium / Wisuda",
+      "siakadData": "Status akhir perjalanan studi mahasiswa.",
+      "spmiUse": "Indikator retensi, kelulusan, outcome lulusan, dan bukti akreditasi."
     },
     {
       "key": "kampus-merdeka",
