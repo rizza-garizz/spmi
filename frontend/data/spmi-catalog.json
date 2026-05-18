@@ -1,0 +1,592 @@
+{
+  "metadata": {
+    "system": "SPMI Command Center",
+    "version": "1.0",
+    "owner": "LPM"
+  },
+  "metrics": [
+    { "label": "Standar aktif", "value": 28 },
+    { "label": "Dokumen aktif", "value": 64 },
+    { "label": "RTL berjalan", "value": 17 },
+    { "label": "Temuan audit", "value": 9 }
+  ],
+  "standardCategories": [
+    {
+      "key": "pendidikan",
+      "label": "Pendidikan",
+      "scope": "Proses belajar, kurikulum, asesmen, dan capaian pembelajaran."
+    },
+    {
+      "key": "penelitian",
+      "label": "Penelitian",
+      "scope": "Riset, etika, pendanaan, dan luaran ilmiah."
+    },
+    {
+      "key": "pkm",
+      "label": "PkM",
+      "scope": "Program pengabdian, mitra, evaluasi, dan dampak."
+    },
+    {
+      "key": "tambahan",
+      "label": "Tambahan",
+      "scope": "Tata pamong, kerjasama, sistem informasi, dan area pendukung mutu."
+    }
+  ],
+  "standards": [
+    {
+      "code": "STD-PEND-01",
+      "title": "Standar Pembelajaran",
+      "category": "pendidikan",
+      "description": "Perencanaan, pelaksanaan, evaluasi, dan perbaikan proses pembelajaran.",
+      "indicators": [
+        "Konsistensi dengan hasil analisis SWOT dan/atau analisis lain serta rencana pengembangan ke depan.",
+        "Keserbacakupan informasi dalam profil dan konsistensi antara profil dengan data dan informasi yang disampaikan pada masing-masing kriteria, serta menunjukkan iklim yang kondusif untuk pengembangan dan reputasi sebagai rujukan di bidang keilmuannya.",
+        "Kesesuaian Visi, Misi, Tujuan dan Strategi (VMTS) Unit Pengelola Program Studi (UPPS) terhadap VMTS Perguruan Tinggi (PT) dan visi keilmuan Program Studi (PS) yang dikelolanya.",
+        "Mekanisme dan keterlibatan pemangku kepentingan dalam penyusunan VMTS UPPS.",
+        "Strategi pencapaian tujuan disusun berdasarkan analisis yang sistematis, serta pada pelaksanaannya dilakukan pemantauan dan evaluasi yang ditindak lanjuti."
+      ]
+    },
+    {
+      "code": "STD-PEND-02",
+      "title": "Standar Kurikulum",
+      "category": "pendidikan",
+      "description": "Penyusunan dan pembaruan kurikulum berbasis capaian pembelajaran."
+    },
+    {
+      "code": "STD-PEND-03",
+      "title": "Standar Penilaian",
+      "category": "pendidikan",
+      "description": "Metode, instrumen, dan pelaporan penilaian hasil belajar."
+    },
+    {
+      "code": "STD-PEND-04",
+      "title": "Standar Dosen",
+      "category": "pendidikan",
+      "description": "Kualifikasi, beban kerja, pengembangan, dan evaluasi dosen."
+    },
+    {
+      "code": "STD-PEND-05",
+      "title": "Standar Sarana dan Prasarana",
+      "category": "pendidikan",
+      "description": "Ketersediaan, pemeliharaan, dan pemanfaatan sarana pembelajaran."
+    },
+    {
+      "code": "STD-LIT-01",
+      "title": "Standar Penelitian",
+      "category": "penelitian",
+      "description": "Perencanaan, pelaksanaan, dan luaran penelitian yang terukur."
+    },
+    {
+      "code": "STD-LIT-02",
+      "title": "Standar Etik Penelitian",
+      "category": "penelitian",
+      "description": "Kepatuhan etika, integritas, dan tata kelola data penelitian."
+    },
+    {
+      "code": "STD-LIT-03",
+      "title": "Standar Publikasi",
+      "category": "penelitian",
+      "description": "Kualitas publikasi, sitasi, dan diseminasi hasil riset."
+    },
+    {
+      "code": "STD-PKM-01",
+      "title": "Standar PkM",
+      "category": "pkm",
+      "description": "Perancangan, pelaksanaan, dan evaluasi program pengabdian."
+    },
+    {
+      "code": "STD-PKM-02",
+      "title": "Standar Kemitraan PkM",
+      "category": "pkm",
+      "description": "Pemetaan mitra, perjanjian kerja sama, dan dampak program."
+    },
+    {
+      "code": "STD-TAM-01",
+      "title": "Standar Tata Pamong",
+      "category": "tambahan",
+      "description": "Tata kelola, struktur, dan akuntabilitas pengelolaan mutu."
+    },
+    {
+      "code": "STD-TAM-02",
+      "title": "Standar Kerjasama",
+      "category": "tambahan",
+      "description": "Perencanaan, pelaksanaan, dan evaluasi kerja sama institusional."
+    },
+    {
+      "code": "STD-TAM-03",
+      "title": "Standar Sistem Informasi Mutu",
+      "category": "tambahan",
+      "description": "Pencatatan, dashboard, dan akses data mutu yang konsisten."
+    },
+    {
+      "code": "STD-TAM-04",
+      "title": "Standar Audit Internal",
+      "category": "tambahan",
+      "description": "Mekanisme audit internal, temuan, dan tindak lanjut."
+    }
+  ],
+  "documentTypes": [
+    { "value": "kebijakan", "label": "Kebijakan" },
+    { "value": "pedoman", "label": "Pedoman" },
+    { "value": "standar", "label": "Standar" },
+    { "value": "tata_cara", "label": "Tata Cara" },
+    { "value": "panduan_ami", "label": "Panduan AMI" },
+    { "value": "laporan_ami", "label": "Laporan AMI" },
+    { "value": "laporan_rtm", "label": "Laporan RTM" },
+    { "value": "laporan_rtl", "label": "Laporan RTL" },
+    { "value": "survei", "label": "Survei" },
+    { "value": "lkpt", "label": "LKPT" },
+    { "value": "lkps", "label": "LKPS" },
+    { "value": "sop", "label": "SOP" },
+    { "value": "bukti", "label": "Bukti" }
+  ],
+  "importTypes": [
+    { "value": "lkpt", "label": "LKPT" },
+    { "value": "lkps", "label": "LKPS" },
+    { "value": "kkm", "label": "KKM" },
+    { "value": "survey", "label": "Survei" },
+    { "value": "other", "label": "Lainnya" }
+  ],
+  "documents": [
+    { "id": 1, "title": "Kebijakan SPMI", "type": "kebijakan", "status": "approved" },
+    { "id": 2, "title": "Pedoman PPEPP", "type": "pedoman", "status": "approved" },
+    { "id": 3, "title": "Laporan AMI 2025", "type": "laporan_ami", "status": "review" },
+    { "id": 4, "title": "Laporan RTM", "type": "laporan_rtm", "status": "draft" },
+    { "id": 5, "title": "Laporan RTL", "type": "laporan_rtl", "status": "draft" },
+    { "id": 6, "title": "SOP Evaluasi Pembelajaran", "type": "sop", "status": "approved" }
+  ],
+  "ppeppCycles": [
+    { "id": 1, "name": "Siklus 2024/2025", "period": "yearly", "status": "closed" },
+    { "id": 2, "name": "Siklus 2025/2026", "period": "yearly", "status": "running" }
+  ],
+  "amiAudits": [
+    { "id": 1, "org_unit": { "name": "Program Studi Sistem Informasi" }, "score": 87.5, "status": "approved" },
+    { "id": 2, "org_unit": { "name": "Fakultas Ilmu Komputer" }, "score": 82.2, "status": "in_review" }
+  ],
+  "rtmMeetings": [
+    { "id": 1, "title": "RTM Semester Ganjil 2025", "status": "done" },
+    { "id": 2, "title": "RTM Tindak Lanjut AMI", "status": "scheduled" }
+  ],
+  "surveys": [
+    { "id": 1, "title": "Survei Kepuasan Mahasiswa", "target": "mahasiswa" },
+    { "id": 2, "title": "Survei Kepuasan Dosen", "target": "dosen" }
+  ],
+  "surveyTargets": [
+    { "value": "dosen", "label": "Dosen" },
+    { "value": "tendik", "label": "Tendik" },
+    { "value": "mahasiswa", "label": "Mahasiswa" },
+    { "value": "alumni", "label": "Alumni" },
+    { "value": "mitra", "label": "Mitra" }
+  ],
+  "integrations": [
+    { "key": "siakad", "domain": "xd.ingenio.id", "status": "discovery" },
+    { "key": "hris", "domain": "HRIS / SDM", "status": "planned" },
+    { "key": "research", "domain": "Riset & Pengabdian", "status": "planned" },
+    { "key": "studentdesk", "domain": "Layanan Mahasiswa", "status": "planned" }
+  ],
+  "siakadIntegrationMap": [
+    {
+      "key": "portal-mahasiswa",
+      "source": "Portal > Mahasiswa",
+      "siakadData": "Daftar mahasiswa, biodata, status semester, KRS, KHS, transkrip, aktivitas dan prestasi.",
+      "spmiUse": "Indikator mahasiswa, capaian akademik, retensi, lulusan, dan bahan akreditasi."
+    },
+    {
+      "key": "portal-pengguna",
+      "source": "Portal > Pegawai / Orang Tua / Alumni",
+      "siakadData": "Pusat data pengguna non-mahasiswa yang terkait layanan akademik dan hubungan lulusan.",
+      "spmiUse": "Basis sinkronisasi SDM awal, survei pemangku kepentingan, tracer alumni, dan segmentasi responden."
+    },
+    {
+      "key": "portal-kegiatan",
+      "source": "Portal > Kegiatan",
+      "siakadData": "Aktivitas pengguna yang berkaitan dengan kegiatan akademik dan non-akademik.",
+      "spmiUse": "Bahan bukti implementasi, prestasi, dan indikator partisipasi kegiatan."
+    },
+    {
+      "key": "ringkasan-akademik",
+      "source": "Beranda > Ringkasan Akademik",
+      "siakadData": "Agregat data akademik per institusi, periode, fakultas, dan prodi.",
+      "spmiUse": "Sumber utama indikator otomatis dan dashboard mutu akademik."
+    },
+    {
+      "key": "jabatan-struktural",
+      "source": "Akses Dosen > Jabatan Struktural",
+      "siakadData": "Kaprodi, Sekprodi, Dekan, dan Wakil Dekan sebagai atribut aktif dosen.",
+      "spmiUse": "Sinkronisasi assignment role SPMI berdasarkan unit dan jabatan aktif."
+    },
+    {
+      "key": "perkuliahan",
+      "source": "Perkuliahan",
+      "siakadData": "Kurikulum, kelas, pengampu, KRS, nilai, KHS, dan transkrip.",
+      "spmiUse": "Evaluasi standar pembelajaran, indikator akademik, dan bukti PPEPP."
+    },
+    {
+      "key": "kampus-merdeka",
+      "source": "Kampus Merdeka",
+      "siakadData": "Aktivitas MBKM dan nilai konversi mahasiswa.",
+      "spmiUse": "Indikator IKU, evaluasi pembelajaran, dan kesiapan akreditasi."
+    }
+  ],
+  "imports": [
+    { "id": 1, "type": "lkpt", "title": "Import LKPT Semester Ganjil", "status": "processed" },
+    { "id": 2, "type": "lkps", "title": "Import LKPS Prodi SI", "status": "queued" },
+    { "id": 3, "type": "kkm", "title": "Evaluasi KKM", "status": "processed" }
+  ],
+  "dashboardModules": [
+    {
+      "key": "repository_dokumen",
+      "label": "Repository Dokumen",
+      "scope": "Arsip kebijakan, standar, bukti, dan versi dokumen."
+    },
+    {
+      "key": "ppepp_tracker",
+      "label": "PPEPP Tracker",
+      "scope": "Pantau penetapan, pelaksanaan, evaluasi, pengendalian, dan peningkatan."
+    },
+    {
+      "key": "ami",
+      "label": "AMI",
+      "scope": "Kelola audit internal, temuan, dan rekomendasi tindak lanjut."
+    },
+    {
+      "key": "rtm_rtl",
+      "label": "RTM / RTL",
+      "scope": "Catat rapat tinjauan manajemen dan tindak lanjutnya."
+    },
+    {
+      "key": "survei",
+      "label": "Survei",
+      "scope": "Rekap survei kepuasan dan umpan balik pemangku kepentingan."
+    }
+  ],
+  "ppeppSteps": [
+    {
+      "code": "P",
+      "name": "Penetapan",
+      "description": "Pengesahan standar, kebijakan, pedoman, dan dokumen final.",
+      "deliverable": "Standar yang ditetapkan dan dipublikasikan"
+    },
+    {
+      "code": "P",
+      "name": "Pelaksanaan",
+      "description": "Implementasi standar di unit kerja dan pencatatan bukti digital.",
+      "deliverable": "Bukti implementasi dan log aktivitas"
+    },
+    {
+      "code": "E",
+      "name": "Evaluasi",
+      "description": "Audit mutu internal, survei kepuasan, dan rekap borang evaluasi.",
+      "deliverable": "Temuan, skor, dan ringkasan evaluasi"
+    },
+    {
+      "code": "P",
+      "name": "Pengendalian",
+      "description": "RTM, tindak lanjut, dan kontrol pelaksanaan perbaikan.",
+      "deliverable": "RTL aktif dan status penyelesaian"
+    },
+    {
+      "code": "P",
+      "name": "Peningkatan",
+      "description": "Revisi standar berdasarkan hasil evaluasi dan kebutuhan terbaru.",
+      "deliverable": "Revisi standar dan rencana peningkatan"
+    }
+  ],
+  "documentGroups": [
+    "Kebijakan SPMI",
+    "Pedoman PPEPP",
+    "Standar/Kriteria",
+    "Tata Cara Dokumentasi",
+    "Panduan AMI",
+    "Laporan AMI",
+    "Laporan RTM",
+    "Laporan RTL",
+    "Formulir dan Bukti Implementasi",
+    "LKPT dan LKPS"
+  ],
+  "qualityChecklist": [
+    {
+      "key": "single_source",
+      "label": "Satu sumber data",
+      "description": "Standar, tipe dokumen, dan tipe import harus berasal dari katalog yang sama."
+    },
+    {
+      "key": "versioned",
+      "label": "Berversi",
+      "description": "Item penting memiliki versi dan riwayat perubahan yang jelas."
+    },
+    {
+      "key": "traceable",
+      "label": "Tertelusur",
+      "description": "Setiap output dapat dilacak ke standar, proses, atau unit kerja terkait."
+    },
+    {
+      "key": "operational",
+      "label": "Operasional",
+      "description": "Data utama bisa dipakai langsung untuk kerja harian tanpa langkah tambahan."
+    },
+    {
+      "key": "auditable",
+      "label": "Siap audit",
+      "description": "Struktur data cukup rapi untuk dibaca saat audit internal maupun eksternal."
+    },
+    {
+      "key": "expandable",
+      "label": "Mudah dikembangkan",
+      "description": "Item baru bisa ditambahkan tanpa memecah konsistensi frontend dan backend."
+    }
+  ],
+  "roles": [
+    {
+      "name": "admin_lpm",
+      "scope": "Seluruh modul inti, pengaturan akses, standar mutu, dan integrasi sistem."
+    },
+    {
+      "name": "auditor",
+      "scope": "AMI, temuan, rekomendasi, evaluasi, dan laporan audit."
+    },
+    {
+      "name": "dekan",
+      "scope": "Monitoring mutu tingkat fakultas, akreditasi, RTM, dan pengawalan keputusan strategis."
+    },
+    {
+      "name": "wakil_dekan",
+      "scope": "Monitoring mutu fakultas dan koordinasi tindak lanjut sesuai bidang pimpinan fakultas."
+    },
+    {
+      "name": "kaprodi",
+      "scope": "Operasional mutu program studi, dokumen prodi, indikator, PPEPP, dan RTL."
+    },
+    {
+      "name": "sekprodi",
+      "scope": "Dukungan operasional prodi melalui input data, pembaruan dokumen, dan monitoring harian."
+    },
+    {
+      "name": "unit_kerja",
+      "scope": "Input implementasi, dokumen, indikator, dan tindak lanjut unit kerja."
+    }
+  ],
+  "orgUnits": [
+    {
+      "code": "LPM",
+      "name": "Lembaga Penjaminan Mutu",
+      "type": "lpm"
+    },
+    {
+      "code": "FIKOM",
+      "name": "Fakultas Ilmu Komputer",
+      "type": "fakultas"
+    },
+    {
+      "code": "SI",
+      "name": "Program Studi Sistem Informasi",
+      "type": "prodi",
+      "parent_code": "FIKOM"
+    }
+  ],
+  "seedUsers": [
+    {
+      "name": "SPMI Admin",
+      "email": "admin@spmi.local",
+      "password": "Password123!",
+      "role": "admin_lpm"
+    },
+    {
+      "name": "Internal Auditor",
+      "email": "auditor@spmi.local",
+      "password": "Password123!",
+      "role": "auditor"
+    },
+    {
+      "name": "Dekan Fakultas",
+      "email": "dekan@spmi.local",
+      "password": "Password123!",
+      "role": "dekan"
+    },
+    {
+      "name": "Wakil Dekan",
+      "email": "wadek@spmi.local",
+      "password": "Password123!",
+      "role": "wakil_dekan"
+    },
+    {
+      "name": "Ketua Program Studi",
+      "email": "kaprodi@spmi.local",
+      "password": "Password123!",
+      "role": "kaprodi"
+    },
+    {
+      "name": "Sekretaris Program Studi",
+      "email": "sekprodi@spmi.local",
+      "password": "Password123!",
+      "role": "sekprodi"
+    },
+    {
+      "name": "Unit Operator",
+      "email": "unit@spmi.local",
+      "password": "Password123!",
+      "role": "unit_kerja"
+    }
+  ],
+  "faculties": [
+    {
+      "code": "FB",
+      "name": "Fakultas Bisnis",
+      "icon": "briefcase",
+      "programs": [
+        { "name": "Akuntansi", "level": "S1", "accreditation": { "rank": "A", "sk": "602/DE/A.5/LAMEMBA-S/XI/2025", "expiry": "2026-05-24", "instrument": "LAMEMBA", "certificate": "https://drive.google.com/file/d/1Hs50F9Lj5-XgOlQORx_iYPGlisZkdoEl/view" }},
+        { "name": "Aktuaria", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "225/SK/LAMSAMA/Akred/S/X/2025", "expiry": "2029-10-20", "instrument": "LAMSAMA", "certificate": "https://drive.google.com/file/d/1v0ABAvSuEgLmSsNoiogMTihdGrflEt9v/view" }},
+        { "name": "Agribisnis", "level": "S1", "accreditation": { "rank": "Baik", "sk": "261/SK/BAN-PT/Ak/S/II/2026", "expiry": "2031-02-24", "instrument": "BAN-PT", "certificate": "https://drive.google.com/file/d/1ku96oxAZI2U-D99Lq2zaBRYCIw1Nquy4/view" }},
+        { "name": "Manajemen", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "723/DE/A.5/AR.10/IX/2023", "expiry": "2028-09-18", "instrument": "LAMEMBA", "certificate": "https://drive.google.com/file/d/164HjKvHoz-YT2wPL7qiqddJV3BFC92oA/view" }},
+        { "name": "Magister Manajemen Teknologi", "level": "S2", "accreditation": { "rank": "Unggul", "sk": "552/DE/A.5/AR.10/VII/2023", "expiry": "2028-07-25", "instrument": "LAMEMBA", "certificate": "https://drive.google.com/file/d/157brlG9dH-EuBjCpN62utrrD_HCjtFiH/view" }},
+        { "name": "Doktor Manajemen", "level": "S3", "accreditation": { "rank": "Baik", "sk": "-", "expiry": "2030-09-29", "instrument": "LAMEMBA", "certificate": null }},
+        { "name": "Administrasi Bisnis", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "75/AK.03.05/2025", "expiry": "2030-10-13", "instrument": "LAMSPAK", "certificate": "https://drive.google.com/file/d/1qlImG6xD7wnU4ld7yp47yCVf9zU94SJn/view" }}
+      ]
+    },
+    {
+      "code": "FK",
+      "name": "Fakultas Komputer",
+      "icon": "laptop-code",
+      "programs": [
+        { "name": "Sistem Informasi", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "003/SK/LAM-INFOKOM/Ak.Int/S/XII/2023", "expiry": "2028-03-31", "instrument": "LAMINFOKOM", "certificate": "https://drive.google.com/file/d/13Gy5gS94eEAEbYPemKqd4DEngPe_Yrdl/view" }},
+        { "name": "Informatika", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "002/SK/LAM-INFOKOM/Ak.Int/S/XII/2024", "expiry": "2029-03-31", "instrument": "LAMINFOKOM", "certificate": "https://drive.google.com/file/d/1Ntz3iO2fnjQo2CBN3p9A5Dm-dXFNKRmL/view" }},
+        { "name": "Magister Informatika", "level": "S2", "accreditation": { "rank": "Unggul", "sk": "098/SK/LAM-INFOKOM/Ak/M/VIII/2025", "expiry": "2030-08-08", "instrument": "LAMINFOKOM", "certificate": "https://drive.google.com/file/d/1PUUzs1G99NeGbHFFrstQOXoDyMYVSVLn/view" }}
+      ]
+    },
+    {
+      "code": "FT",
+      "name": "Fakultas Teknik",
+      "icon": "cogs",
+      "programs": [
+        { "name": "Teknik Elektro", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "No. 0840/SK/LAM Teknik/AS/XII/2025", "expiry": "2030-12-20", "instrument": "LAMTEKNIK", "certificate": "https://drive.google.com/file/d/1Qs_6_VZtkMc8ltaXFsofvU3N5Grwx6oR/view" }},
+        { "name": "Teknik Mesin", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "0364/SK/LAM Teknik/AS/XII/2023", "expiry": "2028-08-20", "instrument": "LAMTEKNIK", "certificate": "https://drive.google.com/file/d/1F2M071aWEa96KjvpoT0koAa6CN1VYafe/view" }},
+        { "name": "Teknik Lingkungan", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "0842/SK/LAM Teknik/AS/XII/2024", "expiry": "2029-12-20", "instrument": "LAMTEKNIK", "certificate": "https://drive.google.com/file/d/1opzYUcmqv082juPE16ePSg6t_dxMU7CM/view" }},
+        { "name": "Teknik Sipil", "level": "S1", "accreditation": { "rank": "Baik Sekali", "sk": "0738/SK/LAM Teknik/AS/XII/2024", "expiry": "2029-12-20", "instrument": "LAMTEKNIK", "certificate": "https://drive.google.com/file/d/1gO4LAZUqcpGeEs37T12Tk94_XzclwWe_/view" }},
+        { "name": "Teknik Industri", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "0582/SK/LAM Teknik/AS/VIII/2025", "expiry": "2030-08-20", "instrument": "LAMTEKNIK", "certificate": "https://drive.google.com/file/d/1rtQg8PfkFw4ssCaVMuNa4RdPg16BEeXm/view" }}
+      ]
+    },
+    {
+      "code": "FH",
+      "name": "Fakultas Humaniora",
+      "icon": "user-friends",
+      "programs": [
+        { "name": "Ilmu Komunikasi", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "138/AK.03.05/2025", "expiry": "2030-11-18", "instrument": "LAMSPAK", "certificate": "https://drive.google.com/file/d/1KIqDEBhlMYe7TCkSKEUebAfDrV6usrqI/view" }},
+        { "name": "Hubungan Internasional", "level": "S1", "accreditation": { "rank": "B", "sk": "094/AK.03.01/2026", "expiry": "2026-10-27", "instrument": "LAMSPAK", "certificate": "https://drive.google.com/file/d/1BVkiJBywbstWx5lKA1pwR6W0pMU1KVzo/view" }},
+        { "name": "PGSD", "level": "S1", "accreditation": { "rank": "Unggul", "sk": "524/SK/LAMDIK/Ak/S/V/2024", "expiry": "2029-03-26", "instrument": "LAMDIK", "certificate": "https://drive.google.com/file/d/1RLpYXwxagIMQZAdo-JE0FH_ElDUgJsVv/view" }}
+      ]
+    },
+    {
+      "code": "FHK",
+      "name": "Fakultas Hukum",
+      "icon": "balance-scale",
+      "programs": [
+        { "name": "Hukum", "level": "S1", "accreditation": { "rank": "A", "sk": "7802/SK/BAN-PT/Ak.Ppj/S/X/2025", "expiry": "2030-09-30", "instrument": "BAN-PT", "certificate": "https://drive.google.com/file/d/1IozpUQIs4P7ZiYH0F9UdNhI9C7uY0Jui/view" }},
+        { "name": "Magister Hukum", "level": "S2", "accreditation": { "rank": "Baik", "sk": "4617/SK/BAN-PT/Ak.P/M/VI/2024", "expiry": "2029-06-11", "instrument": "BAN-PT", "certificate": "https://drive.google.com/file/d/12LexEmfaZeQd9NNy5yaMNFzYaubTZCdj/view" }}
+      ]
+    },
+    {
+      "code": "FSDA",
+      "name": "Fakultas Seni, Desain, dan Arsitektur",
+      "icon": "paint-brush",
+      "programs": [
+        { "name": "Arsitektur", "level": "S1", "accreditation": { "rank": "Baik", "sk": "8726/SK/BAN-PT/Ak/S/XII/2025", "expiry": "2030-12-16", "instrument": "BAN-PT", "certificate": "https://drive.google.com/file/d/15hxia-9rvfzMSkBFaEc8PM4gcjf3n9gH/view" }},
+        { "name": "Desain Interior", "level": "S1", "accreditation": { "rank": "Baik", "sk": "6061/SK/BAN-PT/Ak.P/S/III/2025", "expiry": "2031-03-31", "instrument": "BAN-PT", "certificate": "https://drive.google.com/file/d/193M5HYZJxbrzBzWZtyzfN0Q6oVsEwxv-/view" }},
+        { "name": "Desain Komunikasi Visual", "level": "S1", "accreditation": { "rank": "B", "sk": "No. 644/SK/BAN-PT/Ak.Ppj/S/II/2024", "expiry": "2029-02-27", "instrument": "BAN-PT", "certificate": "https://drive.google.com/file/d/1qthciGEKoF9JlpxxYCKBpqpNE5Ck_hHQ/view" }}
+      ]
+    },
+    {
+      "code": "FKed",
+      "name": "Fakultas Kedokteran",
+      "icon": "user-md",
+      "programs": [
+        { "name": "Profesi Dokter", "level": "Profesi", "accreditation": { "rank": "Baik", "sk": "0692/LAM-PTKes/Akr/Pro/V/2025", "expiry": "2030-05-23", "instrument": "LAMPTKes", "certificate": "https://drive.google.com/file/d/13esqzrI7sIx6-TDeSQdRxXb79ofhxmZE/view" }},
+        { "name": "Kedokteran", "level": "S1", "accreditation": { "rank": "Baik", "sk": "0691/LAM-PTKes/Akr/Sar/V/2025", "expiry": "2030-05-23", "instrument": "LAMPTKes", "certificate": "https://drive.google.com/file/d/1Vn4DJjDtUFjVa7ZDCPvyJ6XNNXVmUcH2/view" }}
+      ]
+    }
+  ],
+  "spmiDocuments": [
+    { "title": "Formulir SOP SPMI", "description": "Kumpulan formulir standar operasional prosedur untuk mendukung pelaksanaan penjaminan mutu.", "type": "sop", "url": "https://drive.google.com/drive/u/5/folders/1wjEvIuosuIoAaNiFVrhHTodgF2G0-Nsp" },
+    { "title": "Kebijakan SPMI", "description": "Dokumen kebijakan dasar implementasi Sistem Penjaminan Mutu Internal di Universitas.", "type": "kebijakan", "url": "https://drive.google.com/drive/u/5/folders/1FczMtEJSVW4w3rt70CBaWLoIUKFFjmG6" },
+    { "title": "Manual SPMI", "description": "Panduan teknis pelaksanaan siklus penjaminan mutu.", "type": "pedoman", "url": "https://drive.google.com/drive/u/5/folders/1lzPUFDXPxX7y-_Sc6UCCtifLt3NJcV0s" },
+    { "title": "Standar Pelampauan", "description": "Standar mutu tambahan yang ditetapkan melampaui Standar Nasional Pendidikan Tinggi.", "type": "standar", "url": "https://drive.google.com/drive/u/5/folders/1RBquTqQBnhFOzceQspNoXye7g0FatQsl" },
+    { "title": "Standar SPMI", "description": "Dokumen standar mutu pendidikan, penelitian, dan pengabdian kepada masyarakat.", "type": "standar", "url": "https://drive.google.com/drive/u/5/folders/1-jLWNVDnCWa6MOPvbotq5wCk94PlGsDH" },
+    { "title": "Tata Cara Dokumentasi DPMI", "description": "Pedoman pengelolaan arsip dan dokumentasi mutu internal.", "type": "tata_cara", "url": "https://drive.google.com/drive/u/5/folders/1B0w9hglr-9TIswF353KfQRDBi-ZDJW4h" }
+  ],
+  "organization": {
+    "unit": "Direktorat Penjaminan Mutu Internal",
+    "director": { "title": "Direktur", "name": "Ir. Mia Galina, S.T., M.T." },
+    "divisions": [
+      {
+        "name": "Bidang Akreditasi",
+        "viceDirector": "Donald Samuel Slamet Santosa, S.Pd.,M.M., M.Pd., D.Th.",
+        "departments": [
+          { "title": "Kepala Bagian Akreditasi Program Studi", "name": "Riyanto Adji, S.T., M.MSc." },
+          { "title": "Kepala Bagian Akreditasi Perguruan Tinggi", "name": "Chita Oktapriana M.Ak.,CSRS., CMA." }
+        ]
+      },
+      {
+        "name": "Bidang Pemeringkatan Internasional dan AMI",
+        "viceDirector": "Ir. Seng Hansen, S.T., M.Sc., M.H., Ph.D., IPM.",
+        "departments": [
+          { "title": "Kepala Bagian Pengembangan dan Audit Mutu Internal", "name": "Haris Herdiansyah, S.Psi., M.Si." }
+        ]
+      },
+      {
+        "name": "Bidang Sistem Informasi Data dan Statistik",
+        "viceDirector": "Reni Renita, S.T.",
+        "departments": [
+          { "title": "Kepala Bagian Sistem Informasi", "name": "Neilany Edwina Nulampau, S.Sos., M.Si." },
+          { "title": "Kepala Bagian Pengelolaan Database Institusi", "name": "Irwan Budi Tarwanto, S.E., M.M." }
+        ]
+      }
+    ],
+    "staff": ["Christian Deswinta S.Ipol., M.IP."]
+  },
+  "news": [
+    {
+      "id": 1,
+      "title": "Universitas Malang Mengadakan Penguatan SPMI Menuju PTS Berkualitas",
+      "date": "2026-02-09",
+      "category": "Penjaminan Mutu",
+      "excerpt": "Kegiatan penguatan SPMI sesuai Permendikti Saintek No. 39/2025, menghadirkan narasumber Prof. Zainal Arifin Hasibuan dari IPB.",
+      "author": "Admin SPMI"
+    },
+    {
+      "id": 2,
+      "title": "UKWMS Sukses Laksanakan Benchmarking SPMI dengan Universitas Malang",
+      "date": "2025-08-22",
+      "category": "Benchmarking",
+      "excerpt": "Pertukaran pengalaman strategi budaya mutu, mekanisme audit internal, dan inovasi pengelolaan mutu berkelanjutan.",
+      "author": "Admin SPMI"
+    }
+  ],
+  "amiAudits": [
+    {
+      "id": "AMI-2025-01",
+      "org_unit": { "name": "Fakultas Komputer", "code": "FK" },
+      "scheduled_date": "2025-11-10",
+      "auditor": "Ir. Seng Hansen, S.T., M.Sc., Ph.D.",
+      "status": "selesai",
+      "score": 88.5,
+      "findings": { "kritis": 0, "tinggi": 1, "sedang": 3, "rendah": 5 }
+    },
+    {
+      "id": "AMI-2025-02",
+      "org_unit": { "name": "Fakultas Bisnis", "code": "FB" },
+      "scheduled_date": "2025-11-12",
+      "auditor": "Dr. Donald Samuel Slamet Santosa",
+      "status": "berjalan",
+      "score": 75.0,
+      "findings": { "kritis": 0, "tinggi": 2, "sedang": 4, "rendah": 1 }
+    },
+    {
+      "id": "AMI-2025-03",
+      "org_unit": { "name": "Fakultas Humaniora", "code": "FH" },
+      "scheduled_date": "2025-11-15",
+      "auditor": "Riyanto Adji, S.T., M.MSc.",
+      "status": "terjadwal",
+      "score": null,
+      "findings": { "kritis": 0, "tinggi": 0, "sedang": 0, "rendah": 0 }
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+services:
+  # Database: PostgreSQL 16
+  postgres:
+    image: postgres:16-alpine
+    container_name: spmi-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-spmi}
+      POSTGRES_USER: ${DB_USERNAME:-spmi}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-spmi_secret}
+    ports:
+      - "5433:5432" # Changed to 5433 because 5432 is used by erp_postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # Cache: Redis
+  redis:
+    image: redis:alpine
+    container_name: spmi-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379" # Changed to 6380 because 6379 is used by klinik-redis
+
+  # Email Testing: Mailpit
+  mailpit:
+    image: axllent/mailpit
+    container_name: spmi-mailpit
+    restart: unless-stopped
+    ports:
+      - "1026:1025"
+      - "8026:8025"
+
+  # Backend: Laravel (PHP 8.3)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: spmi-backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - "8001:8000"
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_HOST: redis
+
+  # Frontend: Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: spmi-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3001:3000" # Changed to 3001 because 3000 is used by banksampah-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8001/api
+
+volumes:
+  pgdata:

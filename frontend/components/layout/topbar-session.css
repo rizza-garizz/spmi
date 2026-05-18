@@ -1,0 +1,94 @@
+.session-chip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  margin-right: 15px;
+}
+
+.session-chip:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.session-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f0f2f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  font-size: 1.2rem;
+  position: relative;
+}
+
+.session-status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.status-live { background-color: #2ecc71; }
+.status-local { background-color: #f1c40f; }
+.status-idle { background-color: #95a5a6; }
+
+.session-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.session-copy strong {
+  font-size: 0.85rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.session-copy span {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.session-action {
+  background: transparent;
+  border: none;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.session-action:hover {
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.session-action i {
+  font-size: 1rem;
+}
+
+@media (max-width: 576px) {
+  .session-copy {
+    display: none;
+  }
+  .session-chip {
+    padding: 6px;
+    gap: 8px;
+  }
+}

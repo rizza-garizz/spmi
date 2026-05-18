@@ -1,0 +1,390 @@
+module.exports = {
+  openapi: "3.0.3",
+  info: {
+    title: "SPMI Command Center API",
+    version: "1.0.0",
+    description:
+      "Backend API resmi untuk SPMI Command Center. Mendukung mode local_mock untuk demo cepat dan mode database untuk integrasi PostgreSQL + Prisma.",
+  },
+  servers: [
+    {
+      url: "http://localhost:4000",
+      description: "Local development",
+    },
+  ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+      },
+    },
+    schemas: {
+      ApiEnvelope: {
+        type: "object",
+        properties: {
+          success: { type: "boolean", example: true },
+          data: { type: "object", nullable: true },
+          message: { type: "string", example: "OK" },
+        },
+      },
+    },
+  },
+  paths: {
+    "/health": {
+      get: {
+        tags: ["System"],
+        summary: "Health check backend",
+        responses: {
+          200: { description: "Service is healthy" },
+        },
+      },
+    },
+    "/system/status": {
+      get: {
+        tags: ["System"],
+        summary: "Status runtime backend",
+        responses: {
+          200: { description: "Runtime status and mode" },
+        },
+      },
+    },
+    "/auth/login": {
+      post: {
+        tags: ["Auth"],
+        summary: "Login user and issue token",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["email", "password"],
+                properties: {
+                  email: { type: "string", example: "admin@spmi.local" },
+                  password: { type: "string", example: "Password123!" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Login successful" },
+          401: { description: "Invalid credentials" },
+        },
+      },
+    },
+    "/auth/me": {
+      get: {
+        tags: ["Auth"],
+        summary: "Get current authenticated user",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: "Current profile" },
+          401: { description: "Invalid token" },
+        },
+      },
+    },
+    "/dashboard/summary": {
+      get: {
+        tags: ["Dashboard"],
+        summary: "Get dashboard summary and KPI trend snapshot",
+        responses: {
+          200: { description: "Dashboard summary" },
+        },
+      },
+    },
+    "/catalog": {
+      get: {
+        tags: ["Catalog"],
+        summary: "Get complete frontend catalog snapshot",
+        responses: {
+          200: { description: "Catalog snapshot" },
+        },
+      },
+    },
+    "/standards": {
+      get: {
+        tags: ["Standards"],
+        summary: "List quality standards",
+        responses: {
+          200: { description: "List of standards" },
+        },
+      },
+      post: {
+        tags: ["Standards"],
+        summary: "Create a standard in current runtime mode",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["code", "title", "category"],
+                properties: {
+                  code: { type: "string", example: "STD-PEND-09" },
+                  title: { type: "string", example: "Standar Evaluasi Pembelajaran" },
+                  category: { type: "string", example: "pendidikan" },
+                  description: { type: "string", example: "Ringkasan standar" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Standard created" },
+        },
+      },
+    },
+    "/documents": {
+      get: {
+        tags: ["Documents"],
+        summary: "List documents",
+        responses: {
+          200: { description: "Document repository" },
+        },
+      },
+      post: {
+        tags: ["Documents"],
+        summary: "Create/upload a document in current runtime mode",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                properties: {
+                  code: { type: "string" },
+                  title: { type: "string" },
+                  type: { type: "string" },
+                  file: { type: "string", format: "binary" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Document created" },
+        },
+      },
+    },
+    "/documents/versions/{versionId}": {
+      get: {
+        tags: ["Documents"],
+        summary: "Get document version download URL",
+        parameters: [
+          {
+            name: "versionId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Download URL payload" },
+        },
+      },
+    },
+    "/imports/aoa/preview": {
+      post: {
+        tags: ["Imports"],
+        summary: "Preview migrasi AOA sebelum commit",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                required: ["file"],
+                properties: {
+                  entity: { type: "string", example: "standards" },
+                  file: { type: "string", format: "binary" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Preview migrasi tersedia" },
+          422: { description: "File atau data migrasi tidak valid" },
+        },
+      },
+    },
+    "/imports/aoa/commit": {
+      post: {
+        tags: ["Imports"],
+        summary: "Commit migrasi AOA setelah preview aman",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                required: ["file"],
+                properties: {
+                  entity: { type: "string", example: "standards" },
+                  strategy: {
+                    type: "string",
+                    enum: ["skip_duplicates", "overwrite_duplicates"],
+                    example: "skip_duplicates",
+                  },
+                  file: { type: "string", format: "binary" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Migrasi AOA berhasil dieksekusi" },
+          422: { description: "Tidak ada data aman yang bisa dimigrasikan" },
+        },
+      },
+    },
+    "/ppepp/cycles": {
+      get: {
+        tags: ["PPEPP"],
+        summary: "List PPEPP cycles",
+        responses: {
+          200: { description: "PPEPP cycles" },
+        },
+      },
+      post: {
+        tags: ["PPEPP"],
+        summary: "Create a PPEPP cycle",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          201: { description: "PPEPP cycle created" },
+        },
+      },
+    },
+    "/ami/audits": {
+      get: {
+        tags: ["AMI"],
+        summary: "List internal audits",
+        responses: {
+          200: { description: "AMI audits" },
+        },
+      },
+      post: {
+        tags: ["AMI"],
+        summary: "Create an internal audit",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          201: { description: "AMI audit created" },
+        },
+      },
+    },
+    "/ami/audits/{id}/findings": {
+      post: {
+        tags: ["AMI"],
+        summary: "Create a finding for an audit",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          201: { description: "Finding created" },
+        },
+      },
+    },
+    "/rtm/meetings": {
+      get: {
+        tags: ["RTM"],
+        summary: "List RTM meetings",
+        responses: {
+          200: { description: "RTM meetings" },
+        },
+      },
+      post: {
+        tags: ["RTM"],
+        summary: "Create an RTM meeting",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          201: { description: "RTM meeting created" },
+        },
+      },
+    },
+    "/indicators": {
+      get: {
+        tags: ["Indicators"],
+        summary: "List indicators and latest values",
+        responses: {
+          200: { description: "Indicator list" },
+        },
+      },
+      post: {
+        tags: ["Indicators"],
+        summary: "Create a new indicator",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          201: { description: "Indicator created" },
+        },
+      },
+    },
+    "/indicators/{id}/values": {
+      post: {
+        tags: ["Indicators"],
+        summary: "Create a new indicator value",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          201: { description: "Indicator value created" },
+          404: { description: "Indicator not found" },
+        },
+      },
+    },
+    "/org-units": {
+      get: {
+        tags: ["Organization"],
+        summary: "List organization units",
+        responses: {
+          200: { description: "Org units" },
+        },
+      },
+    },
+    "/integrations": {
+      get: {
+        tags: ["Integration"],
+        summary: "List integration sources",
+        responses: {
+          200: { description: "Integration list" },
+        },
+      },
+    },
+    "/imports": {
+      get: {
+        tags: ["Import"],
+        summary: "List import jobs",
+        responses: {
+          200: { description: "Import jobs" },
+        },
+      },
+    },
+    "/surveys": {
+      get: {
+        tags: ["Surveys"],
+        summary: "List survey definitions",
+        responses: {
+          200: { description: "Survey list" },
+        },
+      },
+    },
+  },
+};

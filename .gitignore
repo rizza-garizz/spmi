@@ -1,0 +1,15 @@
+backend/vendor/
+backend/node_modules/
+backend/.env
+backend/storage/*.key
+backend-node/node_modules/
+backend-node/.env
+backend-node/uploads/
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+.DS_Store
+._*
+*.tsbuildinfo
+docker-compose.override.yml
+*.log

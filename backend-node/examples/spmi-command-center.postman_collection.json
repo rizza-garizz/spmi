@@ -1,0 +1,177 @@
+{
+  "info": {
+    "name": "SPMI Command Center API",
+    "_postman_id": "b44e4938-52b6-4f2d-b1a2-4fd7f95bc001",
+    "description": "Koleksi endpoint utama untuk backend SPMI Command Center.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "token", "value": "" },
+    { "key": "standarId", "value": "" },
+    { "key": "dokumenId", "value": "" },
+    { "key": "unitKerjaId", "value": "" },
+    { "key": "auditorId", "value": "" },
+    { "key": "amiId", "value": "" },
+    { "key": "surveiId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin.lpm@spmi.local\",\n  \"password\": \"Admin123!\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "Auth - Me",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/auth/me"
+      }
+    },
+    {
+      "name": "Dashboard Summary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/dashboard/summary"
+      }
+    },
+    {
+      "name": "Standar - List",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/standar?page=1&limit=10&search=pembelajaran"
+      }
+    },
+    {
+      "name": "Standar - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Standar Penilaian Pembelajaran\",\n  \"description\": \"Standar evaluasi hasil belajar mahasiswa.\",\n  \"category\": \"Akademik\",\n  \"status\": \"aktif\"\n}"
+        },
+        "url": "{{baseUrl}}/standar"
+      }
+    },
+    {
+      "name": "PPEPP - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"standar_id\": \"{{standarId}}\",\n  \"unit_kerja_id\": \"{{unitKerjaId}}\",\n  \"fase\": \"E\",\n  \"isi\": \"Evaluasi ketercapaian indikator mutu semester genap.\",\n  \"status\": \"berjalan\",\n  \"tahun\": 2026\n}"
+        },
+        "url": "{{baseUrl}}/ppepp"
+      }
+    },
+    {
+      "name": "AMI - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"AMI Fakultas 2026\",\n  \"jadwal\": \"2026-06-15T09:00:00.000Z\",\n  \"auditor_id\": \"{{auditorId}}\",\n  \"auditee_id\": \"{{unitKerjaId}}\",\n  \"status\": \"terjadwal\",\n  \"catatan\": \"Audit rutin semester genap.\"\n}"
+        },
+        "url": "{{baseUrl}}/ami"
+      }
+    },
+    {
+      "name": "AMI - Add Finding",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Monitoring perkuliahan belum konsisten\",\n  \"deskripsi\": \"Bukti monitoring tidak tersedia untuk seluruh mata kuliah.\",\n  \"severity\": \"sedang\",\n  \"kategori\": \"Pembelajaran\",\n  \"rencana_tindak_lanjut\": \"Menyusun checklist monitoring standar.\",\n  \"status_rtl\": \"berjalan\",\n  \"tenggat\": \"2026-07-10T00:00:00.000Z\"\n}"
+        },
+        "url": "{{baseUrl}}/ami/{{amiId}}/temuan"
+      }
+    },
+    {
+      "name": "RTM - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tanggal\": \"2026-07-01T08:00:00.000Z\",\n  \"peserta\": [\"Ketua LPM\", \"Dekan\", \"Ketua Prodi\"],\n  \"agenda\": \"Tinjauan hasil AMI semester genap\",\n  \"hasil_keputusan\": \"Unit kerja wajib menyelesaikan RTL maksimal 30 hari.\",\n  \"status\": \"berjalan\"\n}"
+        },
+        "url": "{{baseUrl}}/rtm"
+      }
+    },
+    {
+      "name": "Survei - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Survei Kepuasan Mahasiswa\",\n  \"description\": \"Survei layanan akademik semester genap.\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"label\": \"Bagaimana kualitas layanan akademik?\",\n      \"type\": \"radio\",\n      \"options\": [\"Sangat Baik\", \"Baik\", \"Cukup\", \"Kurang\"],\n      \"required\": true\n    },\n    {\n      \"id\": \"q2\",\n      \"label\": \"Masukan tambahan\",\n      \"type\": \"textarea\",\n      \"required\": false\n    }\n  ],\n  \"status\": \"aktif\",\n  \"start_date\": \"2026-05-10T00:00:00.000Z\",\n  \"end_date\": \"2026-05-31T23:59:59.000Z\"\n}"
+        },
+        "url": "{{baseUrl}}/survei"
+      }
+    },
+    {
+      "name": "Survei - Submit Answer",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"respondent_name\": \"Budi\",\n  \"respondent_email\": \"budi@example.com\",\n  \"answers\": {\n    \"q1\": \"Baik\",\n    \"q2\": \"Pelayanan akademik sudah cukup responsif.\"\n  }\n}"
+        },
+        "url": "{{baseUrl}}/survei/{{surveiId}}/jawaban"
+      }
+    },
+    {
+      "name": "Integrasi - Sync",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"service\": \"pddikti\"\n}"
+        },
+        "url": "{{baseUrl}}/integrasi/sync"
+      }
+    }
+  ]
+}

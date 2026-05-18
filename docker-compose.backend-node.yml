@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: spmi-node-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: spmi_command_center
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - spmi_node_pgdata:/var/lib/postgresql/data
+
+  backend-node:
+    image: node:20-alpine
+    container_name: spmi-node-api
+    working_dir: /app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend-node:/app
+    command: sh -c "npm install && npx prisma generate && npm run dev"
+    environment:
+      PORT: 4000
+      NODE_ENV: development
+      APP_MODE: database
+      APP_URL: http://localhost:4000
+      JWT_SECRET: super-secret-change-me
+      JWT_EXPIRES_IN: 1d
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/spmi_command_center?schema=public
+      UPLOAD_DIR: uploads
+    ports:
+      - "4000:4000"
+
+volumes:
+  spmi_node_pgdata:
