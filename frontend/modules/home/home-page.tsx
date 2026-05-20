@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { RoleGate } from "@/components/auth/RoleGate";
+import { moduleRegistry } from "@/lib/module-registry";
 
-const coreModules = [
-  { href: "/dashboard", label: "Dashboard", scope: "Control room untuk melihat status operasional.", icon: "la-dashboard", color: "bg-primary", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"] as const },
-  { href: "/nilai", label: "Nilai & Rekap", scope: "Rekap skor, prioritas kerja, dan status mutu.", icon: "la-bar-chart", color: "bg-success", roles: ["admin_lpm", "auditor", "kaprodi", "sekprodi", "unit_kerja"] as const },
-  { href: "/documents", label: "Dokumen", scope: "Repository kebijakan, pedoman, dan bukti.", icon: "la-file-text", color: "bg-info", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"] as const },
-  { href: "/standards", label: "Standar", scope: "Master data standar mutu dan kategori.", icon: "la-book", color: "bg-warning", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"] as const },
-  { href: "/ppepp", label: "PPEPP", scope: "Siklus kerja mutu dari penetapan sampai peningkatan.", icon: "la-refresh", color: "bg-danger", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"] as const },
-  { href: "/ami", label: "AMI", scope: "Audit internal untuk evaluasi dan temuan.", icon: "la-check-circle", color: "bg-dark", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] as const },
-] as const;
+const cardColors = ["bg-primary", "bg-success", "bg-info", "bg-warning", "bg-danger", "bg-dark"] as const;
+const coreModules = moduleRegistry
+  .flatMap((section) => section.children)
+  .filter((node) => ["/dashboard", "/nilai", "/documents", "/standards", "/ppepp", "/ami"].includes(node.href))
+  .map((node, index) => ({ ...node, color: cardColors[index % cardColors.length] }));
 
 export async function HomePage() {
   return (
@@ -58,9 +56,9 @@ export async function HomePage() {
                   </div>
                   <div className="mt-3 text-white">
                     <p style={{ fontSize: "0.85rem", opacity: 0.9, marginBottom: 15, minHeight: "40px" }}>
-                      {item.scope}
+                      {item.description}
                     </p>
-                    <Link href={item.href} className="btn btn-light btn-sm text-dark">
+                    <Link href={item.href as any} className="btn btn-light btn-sm text-dark">
                       Buka Modul
                     </Link>
                   </div>

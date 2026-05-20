@@ -122,7 +122,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
 
                 return (
                   <li key={section.label}>
-                    <span className={`nav-label ${sectionIndex === 0 ? "first" : ""}`}>{section.label}</span>
+                    <a className={`nav-label ${sectionIndex === 0 ? "first" : ""}`} href={`/modules/${section.id}`}>{section.label}</a>
                     <ul className="spmi-nav-sublist">
                       {allowedItems.map((item) => renderNavItem(item))}
                     </ul>
