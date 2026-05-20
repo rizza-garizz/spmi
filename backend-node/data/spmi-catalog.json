@@ -422,31 +422,31 @@
   ],
   "ppeppSteps": [
     {
-      "code": "P",
+      "code": "penetapan",
       "name": "Penetapan",
       "description": "Pengesahan standar, kebijakan, pedoman, dan dokumen final.",
       "deliverable": "Standar yang ditetapkan dan dipublikasikan"
     },
     {
-      "code": "P",
+      "code": "pelaksanaan",
       "name": "Pelaksanaan",
       "description": "Implementasi standar di unit kerja dan pencatatan bukti digital.",
       "deliverable": "Bukti implementasi dan log aktivitas"
     },
     {
-      "code": "E",
+      "code": "evaluasi",
       "name": "Evaluasi",
       "description": "Audit mutu internal, survei kepuasan, dan rekap borang evaluasi.",
       "deliverable": "Temuan, skor, dan ringkasan evaluasi"
     },
     {
-      "code": "P",
+      "code": "pengendalian",
       "name": "Pengendalian",
       "description": "RTM, tindak lanjut, dan kontrol pelaksanaan perbaikan.",
       "deliverable": "RTL aktif dan status penyelesaian"
     },
     {
-      "code": "P",
+      "code": "peningkatan",
       "name": "Peningkatan",
       "description": "Revisi standar berdasarkan hasil evaluasi dan kebutuhan terbaru.",
       "deliverable": "Revisi standar dan rencana peningkatan"

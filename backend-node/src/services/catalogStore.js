@@ -85,6 +85,90 @@ function approvalSeed(step = "draft", status = "draft") {
   };
 }
 
+const PPEPP_STAGE_DEFINITIONS = [
+  {
+    key: "penetapan",
+    label: "Penetapan",
+    description: "Pengesahan standar, kebijakan, pedoman, dan dokumen final.",
+    deliverable: "Standar yang ditetapkan dan dipublikasikan",
+  },
+  {
+    key: "pelaksanaan",
+    label: "Pelaksanaan",
+    description: "Implementasi standar di unit kerja dan pencatatan bukti digital.",
+    deliverable: "Bukti implementasi dan log aktivitas",
+  },
+  {
+    key: "evaluasi",
+    label: "Evaluasi",
+    description: "Audit mutu internal, survei kepuasan, dan rekap borang evaluasi.",
+    deliverable: "Temuan, skor, dan ringkasan evaluasi",
+  },
+  {
+    key: "pengendalian",
+    label: "Pengendalian",
+    description: "RTM, tindak lanjut, dan kontrol pelaksanaan perbaikan.",
+    deliverable: "RTL aktif dan status penyelesaian",
+  },
+  {
+    key: "peningkatan",
+    label: "Peningkatan",
+    description: "Revisi standar berdasarkan hasil evaluasi dan kebutuhan terbaru.",
+    deliverable: "Revisi standar dan rencana peningkatan",
+  },
+];
+
+function buildPpeppStages(source = {}) {
+  const sourceStages = Array.isArray(source.stages) ? source.stages : [];
+  return PPEPP_STAGE_DEFINITIONS.map((definition) => {
+    const existing = sourceStages.find((item) => item.key === definition.key || item.name === definition.label) || {};
+    const status = existing.status || (source.status === "closed" || source.status === "done" ? "completed" : "not_started");
+
+    return {
+      ...definition,
+      status,
+      progress: Number(existing.progress ?? (status === "completed" ? 100 : status === "in_progress" ? 50 : 0)),
+      start_date: existing.start_date || null,
+      due_date: existing.due_date || null,
+      completed_at: existing.completed_at || null,
+      notes: existing.notes || "",
+      evidence: Array.isArray(existing.evidence) ? existing.evidence : [],
+    };
+  });
+}
+
+function buildPpeppTimeline(item) {
+  const existing = Array.isArray(item.timeline) ? item.timeline : [];
+  if (existing.length) return existing;
+
+  return [
+    {
+      at: item.created_at || "2026-05-20T00:00:00.000Z",
+      actor: "system",
+      action: "created",
+      stage: null,
+      note: "Siklus PPEPP dibuat.",
+    },
+  ];
+}
+
+function calculatePpeppProgress(stages) {
+  if (!stages.length) return 0;
+  const total = stages.reduce((sum, stage) => sum + Number(stage.progress || 0), 0);
+  return Math.round(total / stages.length);
+}
+
+function normalizePpeppCycle(item) {
+  const stages = buildPpeppStages(item);
+  return {
+    ...item,
+    current_stage: item.current_stage || stages.find((stage) => stage.status !== "completed")?.key || "peningkatan",
+    stages,
+    timeline: buildPpeppTimeline(item),
+    progress: Number(item.progress ?? calculatePpeppProgress(stages)),
+  };
+}
+
 const state = {
   standards: normalizeInitialStandards(catalog.standards),
   documents: catalog.documents.map((item) => ({
@@ -240,14 +324,17 @@ const state = {
       ],
     },
   ],
-  ppeppCycles: catalog.ppeppCycles.map((item) => ({
-    id: item.id,
-    name: item.name,
-    period: item.period,
-    status: item.status,
-    org_unit_code: item.org_unit_code || (item.id % 2 === 0 ? "FIKOM" : "SI"),
-    approval: approvalSeed(item.status === "done" ? "approved" : "draft", item.status === "done" ? "approved" : "draft"),
-  })),
+  ppeppCycles: catalog.ppeppCycles.map((item) =>
+    normalizePpeppCycle({
+      id: item.id,
+      name: item.name,
+      period: item.period,
+      status: item.status,
+      org_unit_code: item.org_unit_code || (item.id % 2 === 0 ? "FIKOM" : "SI"),
+      approval: approvalSeed(item.status === "done" ? "approved" : "draft", item.status === "done" ? "approved" : "draft"),
+      created_at: "2026-05-20T00:00:00.000Z",
+    })
+  ),
   surveys: catalog.surveys.map((item) => ({
     id: item.id,
     title: item.title,
@@ -516,7 +603,7 @@ function updateMeetingAction(meetingId, actionId, data) {
 }
 
 function addPpeppCycle(data, user) {
-  const item = {
+  const item = normalizePpeppCycle({
     id: Date.now(),
     name: data.name || `Siklus ${new Date().getFullYear()}`,
     period: data.period || "yearly",
@@ -525,9 +612,85 @@ function addPpeppCycle(data, user) {
     approval: getInitialApproval(user),
     academic_year_start: data.academic_year_start || null,
     academic_year_end: data.academic_year_end || null,
-  };
+    created_at: new Date().toISOString(),
+  });
   state.ppeppCycles.unshift(item);
   return item;
+}
+
+function findPpeppCycle(cycleId) {
+  return state.ppeppCycles.find((item) => String(item.id) === String(cycleId));
+}
+
+function updatePpeppStage(cycleId, stageKey, data, user) {
+  const cycle = findPpeppCycle(cycleId);
+  if (!cycle) return null;
+
+  const stage = cycle.stages.find((item) => item.key === stageKey || item.label.toLowerCase() === String(stageKey).toLowerCase());
+  if (!stage) return null;
+
+  const nextStatus = data.status || stage.status;
+  const rawProgress = Number.isFinite(Number(data.progress)) ? Number(data.progress) : stage.progress;
+  const nextProgress = nextStatus === "completed" ? 100 : Math.min(100, Math.max(0, Number(rawProgress || 0)));
+
+  stage.status = nextStatus;
+  stage.progress = nextProgress;
+  stage.start_date = data.start_date ?? stage.start_date;
+  stage.due_date = data.due_date ?? stage.due_date;
+  stage.completed_at = nextStatus === "completed" ? data.completed_at || new Date().toISOString() : data.completed_at ?? stage.completed_at;
+  stage.notes = data.notes ?? stage.notes;
+
+  cycle.current_stage = cycle.stages.find((item) => item.status !== "completed")?.key || stage.key;
+  cycle.progress = calculatePpeppProgress(cycle.stages);
+  cycle.status = cycle.progress >= 100 ? "closed" : cycle.progress > 0 ? "running" : cycle.status;
+  cycle.timeline.unshift({
+    at: new Date().toISOString(),
+    actor: user?.email || user?.username || "system",
+    action: "stage_updated",
+    stage: stage.key,
+    status: stage.status,
+    progress: stage.progress,
+    note: data.notes || `${stage.label} diperbarui.`,
+  });
+
+  return cycle;
+}
+
+function addPpeppEvidence(cycleId, stageKey, data, user) {
+  const cycle = findPpeppCycle(cycleId);
+  if (!cycle) return null;
+
+  const stage = cycle.stages.find((item) => item.key === stageKey || item.label.toLowerCase() === String(stageKey).toLowerCase());
+  if (!stage) return null;
+
+  const evidence = {
+    id: `EV-PPEPP-${Date.now()}`,
+    title: data.title || data.file_name || "Bukti PPEPP",
+    file_name: data.file_name || null,
+    file_path: data.file_path || null,
+    file_size: Number(data.file_size || 0),
+    notes: data.notes || "",
+    uploaded_at: new Date().toISOString(),
+    uploaded_by: user?.email || user?.username || "system",
+  };
+
+  stage.evidence.unshift(evidence);
+  if (stage.status === "not_started") {
+    stage.status = "in_progress";
+    stage.progress = Math.max(stage.progress, 25);
+  }
+
+  cycle.progress = calculatePpeppProgress(cycle.stages);
+  cycle.status = cycle.progress >= 100 ? "closed" : "running";
+  cycle.timeline.unshift({
+    at: evidence.uploaded_at,
+    actor: evidence.uploaded_by,
+    action: "evidence_uploaded",
+    stage: stage.key,
+    note: evidence.title,
+  });
+
+  return { cycle, stage, evidence };
 }
 
 function addAmiAudit(data, user) {
@@ -853,6 +1016,8 @@ module.exports = {
   addMeeting,
   updateMeetingAction,
   addPpeppCycle,
+  updatePpeppStage,
+  addPpeppEvidence,
   addAmiAudit,
   addIndicator,
   addIndicatorValue,

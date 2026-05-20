@@ -275,6 +275,66 @@ test("POST /ppepp/cycles creates a local PPEPP cycle", async () => {
   assert.equal(response.status, 201);
   assert.equal(payload.success, true);
   assert.equal(payload.data.name, "Siklus Test");
+  assert.equal(payload.data.stages.length, 5);
+  assert.deepEqual(
+    payload.data.stages.map((stage) => stage.key),
+    ["penetapan", "pelaksanaan", "evaluasi", "pengendalian", "peningkatan"]
+  );
+  assert.ok(Array.isArray(payload.data.timeline));
+});
+
+test("PPEPP stages track status, timeline, progress, and evidence upload", async () => {
+  const token = await loginAs("unit@spmi.local");
+  const createdResponse = await fetch(`${baseUrl}/ppepp/cycles`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      name: "Siklus Evidence Test",
+      period: "semester",
+      status: "planned",
+    }),
+  });
+  const createdPayload = await createdResponse.json();
+  const cycleId = createdPayload.data.id;
+
+  const stageResponse = await fetch(`${baseUrl}/ppepp/cycles/${cycleId}/stages/penetapan`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      status: "completed",
+      progress: 100,
+      notes: "Standar sudah ditetapkan.",
+    }),
+  });
+  const stagePayload = await stageResponse.json();
+
+  assert.equal(stageResponse.status, 200);
+  assert.equal(stagePayload.data.stages.find((stage) => stage.key === "penetapan").status, "completed");
+  assert.equal(stagePayload.data.progress, 20);
+  assert.equal(stagePayload.data.timeline[0].action, "stage_updated");
+
+  const evidenceForm = new FormData();
+  evidenceForm.append("title", "SK Penetapan Standar");
+  evidenceForm.append("file", new Blob(["bukti,penetapan"], { type: "text/csv" }), "sk-penetapan.csv");
+
+  const evidenceResponse = await fetch(`${baseUrl}/ppepp/cycles/${cycleId}/stages/penetapan/evidence`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: evidenceForm,
+  });
+  const evidencePayload = await evidenceResponse.json();
+
+  assert.equal(evidenceResponse.status, 201);
+  assert.equal(evidencePayload.data.stage.evidence.length, 1);
+  assert.equal(evidencePayload.data.cycle.timeline[0].action, "evidence_uploaded");
 });
 
 test("POST /ami/audits creates a local audit", async () => {

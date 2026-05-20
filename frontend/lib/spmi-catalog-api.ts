@@ -120,7 +120,24 @@ const emptyCatalog = {
   documentTypes: [] as Array<{ value: string; label: string }>,
   importTypes: [] as Array<{ value: string; label: string }>,
   documents: [] as Array<{ id: number; title: string; type: string; status: string }>,
-  ppeppCycles: [] as Array<{ id: number; name: string; period: string; status: string }>,
+  ppeppCycles: [] as Array<{
+    id: number | string;
+    name: string;
+    period: string;
+    status: string;
+    progress?: number;
+    current_stage?: string;
+    stages?: Array<{
+      key: string;
+      label: string;
+      description: string;
+      deliverable: string;
+      status: string;
+      progress: number;
+      evidence: Array<unknown>;
+    }>;
+    timeline?: Array<unknown>;
+  }>,
   amiAudits: [] as Array<{ id: number; org_unit: { name: string }; score: number; status: string }>,
   rtmMeetings: [] as Array<{ id: number; title: string; status: string }>,
   surveys: [] as Array<{ id: number; title: string; target: string }>,

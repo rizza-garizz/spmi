@@ -63,6 +63,14 @@ router.post("/documents", verifyToken, requireRole(...ROLE_DOCUMENT_WRITE), uplo
 router.get("/documents/versions/:versionId", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.documentVersion);
 router.get("/ppepp/cycles", optionalAuth, compatController.ppeppCycles);
 router.post("/ppepp/cycles", verifyToken, requireRole(...ROLE_PPEPP_WRITE), compatController.createPpeppCycle);
+router.patch("/ppepp/cycles/:id/stages/:stage", verifyToken, requireRole(...ROLE_PPEPP_WRITE), compatController.updatePpeppCycleStage);
+router.post(
+  "/ppepp/cycles/:id/stages/:stage/evidence",
+  verifyToken,
+  requireRole(...ROLE_PPEPP_WRITE),
+  upload.single("file"),
+  compatController.uploadPpeppEvidence
+);
 router.get("/ami/audits", optionalAuth, compatController.amiAudits);
 router.post("/ami/audits", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.createAmiAudit);
 router.post("/ami/audits/:id/findings", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.createFinding);

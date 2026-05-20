@@ -125,6 +125,8 @@ npm run dev
 - `GET /standards/:id/revisions`
 - `GET/POST /documents`
 - `GET/POST /ppepp/cycles`
+- `PATCH /ppepp/cycles/:id/stages/:stage`
+- `POST /ppepp/cycles/:id/stages/:stage/evidence`
 - `GET/POST /ami/audits`
 - `POST /ami/audits/:id/findings`
 - `GET/POST /rtm/meetings`

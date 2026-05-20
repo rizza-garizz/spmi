@@ -1,6 +1,7 @@
 import { getPpeppCycles } from "@/lib/spmi-catalog-api";
 import { RoleGate } from "@/components/auth/RoleGate";
 import { CreatePpeppCycleForm } from "@/components/isian/ppepp/create-ppepp-cycle-form";
+import { PpeppCycleMonitor } from "@/components/isian/ppepp/ppepp-cycle-monitor";
 import { NilaiCardGrid } from "@/components/nilai/core";
 import { ProgressiveSection } from "@/components/support/progressive-section";
 
@@ -20,7 +21,7 @@ export default async function PpeppPage() {
           <h1>PPEPP Tracker</h1>
           <p className="hero-copy">
             Mengikat pelaksanaan standar, evaluasi, pengendalian, dan peningkatan ke satu siklus
-            mutu yang bisa ditelusuri per periode.
+            mutu yang bisa ditelusuri per periode, tahap, timeline, dan bukti.
           </p>
         </div>
       </section>
@@ -37,9 +38,23 @@ export default async function PpeppPage() {
           items={(cycles.length > 0 ? cycles : [{ name: "Siklus 2025/2026" }]).map((cycle, index) => ({
             key: String(cycle.id ?? index),
             title: cycle.name,
-            lines: [`${cycle.period ?? "yearly"} · ${cycle.status ?? "planned"}`],
+            lines: [
+              `${cycle.period ?? "yearly"} · ${cycle.status ?? "planned"}`,
+              `Progress ${cycle.progress ?? 0}% · ${cycle.current_stage ?? "penetapan"}`,
+            ],
           }))}
         />
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <div>
+            <h2>Monitoring PPEPP Lengkap</h2>
+            <p>Penetapan, Pelaksanaan, Evaluasi, Pengendalian, dan Peningkatan dipantau dalam satu alur.</p>
+          </div>
+          <div className="section-tag">Evidence ready</div>
+        </div>
+        <PpeppCycleMonitor cycles={cycles} />
       </section>
 
       <section className="section">

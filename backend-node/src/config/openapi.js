@@ -294,6 +294,36 @@ module.exports = {
         },
       },
     },
+    "/ppepp/cycles/{id}/stages/{stage}": {
+      patch: {
+        tags: ["PPEPP"],
+        summary: "Update one PPEPP stage status, progress, due date, and notes",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+          { name: "stage", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "PPEPP stage updated" },
+          404: { description: "PPEPP cycle or stage not found" },
+        },
+      },
+    },
+    "/ppepp/cycles/{id}/stages/{stage}/evidence": {
+      post: {
+        tags: ["PPEPP"],
+        summary: "Upload evidence for one PPEPP stage",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+          { name: "stage", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          201: { description: "PPEPP evidence uploaded" },
+          404: { description: "PPEPP cycle or stage not found" },
+        },
+      },
+    },
     "/ami/audits": {
       get: {
         tags: ["AMI"],

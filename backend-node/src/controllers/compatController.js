@@ -14,6 +14,8 @@ const {
   addMeeting,
   updateMeetingAction,
   addPpeppCycle,
+  updatePpeppStage,
+  addPpeppEvidence,
   addAmiAudit,
   addIndicator,
   addIndicatorValue,
@@ -140,6 +142,36 @@ function createPpeppCycle(req, res) {
     data: addPpeppCycle(payload, req.user),
     message: "Siklus PPEPP berhasil dibuat di mode lokal.",
   });
+}
+
+function updatePpeppCycleStage(req, res) {
+  const cycle = state.ppeppCycles.find((item) => String(item.id) === String(req.params.id));
+  if (!cycle) return failure(res, "Siklus PPEPP tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, cycle)) return failure(res, "Anda tidak dapat mengubah data di luar scope unit kerja.", 403);
+
+  const updated = updatePpeppStage(req.params.id, req.params.stage, req.body || {}, req.user);
+  if (!updated) return failure(res, "Tahap PPEPP tidak ditemukan.", 404);
+  return success(res, updated, "Tahap PPEPP berhasil diperbarui.");
+}
+
+function uploadPpeppEvidence(req, res) {
+  const cycle = state.ppeppCycles.find((item) => String(item.id) === String(req.params.id));
+  if (!cycle) return failure(res, "Siklus PPEPP tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, cycle)) return failure(res, "Anda tidak dapat mengunggah bukti di luar scope unit kerja.", 403);
+
+  const result = addPpeppEvidence(
+    req.params.id,
+    req.params.stage,
+    {
+      ...(req.body || {}),
+      file_name: req.file?.originalname || req.body?.file_name || null,
+      file_path: req.file?.path || null,
+      file_size: req.file?.size || 0,
+    },
+    req.user
+  );
+  if (!result) return failure(res, "Tahap PPEPP tidak ditemukan.", 404);
+  return success(res, result, "Bukti PPEPP berhasil diunggah.", 201);
 }
 
 function amiAudits(req, res) {
@@ -447,6 +479,8 @@ module.exports = {
   documentVersion,
   ppeppCycles,
   createPpeppCycle,
+  updatePpeppCycleStage,
+  uploadPpeppEvidence,
   amiAudits,
   createAmiAudit,
   createFinding,
