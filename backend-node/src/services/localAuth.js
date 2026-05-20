@@ -16,8 +16,22 @@ const roleMap = {
   unit_kerja: "unit_kerja",
 };
 
+function buildOrgUnits() {
+  const orgUnits = catalog.orgUnits || [];
+  const idByCode = new Map(orgUnits.map((item, index) => [item.code, `local-org-${index + 1}`]));
+
+  return orgUnits.map((item, index) => ({
+    id: idByCode.get(item.code),
+    name: item.name,
+    code: item.code,
+    type: item.type,
+    parentId: item.parent_code ? idByCode.get(item.parent_code) || null : null,
+  }));
+}
+
 function normalizeSeedUser(user) {
   const normalizedRole = roleMap[user.role] || "guest";
+  const orgUnit = buildOrgUnits().find((item) => item.code === user.org_unit_code) || null;
   return {
     id: `local-${user.email}`,
     name: user.name,
@@ -26,7 +40,13 @@ function normalizeSeedUser(user) {
     role: normalizedRole,
     roles: [normalizedRole],
     isActive: true,
-    orgUnit: null,
+    orgUnit,
+    roleAssignments: [
+      {
+        role: normalizedRole,
+        scopeOrgUnit: orgUnit,
+      },
+    ],
     isLocal: true,
   };
 }

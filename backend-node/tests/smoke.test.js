@@ -119,6 +119,32 @@ test("GET /auth/me returns current local profile", async () => {
   assert.equal(payload.success, true);
   assert.equal(payload.data.email, "auditor@spmi.local");
   assert.equal(payload.data.mode, "local");
+  assert.equal(payload.data.org_unit.code, "LPM");
+  assert.equal(payload.data.role_assignments[0].scope_org_unit.code, "LPM");
+});
+
+test("local seed users carry perguruan tinggi role scopes", async () => {
+  const cases = [
+    ["admin@spmi.local", "admin_lpm", "LPM"],
+    ["dekan@spmi.local", "dekan", "FIKOM"],
+    ["kaprodi@spmi.local", "kaprodi", "SI"],
+    ["unit@spmi.local", "unit_kerja", "SI"],
+  ];
+
+  for (const [email, role, orgCode] of cases) {
+    const token = await loginAs(email);
+    const response = await fetch(`${baseUrl}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.data.role, role);
+    assert.equal(payload.data.org_unit.code, orgCode);
+    assert.equal(payload.data.role_assignments[0].scope_org_unit.code, orgCode);
+  }
 });
 
 test("GET /dashboard/summary returns KPI snapshot", async () => {

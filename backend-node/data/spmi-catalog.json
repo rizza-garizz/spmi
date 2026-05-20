@@ -534,43 +534,50 @@
       "name": "SPMI Admin",
       "email": "admin@spmi.local",
       "password": "Password123!",
-      "role": "admin_lpm"
+      "role": "admin_lpm",
+      "org_unit_code": "LPM"
     },
     {
       "name": "Internal Auditor",
       "email": "auditor@spmi.local",
       "password": "Password123!",
-      "role": "auditor"
+      "role": "auditor",
+      "org_unit_code": "LPM"
     },
     {
       "name": "Dekan Fakultas",
       "email": "dekan@spmi.local",
       "password": "Password123!",
-      "role": "dekan"
+      "role": "dekan",
+      "org_unit_code": "FIKOM"
     },
     {
       "name": "Wakil Dekan",
       "email": "wadek@spmi.local",
       "password": "Password123!",
-      "role": "wakil_dekan"
+      "role": "wakil_dekan",
+      "org_unit_code": "FIKOM"
     },
     {
       "name": "Ketua Program Studi",
       "email": "kaprodi@spmi.local",
       "password": "Password123!",
-      "role": "kaprodi"
+      "role": "kaprodi",
+      "org_unit_code": "SI"
     },
     {
       "name": "Sekretaris Program Studi",
       "email": "sekprodi@spmi.local",
       "password": "Password123!",
-      "role": "sekprodi"
+      "role": "sekprodi",
+      "org_unit_code": "SI"
     },
     {
       "name": "Unit Operator",
       "email": "unit@spmi.local",
       "password": "Password123!",
-      "role": "unit_kerja"
+      "role": "unit_kerja",
+      "org_unit_code": "SI"
     }
   ],
   "hris": {
