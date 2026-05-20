@@ -162,7 +162,18 @@ test("GET /dashboard/summary returns KPI snapshot", async () => {
   assert.ok(Array.isArray(payload.data.performance));
 });
 
-test("POST /standards creates a local standard", async () => {
+test("GET /catalog exposes the required standard groups", async () => {
+  const response = await fetch(`${baseUrl}/catalog`);
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(
+    payload.data.standardCategories.map((item) => item.key),
+    ["pendidikan", "penelitian", "pengabdian", "tata_kelola", "sdm", "keuangan", "sarpras"]
+  );
+});
+
+test("POST /standards creates a local standard with automatic numbering and version history", async () => {
   const token = await loginAs("admin@spmi.local");
   const response = await fetch(`${baseUrl}/standards`, {
     method: "POST",
@@ -171,17 +182,76 @@ test("POST /standards creates a local standard", async () => {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      code: "STD-TEST-01",
-      title: "Standar Test",
-      category: "pendidikan",
-      description: "Uji create standard",
+      title: "Standar Pengembangan SDM",
+      category: "sdm",
+      description: "Uji create standard dengan kode otomatis",
     }),
   });
   const payload = await response.json();
 
   assert.equal(response.status, 201);
   assert.equal(payload.success, true);
-  assert.equal(payload.data.code, "STD-TEST-01");
+  assert.match(payload.data.code, /^STD-SDM-\d{2}$/);
+  assert.equal(payload.data.version, "1.0");
+  assert.equal(payload.data.revisions[0].action, "created");
+});
+
+test("PUT and DELETE /standards keep revision history and hide deleted rows", async () => {
+  const token = await loginAs("admin@spmi.local");
+  const createdResponse = await fetch(`${baseUrl}/standards`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      title: "Standar Akuntabilitas Keuangan Test",
+      category: "keuangan",
+      description: "Draft awal",
+    }),
+  });
+  const createdPayload = await createdResponse.json();
+  const standardId = createdPayload.data.id;
+
+  const updateResponse = await fetch(`${baseUrl}/standards/${standardId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      title: "Standar Akuntabilitas Keuangan Revisi",
+      description: "Draft revisi",
+      revision_note: "Menambahkan cakupan akuntabilitas.",
+    }),
+  });
+  const updatePayload = await updateResponse.json();
+
+  assert.equal(updateResponse.status, 200);
+  assert.equal(updatePayload.data.version, "1.1");
+  assert.equal(updatePayload.data.revisions[0].action, "updated");
+
+  const revisionsResponse = await fetch(`${baseUrl}/standards/${standardId}/revisions`);
+  const revisionsPayload = await revisionsResponse.json();
+
+  assert.equal(revisionsResponse.status, 200);
+  assert.equal(revisionsPayload.data.length, 2);
+
+  const deleteResponse = await fetch(`${baseUrl}/standards/${standardId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const deletePayload = await deleteResponse.json();
+
+  assert.equal(deleteResponse.status, 200);
+  assert.equal(deletePayload.data.status, "deleted");
+
+  const listResponse = await fetch(`${baseUrl}/standards`);
+  const listPayload = await listResponse.json();
+  assert.equal(listResponse.status, 200);
+  assert.equal(listPayload.data.some((item) => item.id === standardId), false);
 });
 
 test("POST /ppepp/cycles creates a local PPEPP cycle", async () => {

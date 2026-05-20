@@ -5,6 +5,10 @@ const {
   getHrisSummary,
   getHrisEmployeeProfile,
   addStandard,
+  getActiveStandards,
+  getStandardRevisions,
+  updateStandard,
+  deleteStandard,
   addDocument,
   addFinding,
   addMeeting,
@@ -61,11 +65,40 @@ function catalog(_req, res) {
 }
 
 function standards(_req, res) {
-  return success(res, state.standards, "Daftar standar mutu");
+  return success(res, getActiveStandards(), "Daftar standar mutu");
 }
 
 function createStandard(req, res) {
-  return success(res, addStandard(req.body || {}), "Standar berhasil dibuat di mode lokal.", 201);
+  return success(
+    res,
+    addStandard({ ...(req.body || {}), changed_by: req.user?.email || req.user?.username || "system" }),
+    "Standar berhasil dibuat di mode lokal.",
+    201
+  );
+}
+
+function standardRevisions(req, res) {
+  const revisions = getStandardRevisions(req.params.id);
+  if (!revisions) return failure(res, "Standar tidak ditemukan.", 404);
+  return success(res, revisions, "Riwayat revisi standar");
+}
+
+function updateStandardRecord(req, res) {
+  const standard = updateStandard(req.params.id, {
+    ...(req.body || {}),
+    changed_by: req.user?.email || req.user?.username || "system",
+  });
+  if (!standard) return failure(res, "Standar tidak ditemukan.", 404);
+  return success(res, standard, "Standar berhasil diperbarui.");
+}
+
+function deleteStandardRecord(req, res) {
+  const standard = deleteStandard(req.params.id, {
+    ...(req.body || {}),
+    changed_by: req.user?.email || req.user?.username || "system",
+  });
+  if (!standard) return failure(res, "Standar tidak ditemukan.", 404);
+  return success(res, standard, "Standar berhasil dinonaktifkan.");
 }
 
 function documents(req, res) {
@@ -406,6 +439,9 @@ module.exports = {
   catalog,
   standards,
   createStandard,
+  standardRevisions,
+  updateStandardRecord,
+  deleteStandardRecord,
   documents,
   createDocument,
   documentVersion,

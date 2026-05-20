@@ -2,7 +2,7 @@ const prisma = require("../lib/prisma");
 const env = require("../config/env");
 const AppError = require("../utils/appError");
 const { readTabularFile } = require("./importService");
-const { state, addImport } = require("./catalogStore");
+const { state, addImport, addStandard, updateStandard } = require("./catalogStore");
 
 const allowedMigrationMimeTypes = new Set([
   "text/csv",
@@ -171,21 +171,20 @@ async function commitAoaMigration(file, actor, options = {}) {
           existing.category = row.normalized.category;
           existing.description = row.normalized.description;
           existing.status = row.normalized.status;
-          if (row.normalized.code) {
-            existing.code = row.normalized.code;
-          }
+          updateStandard(existing.id, {
+            ...row.normalized,
+            revision_note: "Standar diperbarui dari migrasi AOA.",
+            changed_by: actor?.email || "aoa-migration",
+          });
           updated += 1;
         }
         return;
       }
 
-      state.standards.unshift({
-        id: `std-${Date.now()}-${imported + 1}`,
-        code: row.normalized.code || `STD-AOA-${Date.now()}-${imported + 1}`,
-        title: row.normalized.title,
-        category: row.normalized.category,
-        description: row.normalized.description,
-        status: row.normalized.status,
+      addStandard({
+        ...row.normalized,
+        revision_note: "Standar dibuat dari migrasi AOA.",
+        changed_by: actor?.email || "aoa-migration",
       });
       imported += 1;
     });

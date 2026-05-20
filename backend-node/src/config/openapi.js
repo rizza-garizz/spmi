@@ -122,9 +122,8 @@ module.exports = {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["code", "title", "category"],
+                required: ["title", "category"],
                 properties: {
-                  code: { type: "string", example: "STD-PEND-09" },
                   title: { type: "string", example: "Standar Evaluasi Pembelajaran" },
                   category: { type: "string", example: "pendidikan" },
                   description: { type: "string", example: "Ringkasan standar" },
@@ -135,6 +134,39 @@ module.exports = {
         },
         responses: {
           201: { description: "Standard created" },
+        },
+      },
+    },
+    "/standards/{id}": {
+      put: {
+        tags: ["Standards"],
+        summary: "Update a standard and append revision history",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Standard updated" },
+          404: { description: "Standard not found" },
+        },
+      },
+      delete: {
+        tags: ["Standards"],
+        summary: "Soft-delete a standard and keep revision history",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Standard deleted" },
+          404: { description: "Standard not found" },
+        },
+      },
+    },
+    "/standards/{id}/revisions": {
+      get: {
+        tags: ["Standards"],
+        summary: "List standard revision history",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Revision history" },
+          404: { description: "Standard not found" },
         },
       },
     },

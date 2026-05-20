@@ -4,11 +4,13 @@ import { useState, type FormEvent } from "react";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
 
 type StandardPreviewItem = {
-  id?: number;
+  id?: number | string;
   code: string;
   title: string;
   category: string;
   description: string;
+  version?: string;
+  revisions?: Array<unknown>;
 };
 
 type StandardCategory = {
@@ -32,7 +34,6 @@ export function CreateStandardForm({
 
     const title = String(formData.get("title") ?? "");
     const category = String(formData.get("category") ?? "");
-    const code = String(formData.get("code") ?? "");
     const description = String(formData.get("description") ?? "");
 
     if (hasApiBaseUrl()) {
@@ -43,7 +44,6 @@ export function CreateStandardForm({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            code,
             title,
             category,
             description,
@@ -57,12 +57,16 @@ export function CreateStandardForm({
             title?: string;
             category?: string;
             description?: string;
+            version?: string;
+            revisions?: Array<unknown>;
             data?: {
               id?: number;
               code?: string;
               title?: string;
               category?: string;
               description?: string;
+              version?: string;
+              revisions?: Array<unknown>;
             };
           };
           const item = created.data ?? created;
@@ -70,10 +74,12 @@ export function CreateStandardForm({
           setItems((current) => [
             {
               id: item.id ?? Date.now(),
-              code: item.code ?? code,
+              code: item.code ?? "AUTO",
               title: item.title ?? title,
               category: item.category ?? category,
               description: item.description ?? description,
+              version: item.version ?? "1.0",
+              revisions: item.revisions ?? [],
             },
             ...current,
           ]);
@@ -90,10 +96,6 @@ export function CreateStandardForm({
   return (
     <form className="glass auth-card form-shell" onSubmit={handleSubmit}>
       <h3>Tambah Standar</h3>
-      <div className="field">
-        <label htmlFor="code">Kode</label>
-        <input id="code" name="code" placeholder="STD-PEND-02" required />
-      </div>
       <div className="field">
         <label htmlFor="title">Judul</label>
         <input id="title" name="title" placeholder="Standar Kurikulum" required />
@@ -123,8 +125,7 @@ export function CreateStandardForm({
         <div className="grid grid-2">
           {items.map((item) => (
             <div className="pill" key={item.code}>
-              {item.code} ·
-              {item.title} · {item.category}
+              {item.code} · v{item.version ?? "1.0"} · {item.title} · {item.category}
             </div>
           ))}
         </div>

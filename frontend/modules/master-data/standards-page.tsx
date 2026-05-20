@@ -20,7 +20,7 @@ export async function StandardsPage() {
         <div className="col-sm-6 p-md-0">
           <div className="welcome-text">
             <h4>Master Data Standar Mutu</h4>
-            <p className="mb-0">Mengelola standar pendidikan, penelitian, PkM, dan standar tambahan.</p>
+            <p className="mb-0">Mengelola 7 kelompok standar, nomor otomatis, versi, dan riwayat revisi.</p>
           </div>
         </div>
         <div className="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
@@ -62,6 +62,8 @@ export async function StandardsPage() {
                       <th scope="col">Kode</th>
                       <th scope="col">Judul Standar</th>
                       <th scope="col">Kategori</th>
+                      <th scope="col">Versi</th>
+                      <th scope="col">Revisi</th>
                       <th scope="col">Aksi</th>
                     </tr>
                   </thead>
@@ -74,6 +76,8 @@ export async function StandardsPage() {
                           {standard.description && <p className="mb-0 text-muted" style={{ fontSize: "0.8rem" }}>{standard.description}</p>}
                         </td>
                         <td><span className="badge badge-primary">{standard.category}</span></td>
+                        <td><span className="badge badge-light">v{standard.version ?? "1.0"}</span></td>
+                        <td>{standard.revisions?.length ?? 0} catatan</td>
                         <td>
                           <RoleGate
                             allowedRoles={["admin_lpm"]}

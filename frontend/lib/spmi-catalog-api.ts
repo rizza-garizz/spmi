@@ -107,7 +107,16 @@ async function fetchJson<T>(path: string, fallback: T): Promise<T> {
 const emptyCatalog = {
   metrics: [] as DashboardMetric[],
   standardCategories: [] as Array<{ key: string; label: string; scope: string }>,
-  standards: [] as Array<{ code: string; title: string; category: string; description: string }>,
+  standards: [] as Array<{
+    id?: string | number;
+    code: string;
+    title: string;
+    category: string;
+    description: string;
+    status?: string;
+    version?: string;
+    revisions?: Array<unknown>;
+  }>,
   documentTypes: [] as Array<{ value: string; label: string }>,
   importTypes: [] as Array<{ value: string; label: string }>,
   documents: [] as Array<{ id: number; title: string; type: string; status: string }>,

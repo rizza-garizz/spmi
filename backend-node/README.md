@@ -121,6 +121,8 @@ npm run dev
 - `GET /dashboard/summary`
 - `GET /catalog`
 - `GET/POST /standards`
+- `PUT/DELETE /standards/:id`
+- `GET /standards/:id/revisions`
 - `GET/POST /documents`
 - `GET/POST /ppepp/cycles`
 - `GET/POST /ami/audits`

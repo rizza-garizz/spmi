@@ -22,14 +22,29 @@
       "scope": "Riset, etika, pendanaan, dan luaran ilmiah."
     },
     {
-      "key": "pkm",
-      "label": "PkM",
+      "key": "pengabdian",
+      "label": "Pengabdian",
       "scope": "Program pengabdian, mitra, evaluasi, dan dampak."
     },
     {
-      "key": "tambahan",
-      "label": "Tambahan",
-      "scope": "Tata pamong, kerjasama, sistem informasi, dan area pendukung mutu."
+      "key": "tata_kelola",
+      "label": "Tata Kelola",
+      "scope": "Tata pamong, kepemimpinan, sistem informasi, kerja sama, dan audit internal."
+    },
+    {
+      "key": "sdm",
+      "label": "SDM",
+      "scope": "Dosen, tenaga kependidikan, kompetensi, beban kerja, dan pengembangan SDM."
+    },
+    {
+      "key": "keuangan",
+      "label": "Keuangan",
+      "scope": "Perencanaan, pengelolaan, pelaporan, dan akuntabilitas keuangan."
+    },
+    {
+      "key": "sarpras",
+      "label": "Sarpras",
+      "scope": "Sarana, prasarana, fasilitas akademik, dan pemeliharaan aset."
     }
   ],
   "standards": [

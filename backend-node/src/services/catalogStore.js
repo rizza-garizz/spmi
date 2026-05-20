@@ -3,6 +3,80 @@ const path = require("path");
 const catalog = require(path.resolve(__dirname, "../../data/spmi-catalog.json"));
 const { getInitialApproval } = require("./accessPolicy");
 
+const STANDARD_CATEGORIES = [
+  { key: "pendidikan", label: "Pendidikan", prefix: "PEND" },
+  { key: "penelitian", label: "Penelitian", prefix: "PEN" },
+  { key: "pengabdian", label: "Pengabdian", prefix: "PENG" },
+  { key: "tata_kelola", label: "Tata Kelola", prefix: "TK" },
+  { key: "sdm", label: "SDM", prefix: "SDM" },
+  { key: "keuangan", label: "Keuangan", prefix: "KEU" },
+  { key: "sarpras", label: "Sarpras", prefix: "SAR" },
+];
+
+const standardCategoryAliases = {
+  pkm: "pengabdian",
+  tambahan: "tata_kelola",
+  tata_pamong: "tata_kelola",
+  tata_kelola: "tata_kelola",
+  "tata kelola": "tata_kelola",
+  pendidikan: "pendidikan",
+  penelitian: "penelitian",
+  pengabdian: "pengabdian",
+  sdm: "sdm",
+  keuangan: "keuangan",
+  sarpras: "sarpras",
+};
+
+function normalizeStandardCategory(category) {
+  return standardCategoryAliases[String(category || "").toLowerCase()] || "tata_kelola";
+}
+
+function getStandardPrefix(category) {
+  return STANDARD_CATEGORIES.find((item) => item.key === normalizeStandardCategory(category))?.prefix || "STD";
+}
+
+function getNextStandardCode(category, standards = state.standards) {
+  const normalized = normalizeStandardCategory(category);
+  const prefix = getStandardPrefix(normalized);
+  const nextNumber =
+    standards
+      .filter((item) => normalizeStandardCategory(item.category) === normalized)
+      .map((item) => Number(String(item.code || "").match(new RegExp(`^STD-${prefix}-(\\d+)$`))?.[1] || 0))
+      .reduce((max, value) => Math.max(max, value), 0) + 1;
+
+  return `STD-${prefix}-${String(nextNumber).padStart(2, "0")}`;
+}
+
+function normalizeInitialStandards(standards) {
+  const counters = new Map();
+
+  return standards.map((item, index) => {
+    const category = normalizeStandardCategory(item.category);
+    const prefix = getStandardPrefix(category);
+    const nextNumber = (counters.get(category) || 0) + 1;
+    counters.set(category, nextNumber);
+
+    return {
+      id: `std-${index + 1}`,
+      ...item,
+      code: `STD-${prefix}-${String(nextNumber).padStart(2, "0")}`,
+      category,
+      version: item.version || "1.0",
+      status: item.status || "aktif",
+      deleted_at: item.deleted_at || null,
+      revisions: item.revisions || [
+        {
+          version: item.version || "1.0",
+          action: "initial",
+          note: "Versi awal standar dari katalog.",
+          changed_at: "2026-05-20T00:00:00.000Z",
+          changed_by: "system",
+        },
+      ],
+    };
+  });
+}
+
 function approvalSeed(step = "draft", status = "draft") {
   return {
     step,
@@ -12,10 +86,7 @@ function approvalSeed(step = "draft", status = "draft") {
 }
 
 const state = {
-  standards: catalog.standards.map((item, index) => ({
-    id: `std-${index + 1}`,
-    ...item,
-  })),
+  standards: normalizeInitialStandards(catalog.standards),
   documents: catalog.documents.map((item) => ({
     id: item.id,
     code: `DOC-${String(item.id).padStart(3, "0")}`,
@@ -202,7 +273,12 @@ const state = {
 function getCatalogSnapshot() {
   return {
     ...catalog,
-    standards: state.standards,
+    standardCategories: STANDARD_CATEGORIES.map(({ key, label }) => ({
+      key,
+      label,
+      scope: catalog.standardCategories.find((item) => item.key === key)?.scope || "",
+    })),
+    standards: getActiveStandards(),
     documents: state.documents,
     amiAudits: state.audits,
     rtmMeetings: state.meetings,
@@ -251,15 +327,108 @@ function getDashboardSummary() {
 }
 
 function addStandard(data) {
+  const category = normalizeStandardCategory(data.category);
+  const code = getNextStandardCode(category);
   const item = {
     id: `std-${Date.now()}`,
-    code: data.code || `STD-${Date.now()}`,
+    code,
     title: data.title,
-    category: data.category,
+    category,
     description: data.description || "",
+    status: data.status || "aktif",
+    version: data.version || "1.0",
+    deleted_at: null,
+    revisions: [
+      {
+        version: data.version || "1.0",
+        action: "created",
+        note: data.revision_note || "Standar dibuat.",
+        changed_at: new Date().toISOString(),
+        changed_by: data.changed_by || "system",
+      },
+    ],
   };
   state.standards.unshift(item);
   return item;
+}
+
+function getActiveStandards() {
+  return state.standards.filter((item) => !item.deleted_at && item.status !== "deleted");
+}
+
+function bumpMinorVersion(version) {
+  const [major, minor] = String(version || "1.0").split(".").map((part) => Number(part) || 0);
+  return `${major}.${minor + 1}`;
+}
+
+function updateStandard(standardId, data) {
+  const standard = state.standards.find(
+    (item) => !item.deleted_at && (String(item.id) === String(standardId) || item.code === standardId)
+  );
+  if (!standard) return null;
+
+  const previous = {
+    code: standard.code,
+    title: standard.title,
+    category: standard.category,
+    description: standard.description,
+    status: standard.status,
+    version: standard.version || "1.0",
+  };
+
+  const nextCategory = data.category ? normalizeStandardCategory(data.category) : standard.category;
+  const categoryChanged = nextCategory !== standard.category;
+  const nextVersion = data.version || bumpMinorVersion(standard.version);
+
+  Object.assign(standard, {
+    title: data.title || standard.title,
+    code: categoryChanged ? getNextStandardCode(nextCategory) : standard.code,
+    category: nextCategory,
+    description: data.description ?? standard.description,
+    status: data.status || standard.status || "aktif",
+    version: nextVersion,
+  });
+
+  standard.revisions = [
+    {
+      version: standard.version,
+      action: "updated",
+      note: data.revision_note || "Standar diperbarui.",
+      changed_at: new Date().toISOString(),
+      changed_by: data.changed_by || "system",
+      previous,
+    },
+    ...(standard.revisions || []),
+  ];
+
+  return standard;
+}
+
+function deleteStandard(standardId, data = {}) {
+  const standard = state.standards.find(
+    (item) => !item.deleted_at && (String(item.id) === String(standardId) || item.code === standardId)
+  );
+  if (!standard) return null;
+
+  standard.status = "deleted";
+  standard.deleted_at = new Date().toISOString();
+  standard.version = data.version || bumpMinorVersion(standard.version);
+  standard.revisions = [
+    {
+      version: standard.version,
+      action: "deactivated",
+      note: data.revision_note || "Standar dinonaktifkan.",
+      changed_at: new Date().toISOString(),
+      changed_by: data.changed_by || "system",
+    },
+    ...(standard.revisions || []),
+  ];
+  return standard;
+}
+
+function getStandardRevisions(standardId) {
+  const standard = state.standards.find((item) => String(item.id) === String(standardId) || item.code === standardId);
+  return standard?.revisions || null;
 }
 
 function addDocument(data, user) {
@@ -674,6 +843,11 @@ module.exports = {
   getHrisSummary,
   getHrisEmployeeProfile,
   addStandard,
+  getActiveStandards,
+  getStandardRevisions,
+  updateStandard,
+  deleteStandard,
+  getNextStandardCode,
   addDocument,
   addFinding,
   addMeeting,
