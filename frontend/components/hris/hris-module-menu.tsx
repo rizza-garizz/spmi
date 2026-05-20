@@ -15,7 +15,8 @@ const hrisMenus = [
     href: "#hris-pegawai",
     description: "Pegawai dan struktur",
     children: [
-      { label: "Master Pegawai", href: "#hris-pegawai" },
+      { label: "Struktur Master SDM", href: "#hris-pegawai" },
+      { label: "Input Master Pegawai", href: "#hris-pegawai-input" },
       { label: "Jabatan Aktif", href: "#hris-jabatan" },
     ],
   },
@@ -86,5 +87,40 @@ export function HrisModuleMenu() {
         </ul>
       </nav>
     </div>
+  );
+}
+
+export function HrisStructureMap() {
+  return (
+    <section className="hris-structure-map" id="hris-pegawai">
+      <div className="hris-structure-head">
+        <div>
+          <span>Struktur Modul HRIS</span>
+          <h4>Parent & Children Menu</h4>
+        </div>
+        <a href="#hris-pegawai-input">Kelola Data</a>
+      </div>
+      <div className="hris-structure-grid">
+        {hrisMenus.map((menu) => (
+          <article className="hris-structure-card" key={menu.label}>
+            <div className="hris-structure-parent">
+              <span><i className={`la ${menu.icon}`}></i></span>
+              <div>
+                <strong>{menu.label}</strong>
+                <p>{menu.description}</p>
+              </div>
+            </div>
+            <div className="hris-structure-children">
+              {menu.children.map((child) => (
+                <a href={child.href} key={child.label}>
+                  <span>{child.label}</span>
+                  <i className="la la-angle-right"></i>
+                </a>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }

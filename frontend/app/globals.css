@@ -3512,6 +3512,140 @@ textarea:focus-visible,
   background: #ecf9e9;
 }
 
+.hris-structure-map {
+  scroll-margin-top: 110px;
+  margin: 0 0 28px;
+  padding: 22px;
+  border-radius: 18px;
+  border: 1px solid #e4eaf1;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.07);
+}
+
+.hris-structure-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.hris-structure-head span {
+  display: block;
+  color: #0f8b2c;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.hris-structure-head h4 {
+  margin: 4px 0 0;
+  color: #0f172a;
+  font-size: 1.22rem;
+  font-weight: 900;
+}
+
+.hris-structure-head a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #2fad2f;
+  font-size: 0.84rem;
+  font-weight: 800;
+  box-shadow: 0 12px 24px rgba(47, 173, 47, 0.18);
+}
+
+.hris-structure-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.hris-structure-card {
+  min-height: 100%;
+  padding: 14px;
+  border: 1px solid #e6edf4;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.055);
+}
+
+.hris-structure-parent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.hris-structure-parent > span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  color: #16802b;
+  background: #ecf9e9;
+}
+
+.hris-structure-parent i {
+  font-size: 1.1rem;
+}
+
+.hris-structure-parent strong {
+  display: block;
+  color: #111827;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.hris-structure-parent p {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.hris-structure-children {
+  display: grid;
+  gap: 6px;
+  padding-top: 12px;
+}
+
+.hris-structure-children a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: #334155;
+  background: #f8fafc;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.hris-structure-children a:hover,
+.hris-structure-children a:focus {
+  color: #16802b;
+  background: #ecf9e9;
+}
+
+#hris-pegawai-input,
+#hris-jabatan,
+#hris-kompetensi,
+#hris-dokumen,
+#hris-spmi,
+#hris-dashboard {
+  scroll-margin-top: 110px;
+}
+
 @media (max-width: 991px) {
   .hris-module-nav {
     align-items: flex-start;
@@ -3525,5 +3659,20 @@ textarea:focus-visible,
 
   .hris-module-trigger {
     min-width: 96px;
+  }
+
+  .hris-structure-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .hris-structure-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hris-structure-grid {
+    grid-template-columns: 1fr;
   }
 }

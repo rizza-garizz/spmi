@@ -1,7 +1,7 @@
 import { getCatalogSnapshot } from "@/lib/spmi-catalog-api";
 import { HrisEmployeeManager } from "@/components/hris/hris-employee-manager";
 import { HrisPanelManager } from "@/components/hris/hris-panel-manager";
-import { HrisModuleMenu } from "@/components/hris/hris-module-menu";
+import { HrisModuleMenu, HrisStructureMap } from "@/components/hris/hris-module-menu";
 
 export async function HrisPage() {
   const catalog = await getCatalogSnapshot();
@@ -63,7 +63,9 @@ export async function HrisPage() {
         </div>
       </div>
 
-      <div id="hris-pegawai">
+      <HrisStructureMap />
+
+      <div id="hris-pegawai-input">
         <HrisEmployeeManager initialEmployees={hris.employees} />
       </div>
       <HrisPanelManager
