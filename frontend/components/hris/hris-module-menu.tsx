@@ -1,72 +1,7 @@
-const hrisMenus = [
-  {
-    label: "Beranda",
-    icon: "la-home",
-    href: "/hris",
-    description: "Ringkasan SDM",
-    children: [
-      { label: "Ringkasan SDM", href: "/hris" },
-      { label: "Koneksi SPMI", href: "/hris/integrasi-spmi" },
-    ],
-  },
-  {
-    label: "Master SDM",
-    icon: "la-users",
-    href: "/hris/master-sdm",
-    description: "Pegawai dan struktur",
-    children: [
-      { label: "Struktur Master SDM", href: "/hris/master-sdm" },
-      { label: "Master Pegawai", href: "/hris/master-sdm/pegawai" },
-      { label: "Dosen", href: "/hris/master-sdm/dosen" },
-      { label: "Tendik", href: "/hris/master-sdm/tendik" },
-      { label: "Dosen Tugas Tambahan", href: "/hris/master-sdm/dosen-tugas-tambahan" },
-    ],
-  },
-  {
-    label: "Jabatan",
-    icon: "la-user-shield",
-    href: "/hris/jabatan",
-    description: "Struktur dan penugasan",
-    children: [
-      { label: "Jabatan Aktif", href: "/hris/jabatan" },
-      { label: "Struktural", href: "/hris/jabatan/struktural" },
-    ],
-  },
-  {
-    label: "Kompetensi",
-    icon: "la-certificate",
-    href: "/hris/kompetensi",
-    description: "Sertifikasi dan pelatihan",
-    children: [
-      { label: "Semua Kompetensi", href: "/hris/kompetensi" },
-      { label: "Sertifikasi", href: "/hris/kompetensi/sertifikasi" },
-      { label: "Pelatihan", href: "/hris/kompetensi/pelatihan" },
-    ],
-  },
-  {
-    label: "Dokumen",
-    icon: "la-folder-open",
-    href: "/hris/dokumen",
-    description: "Eviden SDM",
-    children: [
-      { label: "Semua Dokumen", href: "/hris/dokumen" },
-      { label: "SK Jabatan", href: "/hris/dokumen/sk-jabatan" },
-      { label: "Sertifikat", href: "/hris/dokumen/sertifikat" },
-      { label: "Upload Eviden", href: "/hris/dokumen/upload" },
-    ],
-  },
-  {
-    label: "Integrasi",
-    icon: "la-link",
-    href: "/hris/integrasi-spmi",
-    description: "SPMI dan akreditasi",
-    children: [
-      { label: "Koneksi SPMI", href: "/hris/integrasi-spmi" },
-      { label: "Standar SDM", href: "/hris/integrasi-spmi/standar-sdm" },
-      { label: "AMI & Akreditasi", href: "/hris/integrasi-spmi/ami-akreditasi" },
-    ],
-  },
-];
+import { findModuleNodeByHref, type ModuleNode } from "@/lib/module-registry";
+
+const hrisRoot = findModuleNodeByHref("/hris");
+const hrisMenus = hrisRoot?.children ?? [];
 
 export { hrisMenus };
 
@@ -90,7 +25,7 @@ export function HrisModuleMenu() {
                   <span>{menu.description}</span>
                 </div>
                 <div className="hris-module-dropdown-list">
-                  {menu.children.map((child) => (
+                  {(menu.children ?? []).map((child) => (
                     <a href={child.href} key={child.label}>
                       <span>{child.label}</span>
                       <i className="la la-angle-right"></i>
@@ -106,18 +41,26 @@ export function HrisModuleMenu() {
   );
 }
 
-export function HrisStructureMap() {
+function collectLandingItems(root: ModuleNode) {
+  return (root.children && root.children.length > 0 ? root.children : [root]).filter((item) => item.href !== root.href || item.children?.length);
+}
+
+export function HrisStructureMap({ rootHref = "/hris" }: { rootHref?: string }) {
+  const root = findModuleNodeByHref(rootHref) ?? hrisRoot;
+  const items = root ? collectLandingItems(root) : hrisMenus;
+
   return (
     <section className="hris-structure-map" id="hris-pegawai">
       <div className="hris-structure-head">
         <div>
-          <span>Pilih Area Kerja</span>
-          <h4>Mulai dari kebutuhan yang ingin dikerjakan</h4>
+          <span>Parent & Children</span>
+          <h4>{root?.label || "Mulai dari kebutuhan yang ingin dikerjakan"}</h4>
+          <p>{root?.description}</p>
         </div>
-        <a href="/hris/master-sdm/pegawai">Kelola Data</a>
+        <a href={items[0]?.href || "/hris/master-sdm/pegawai"}>Buka Child Pertama</a>
       </div>
       <div className="hris-structure-grid">
-        {hrisMenus.map((menu) => (
+        {items.map((menu) => (
           <article className="hris-structure-card" key={menu.label}>
             <div className="hris-structure-parent">
               <span><i className={`la ${menu.icon}`}></i></span>
@@ -127,7 +70,7 @@ export function HrisStructureMap() {
               </div>
             </div>
             <div className="hris-structure-children">
-              {menu.children.map((child) => (
+              {(menu.children && menu.children.length > 0 ? menu.children : [menu]).map((child) => (
                 <a href={child.href} key={child.label}>
                   <span>{child.label}</span>
                   <i className="la la-angle-right"></i>

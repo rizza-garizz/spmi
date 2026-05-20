@@ -3299,6 +3299,12 @@ textarea:focus-visible,
   border-left: 1px solid rgba(67, 182, 73, 0.2);
 }
 
+.spmi-nav-children.is-nested {
+  margin-left: 12px;
+  padding-left: 8px;
+  border-left-style: dashed;
+}
+
 .dlabnav .metismenu .spmi-nav-child-link {
   min-height: 36px;
   padding: 0 10px;
@@ -3346,6 +3352,47 @@ textarea:focus-visible,
 .dlabnav .metismenu a:hover::before,
 .dlabnav .metismenu a:focus::before {
   background: var(--accent);
+}
+
+.spmi-dynamic-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid #e4eaf1;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.spmi-dynamic-breadcrumb a {
+  color: #64748b;
+}
+
+.spmi-dynamic-breadcrumb a:hover,
+.spmi-dynamic-breadcrumb a:focus {
+  color: #27852f;
+}
+
+.spmi-breadcrumb-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spmi-breadcrumb-node i {
+  color: #a7b2c2;
+  font-size: 0.8rem;
+}
+
+.spmi-breadcrumb-node strong {
+  color: #0f172a;
+  font-weight: 900;
 }
 
 .menu-toggle .dlabnav .metismenu a {
@@ -3545,6 +3592,14 @@ textarea:focus-visible,
   color: #0f172a;
   font-size: 1.22rem;
   font-weight: 900;
+}
+
+.hris-structure-head p {
+  max-width: 640px;
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 .hris-structure-head a {

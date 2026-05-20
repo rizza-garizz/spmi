@@ -1,4 +1,5 @@
 import { readAuthSession } from "@/lib/spmi-session-client";
+import { getAllModuleNodes } from "@/lib/module-registry";
 
 export type AppRole =
   | "admin_lpm"
@@ -74,23 +75,10 @@ export const rolePresentation: Record<AppRole, { label: string; summary: string 
   },
 };
 
-export const routeRules: RouteRule[] = [
-  { path: "/nilai", roles: ["admin_lpm", "auditor", "kaprodi", "sekprodi", "unit_kerja"] },
-  { path: "/settings", roles: ["admin_lpm"] },
-  { path: "/standards", roles: activeRoles },
-  { path: "/organization", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
-  { path: "/accreditation", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] },
-  { path: "/integrations", roles: ["admin_lpm"] },
-  { path: "/hris", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
-  { path: "/imports", roles: ["admin_lpm"] },
-  { path: "/documents", roles: activeRoles },
-  { path: "/ppepp", roles: activeRoles },
-  { path: "/ami", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] },
-  { path: "/rtm", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] },
-  { path: "/rtl", roles: activeRoles },
-  { path: "/indicators", roles: activeRoles },
-  { path: "/surveys", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] },
-];
+export const routeRules: RouteRule[] = getAllModuleNodes().map((node) => ({
+  path: node.href,
+  roles: node.roles,
+}));
 
 export function normalizeRole(role?: string | null): AppRole {
   if (!role) {

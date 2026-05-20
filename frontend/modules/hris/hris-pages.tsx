@@ -60,7 +60,7 @@ export async function HrisMasterStructurePage() {
     <>
       <HrisHeader title="Master SDM" subtitle="Struktur parent-child untuk data pegawai, dosen, tendik, dan tugas tambahan." />
       <HrisModuleMenu />
-      <HrisStructureMap />
+      <HrisStructureMap rootHref="/hris/master-sdm" />
     </>
   );
 }
@@ -91,6 +91,7 @@ export async function HrisPositionPage({ structuralOnly = false }: { structuralO
     <>
       <HrisHeader title={structuralOnly ? "Jabatan Struktural" : "Jabatan"} subtitle="Kelola jabatan aktif dan struktur penugasan SDM." />
       <HrisModuleMenu />
+      {!structuralOnly ? <HrisStructureMap rootHref="/hris/jabatan" /> : null}
       <HrisPanelManager
         employees={catalog.hris.employees}
         initialPositions={positions}
@@ -109,6 +110,7 @@ export async function HrisCompetencyPage({ category }: { category?: string }) {
     <>
       <HrisHeader title={category || "Kompetensi"} subtitle="Kelola sertifikasi, pelatihan, dan kompetensi SDM." />
       <HrisModuleMenu />
+      {!category ? <HrisStructureMap rootHref="/hris/kompetensi" /> : null}
       <HrisPanelManager
         employees={catalog.hris.employees}
         initialPositions={catalog.hris.positions}
@@ -128,6 +130,7 @@ export async function HrisDocumentPage({ type, title }: { type?: string; title?:
     <>
       <HrisHeader title={title || type || "Dokumen SDM"} subtitle="Kelola dokumen dan file eviden sumber daya manusia." />
       <HrisModuleMenu />
+      {!type ? <HrisStructureMap rootHref="/hris/dokumen" /> : null}
       <HrisPanelManager
         employees={catalog.hris.employees}
         initialPositions={catalog.hris.positions}
@@ -147,6 +150,7 @@ export async function HrisIntegrationPage({ focus }: { focus?: "standar" | "ami"
     <>
       <HrisHeader title={focus === "standar" ? "Standar SDM" : focus === "ami" ? "AMI & Akreditasi" : "Koneksi SPMI"} subtitle="Pemetaan HRIS sebagai sumber data dan eviden SPMI." />
       <HrisModuleMenu />
+      {!focus ? <HrisStructureMap rootHref="/hris/integrasi-spmi" /> : null}
       <div className="row">
         <div className="col-xl-12 col-xxl-12 col-lg-12">
           <div className="card">

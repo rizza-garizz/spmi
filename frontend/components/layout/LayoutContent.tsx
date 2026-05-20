@@ -6,86 +6,23 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import type { AppRole } from "@/lib/spmi-access";
 import { hasRoleAccess } from "@/lib/spmi-access";
 import { useCurrentRoles } from "@/lib/spmi-access-client";
+import { moduleRegistry, type ModuleNode } from "@/lib/module-registry";
 import { DataRefreshBridge } from "@/components/layout/data-refresh-bridge";
 import { TopbarSession } from "@/components/layout/topbar-session";
 import { ErrorBoundary } from "@/components/support/ErrorBoundary";
-
-type NavItem = {
-  href: string;
-  icon: string;
-  text: string;
-  roles: AppRole[];
-  children?: NavItem[];
-};
-
-const navSections: Array<{
-  label: string;
-  items: NavItem[];
-}> = [
-  {
-    label: "Strategic Dashboard",
-    items: [
-      { href: "/dashboard", icon: "la-dashboard", text: "Performance Overview", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"] },
-      { href: "/nilai", icon: "la-bar-chart", text: "Nilai & Rekap", roles: ["admin_lpm", "auditor", "kaprodi", "sekprodi", "unit_kerja"] },
-    ],
-  },
-  {
-    label: "P - Penetapan (Policies)",
-    items: [
-      { href: "/standards", icon: "la-book", text: "Standar Mutu (IQAS)", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"] },
-      { href: "/documents", icon: "la-file-text", text: "Document Repository", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"] },
-    ],
-  },
-  {
-    label: "P - Pelaksanaan (Action)",
-    items: [
-      { href: "/indicators", icon: "la-chart-line", text: "Capaian IKU/IKT", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"] },
-      { href: "/ppepp", icon: "la-refresh", text: "PPEPP Tracker", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"] },
-    ],
-  },
-  {
-    label: "E - Evaluasi (Evaluation)",
-    items: [
-      { href: "/ami", icon: "la-check-circle", text: "Audit Mutu Internal", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] },
-      { href: "/surveys", icon: "la-poll", text: "Stakeholder Feedback", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] },
-    ],
-  },
-  {
-    label: "P - Pengendalian (Control)",
-    items: [
-      { href: "/rtm", icon: "la-users", text: "Mgt Review (RTM)", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] },
-      { href: "/rtl", icon: "la-tasks", text: "RTL Monitoring", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"] },
-    ],
-  },
-  {
-    label: "Pengaturan & Integrasi",
-    items: [
-      {
-        href: "/hris",
-        icon: "la-id-card",
-        text: "HRIS / SDM",
-        roles: ["admin_lpm", "dekan", "wakil_dekan"],
-        children: [
-          { href: "/hris", icon: "la-chart-pie", text: "Ringkasan SDM", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
-          { href: "/hris/master-sdm", icon: "la-users", text: "Master SDM", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
-          { href: "/hris/master-sdm/pegawai", icon: "la-user", text: "Master Pegawai", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
-          { href: "/hris/jabatan", icon: "la-user-shield", text: "Jabatan", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
-          { href: "/hris/kompetensi", icon: "la-certificate", text: "Kompetensi", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
-          { href: "/hris/dokumen", icon: "la-folder-open", text: "Dokumen SDM", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
-          { href: "/hris/integrasi-spmi", icon: "la-link", text: "Koneksi SPMI", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
-        ],
-      },
-      { href: "/organization", icon: "la-sitemap", text: "Organization", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
-      { href: "/accreditation", icon: "la-graduation-cap", text: "Accreditation", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] },
-      { href: "/imports", icon: "la-upload", text: "Imports", roles: ["admin_lpm"] },
-      { href: "/integrations", icon: "la-plug", text: "Integrations", roles: ["admin_lpm"] },
-      { href: "/settings", icon: "la-cog", text: "Akses & Settings", roles: ["admin_lpm"] },
-    ],
-  },
-];
+import { DynamicBreadcrumb } from "@/components/layout/dynamic-breadcrumb";
 
 function getHrefPath(href: string) {
   return href.split("#")[0];
+}
+
+function filterAllowedNodes(nodes: ModuleNode[], roles: AppRole[]): ModuleNode[] {
+  return nodes
+    .filter((node) => hasRoleAccess(node.roles, roles))
+    .map((node) => ({
+      ...node,
+      children: node.children ? filterAllowedNodes(node.children, roles) : undefined,
+    }));
 }
 
 export function LayoutContent({ children }: { children: React.ReactNode }) {
@@ -98,6 +35,43 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
 
   if (isLoginPage || isPublicReferencePage) {
     return <AuthGuard>{children}</AuthGuard>;
+  }
+
+  function renderNavItem(item: ModuleNode, level = 0): React.ReactNode {
+    const hasChildren = Boolean(item.children?.length);
+    const itemPath = getHrefPath(item.href);
+    const isExactActive = itemPath === pathname;
+    const isActive = isExactActive || (itemPath !== "/" && pathname.startsWith(`${itemPath}/`));
+    const isOpen = openMenus[item.id] ?? isActive;
+
+    return (
+      <li key={item.id} className={hasChildren ? "spmi-nav-has-children" : ""}>
+        {hasChildren ? (
+          <>
+            <button
+              type="button"
+              className={`spmi-nav-parent ${isActive ? "is-active" : ""}`}
+              aria-expanded={isOpen}
+              onClick={() => setOpenMenus((current) => ({ ...current, [item.id]: !isOpen }))}
+            >
+              <i className={`la ${item.icon}`}></i>
+              <span className="nav-text">{item.label}</span>
+              <i className={`la la-angle-${isOpen ? "up" : "down"} spmi-nav-chevron`}></i>
+            </button>
+            {isOpen ? (
+              <ul className={`spmi-nav-children ${level > 0 ? "is-nested" : ""}`}>
+                {item.children?.map((child) => renderNavItem(child, level + 1))}
+              </ul>
+            ) : null}
+          </>
+        ) : (
+          <a className={[level > 0 ? "spmi-nav-child-link" : "", isActive ? "is-active" : ""].filter(Boolean).join(" ")} href={item.href}>
+            <i className={`la ${item.icon}`}></i>
+            <span className="nav-text">{item.label}</span>
+          </a>
+        )}
+      </li>
+    );
   }
 
   return (
@@ -140,13 +114,8 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
         <div className="dlabnav">
           <div className="dlabnav-scroll">
             <ul className="metismenu" id="menu">
-              {navSections.map((section, sectionIndex) => {
-                const allowedItems = section.items
-                  .map((item) => ({
-                    ...item,
-                    children: item.children?.filter((child) => hasRoleAccess(child.roles, roles)),
-                  }))
-                  .filter((item) => hasRoleAccess(item.roles, roles));
+              {moduleRegistry.map((section, sectionIndex) => {
+                const allowedItems = filterAllowedNodes(section.children, roles);
                 if (allowedItems.length === 0) {
                   return null;
                 }
@@ -155,47 +124,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
                   <li key={section.label}>
                     <span className={`nav-label ${sectionIndex === 0 ? "first" : ""}`}>{section.label}</span>
                     <ul className="spmi-nav-sublist">
-                      {allowedItems.map((item) => {
-                        const hasChildren = Boolean(item.children?.length);
-                        const isActive = getHrefPath(item.href) === pathname;
-                        const isOpen = openMenus[item.href] ?? isActive;
-
-                        return (
-                          <li key={item.href} className={hasChildren ? "spmi-nav-has-children" : ""}>
-                            {hasChildren ? (
-                              <>
-                                <button
-                                  type="button"
-                                  className={`spmi-nav-parent ${isActive ? "is-active" : ""}`}
-                                  aria-expanded={isOpen}
-                                  onClick={() => setOpenMenus((current) => ({ ...current, [item.href]: !isOpen }))}
-                                >
-                                  <i className={`la ${item.icon}`}></i>
-                                  <span className="nav-text">{item.text}</span>
-                                  <i className={`la la-angle-${isOpen ? "up" : "down"} spmi-nav-chevron`}></i>
-                                </button>
-                                {isOpen ? (
-                                  <ul className="spmi-nav-children">
-                                    {item.children?.map((child) => (
-                                      <li key={child.href}>
-                                        <a className="spmi-nav-child-link" href={child.href}>
-                                          <i className={`la ${child.icon}`}></i>
-                                          <span className="nav-text">{child.text}</span>
-                                        </a>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : null}
-                              </>
-                            ) : (
-                              <a className={isActive ? "is-active" : ""} href={item.href}>
-                                <i className={`la ${item.icon}`}></i>
-                                <span className="nav-text">{item.text}</span>
-                              </a>
-                            )}
-                          </li>
-                        );
-                      })}
+                      {allowedItems.map((item) => renderNavItem(item))}
                     </ul>
                   </li>
                 );
@@ -207,6 +136,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
         <div className="content-body">
           <div className="container-fluid">
             <DataRefreshBridge />
+            <DynamicBreadcrumb />
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
