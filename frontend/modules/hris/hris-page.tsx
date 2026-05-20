@@ -1,6 +1,7 @@
 import { getCatalogSnapshot } from "@/lib/spmi-catalog-api";
 import { HrisEmployeeManager } from "@/components/hris/hris-employee-manager";
 import { HrisPanelManager } from "@/components/hris/hris-panel-manager";
+import { HrisModuleMenu } from "@/components/hris/hris-module-menu";
 
 export async function HrisPage() {
   const catalog = await getCatalogSnapshot();
@@ -22,6 +23,8 @@ export async function HrisPage() {
           </ol>
         </div>
       </div>
+
+      <HrisModuleMenu />
 
       <div className="row" id="hris-dashboard">
         {hris.metrics.map((metric, index) => (
