@@ -111,8 +111,8 @@ export function HrisStructureMap() {
     <section className="hris-structure-map" id="hris-pegawai">
       <div className="hris-structure-head">
         <div>
-          <span>Struktur Modul HRIS</span>
-          <h4>Parent & Children Menu</h4>
+          <span>Pilih Area Kerja</span>
+          <h4>Mulai dari kebutuhan yang ingin dikerjakan</h4>
         </div>
         <a href="/hris/master-sdm/pegawai">Kelola Data</a>
       </div>

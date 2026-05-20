@@ -81,6 +81,7 @@ export function HrisPanelManager({
   const [editingPosition, setEditingPosition] = useState<HrisPosition | null>(null);
   const [editingCompetency, setEditingCompetency] = useState<HrisCompetency | null>(null);
   const [editingDocument, setEditingDocument] = useState<HrisDocument | null>(null);
+  const [openForms, setOpenForms] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState("");
 
   async function submitRecord<T>(
@@ -150,6 +151,7 @@ export function HrisPanelManager({
           : [document, ...current]
       ));
       setEditingDocument(null);
+      setOpenForms((current) => ({ ...current, documents: false }));
       setMessage(editingDocument ? "Dokumen SDM berhasil diperbarui di HRIS." : "Dokumen SDM berhasil disimpan ke HRIS.");
       dispatchAppEvent("spmi-data-changed");
       form.reset();
@@ -185,8 +187,33 @@ export function HrisPanelManager({
 
   return (
     <>
+      <div className="hris-page-toolbar">
+        <div>
+          <span>Area Kerja</span>
+          <strong>{sections.includes("positions") ? "Jabatan" : sections.includes("competencies") ? "Kompetensi" : "Dokumen SDM"}</strong>
+          <p>Pilih aksi seperlunya. Data utama tetap mudah dipindai dari daftar.</p>
+        </div>
+        <div className="hris-toolbar-actions">
+          {sections.includes("positions") ? (
+            <button className="btn btn-primary" type="button" onClick={() => setOpenForms((current) => ({ ...current, positions: !current.positions }))}>
+              {openForms.positions ? "Tutup Form Jabatan" : "Tambah Jabatan"}
+            </button>
+          ) : null}
+          {sections.includes("competencies") ? (
+            <button className="btn btn-primary" type="button" onClick={() => setOpenForms((current) => ({ ...current, competencies: !current.competencies }))}>
+              {openForms.competencies ? "Tutup Form Kompetensi" : "Tambah Kompetensi"}
+            </button>
+          ) : null}
+          {sections.includes("documents") ? (
+            <button className="btn btn-primary" type="button" onClick={() => setOpenForms((current) => ({ ...current, documents: !current.documents }))}>
+              {openForms.documents ? "Tutup Form Dokumen" : "Tambah Dokumen"}
+            </button>
+          ) : null}
+        </div>
+      </div>
+
       <div className="row">
-        {sections.includes("positions") ? <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-jabatan">
+        {sections.includes("positions") && (openForms.positions || editingPosition) ? <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-jabatan">
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">{editingPosition ? "Edit Jabatan" : "Input Jabatan"}</h4>
@@ -205,6 +232,7 @@ export function HrisPanelManager({
                         : [item, ...current]
                     ));
                     setEditingPosition(null);
+                    setOpenForms((current) => ({ ...current, positions: false }));
                   },
                   editingPosition ? "Jabatan berhasil diperbarui di HRIS." : "Jabatan berhasil disimpan ke HRIS."
                 )}
@@ -246,13 +274,15 @@ export function HrisPanelManager({
                 <button className="btn btn-primary w-100" type="submit">{editingPosition ? "Update Jabatan" : "Simpan Jabatan"}</button>
                 {editingPosition ? (
                   <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setEditingPosition(null)}>Batal Edit</button>
+                ) : openForms.positions ? (
+                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setOpenForms((current) => ({ ...current, positions: false }))}>Batal</button>
                 ) : null}
               </form>
             </div>
           </div>
         </div> : null}
 
-        {sections.includes("competencies") ? <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-kompetensi">
+        {sections.includes("competencies") && (openForms.competencies || editingCompetency) ? <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-kompetensi">
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">{editingCompetency ? "Edit Kompetensi" : "Input Kompetensi"}</h4>
@@ -271,6 +301,7 @@ export function HrisPanelManager({
                         : [item, ...current]
                     ));
                     setEditingCompetency(null);
+                    setOpenForms((current) => ({ ...current, competencies: false }));
                   },
                   editingCompetency ? "Kompetensi berhasil diperbarui di HRIS." : "Kompetensi berhasil disimpan ke HRIS."
                 )}
@@ -317,13 +348,15 @@ export function HrisPanelManager({
                 <button className="btn btn-primary w-100" type="submit">{editingCompetency ? "Update Kompetensi" : "Simpan Kompetensi"}</button>
                 {editingCompetency ? (
                   <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setEditingCompetency(null)}>Batal Edit</button>
+                ) : openForms.competencies ? (
+                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setOpenForms((current) => ({ ...current, competencies: false }))}>Batal</button>
                 ) : null}
               </form>
             </div>
           </div>
         </div> : null}
 
-        {sections.includes("documents") ? <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-dokumen">
+        {sections.includes("documents") && (openForms.documents || editingDocument) ? <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-dokumen">
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">{editingDocument ? "Edit Dokumen" : "Input Dokumen"}</h4>
@@ -372,6 +405,8 @@ export function HrisPanelManager({
                 <button className="btn btn-primary w-100" type="submit">{editingDocument ? "Update Dokumen" : "Simpan Dokumen"}</button>
                 {editingDocument ? (
                   <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setEditingDocument(null)}>Batal Edit</button>
+                ) : openForms.documents ? (
+                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setOpenForms((current) => ({ ...current, documents: false }))}>Batal</button>
                 ) : null}
               </form>
             </div>
@@ -382,7 +417,7 @@ export function HrisPanelManager({
       {message ? <div className="alert alert-info">{message}</div> : null}
 
       <div className="row">
-        {sections.includes("positions") ? <div className="col-xl-4 col-xxl-4 col-lg-4">
+        {sections.includes("positions") ? <div className={sections.length === 1 && !openForms.positions && !editingPosition ? "col-xl-12" : "col-xl-4 col-xxl-4 col-lg-4"}>
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">Jabatan Aktif</h4>
@@ -407,7 +442,7 @@ export function HrisPanelManager({
           </div>
         </div> : null}
 
-        {sections.includes("competencies") ? <div className="col-xl-4 col-xxl-4 col-lg-4">
+        {sections.includes("competencies") ? <div className={sections.length === 1 && !openForms.competencies && !editingCompetency ? "col-xl-12" : "col-xl-4 col-xxl-4 col-lg-4"}>
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">Kompetensi & Sertifikasi</h4>
@@ -432,7 +467,7 @@ export function HrisPanelManager({
           </div>
         </div> : null}
 
-        {sections.includes("documents") ? <div className="col-xl-4 col-xxl-4 col-lg-4">
+        {sections.includes("documents") ? <div className={sections.length === 1 && !openForms.documents && !editingDocument ? "col-xl-12" : "col-xl-4 col-xxl-4 col-lg-4"}>
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">Dokumen SDM</h4>

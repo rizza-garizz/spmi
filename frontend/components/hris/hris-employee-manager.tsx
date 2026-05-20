@@ -21,6 +21,7 @@ type HrisEmployee = {
 export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: HrisEmployee[] }) {
   const [employees, setEmployees] = useState(initialEmployees);
   const [editingEmployee, setEditingEmployee] = useState<HrisEmployee | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -66,6 +67,7 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
       ));
       setMessage(editingEmployee ? "Pegawai berhasil diperbarui di backend HRIS." : "Pegawai berhasil disimpan ke backend HRIS.");
       setEditingEmployee(null);
+      setShowForm(false);
       dispatchAppEvent("spmi-data-changed");
       form.reset();
     } catch {
@@ -106,7 +108,27 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
 
   return (
     <div className="row">
-      <div className="col-xl-4 col-xxl-4 col-lg-5">
+      <div className="col-xl-12">
+        <div className="hris-page-toolbar">
+          <div>
+            <span>Area Kerja</span>
+            <strong>Master Pegawai</strong>
+            <p>Kelola data pegawai dari satu tabel. Form hanya muncul saat dibutuhkan.</p>
+          </div>
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={() => {
+              setEditingEmployee(null);
+              setShowForm((current) => !current);
+            }}
+          >
+            {showForm ? "Tutup Form" : "Tambah Pegawai"}
+          </button>
+        </div>
+      </div>
+
+      {showForm || editingEmployee ? <div className="col-xl-4 col-xxl-4 col-lg-5">
         <div className="card">
           <div className="card-header">
             <h4 className="card-title">{editingEmployee ? "Edit Pegawai" : "Tambah Pegawai"}</h4>
@@ -172,14 +194,16 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
               <button className="btn btn-primary w-100" type="submit">{editingEmployee ? "Update Pegawai" : "Simpan Pegawai"}</button>
               {editingEmployee ? (
                 <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setEditingEmployee(null)}>Batal Edit</button>
+              ) : showForm ? (
+                <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setShowForm(false)}>Batal</button>
               ) : null}
               {message ? <p className="form-note mt-3">{message}</p> : null}
             </form>
           </div>
         </div>
-      </div>
+      </div> : null}
 
-      <div className="col-xl-8 col-xxl-8 col-lg-7">
+      <div className={showForm || editingEmployee ? "col-xl-8 col-xxl-8 col-lg-7" : "col-xl-12"}>
         <div className="card">
           <div className="card-header">
             <h4 className="card-title">Master Pegawai</h4>
@@ -217,7 +241,10 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
                       </td>
                       <td><span className="badge badge-success">{employee.status}</span></td>
                       <td>
-                        <button className="btn btn-sm btn-outline-secondary me-2" type="button" onClick={() => setEditingEmployee(employee)}>
+                        <button className="btn btn-sm btn-outline-secondary me-2" type="button" onClick={() => {
+                          setEditingEmployee(employee);
+                          setShowForm(false);
+                        }}>
                           Edit
                         </button>
                         <Link className="btn btn-sm btn-outline-primary me-2" href={`/hris/${encodeURIComponent(employee.id)}`}>
