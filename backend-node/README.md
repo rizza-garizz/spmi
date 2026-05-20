@@ -124,6 +124,10 @@ npm run dev
 - `PUT/DELETE /standards/:id`
 - `GET /standards/:id/revisions`
 - `GET/POST /documents`
+- `POST /documents/:id/versions`
+- `GET /documents/versions/:versionId`
+- `GET /documents/versions/:versionId/download`
+- `GET /documents/versions/:versionId/preview`
 - `GET/POST /ppepp/cycles`
 - `PATCH /ppepp/cycles/:id/stages/:stage`
 - `POST /ppepp/cycles/:id/stages/:stage/evidence`

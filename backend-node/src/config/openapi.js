@@ -192,6 +192,10 @@ module.exports = {
                   code: { type: "string" },
                   title: { type: "string" },
                   type: { type: "string" },
+                  document_date: { type: "string", format: "date" },
+                  category: { type: "string" },
+                  owner: { type: "string" },
+                  org_unit_code: { type: "string" },
                   file: { type: "string", format: "binary" },
                 },
               },
@@ -200,13 +204,45 @@ module.exports = {
         },
         responses: {
           201: { description: "Document created" },
+          403: { description: "Forbidden by document scope" },
+          409: { description: "Duplicate file rejected" },
+        },
+      },
+    },
+    "/documents/{id}/versions": {
+      post: {
+        tags: ["Documents"],
+        summary: "Upload a new validated version for an existing document",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                properties: {
+                  file: { type: "string", format: "binary" },
+                  file_name: { type: "string" },
+                  file_size: { type: "number" },
+                  mime_type: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Document version created" },
+          403: { description: "Forbidden by document scope" },
+          404: { description: "Document not found" },
+          409: { description: "Duplicate file rejected" },
         },
       },
     },
     "/documents/versions/{versionId}": {
       get: {
         tags: ["Documents"],
-        summary: "Get document version download URL",
+        summary: "Get document version metadata with preview and download URLs",
         parameters: [
           {
             name: "versionId",
@@ -216,7 +252,35 @@ module.exports = {
           },
         ],
         responses: {
-          200: { description: "Download URL payload" },
+          200: { description: "Version metadata payload" },
+          403: { description: "Forbidden by document scope" },
+          404: { description: "Version not found" },
+        },
+      },
+    },
+    "/documents/versions/{versionId}/download": {
+      get: {
+        tags: ["Documents"],
+        summary: "Download a scoped document version",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "versionId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Download payload or storage URL" },
+          403: { description: "Forbidden by document scope" },
+          404: { description: "Version not found" },
+        },
+      },
+    },
+    "/documents/versions/{versionId}/preview": {
+      get: {
+        tags: ["Documents"],
+        summary: "Preview a scoped document version",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "versionId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Preview payload or storage URL" },
+          403: { description: "Forbidden by document scope" },
+          404: { description: "Version not found" },
         },
       },
     },

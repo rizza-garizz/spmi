@@ -14,6 +14,16 @@ interface Document {
   title: string;
   type: string;
   status: string;
+  org_unit_code?: string;
+  document_date?: string;
+  category?: string;
+  owner?: string;
+  metadata?: {
+    tanggal?: string;
+    unit?: string;
+    kategori?: string;
+    penanggung_jawab?: string;
+  };
   current_version: string;
   versions: Array<{
     id: number;
@@ -21,6 +31,7 @@ interface Document {
     file_name: string;
     file_path: string;
     file_size: number;
+    mime_type?: string | null;
     created_at: string;
   }>;
 }
@@ -40,6 +51,9 @@ export function DocumentsPage() {
     code: "",
     title: "",
     type: "kebijakan",
+    document_date: "",
+    category: "",
+    owner: "",
     mutu_standard_id: "",
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -84,6 +98,9 @@ export function DocumentsPage() {
     data.append("code", formData.code);
     data.append("title", formData.title);
     data.append("type", formData.type);
+    data.append("document_date", formData.document_date);
+    data.append("category", formData.category || formData.type);
+    data.append("owner", formData.owner);
     data.append("file", selectedFile);
     if (formData.mutu_standard_id) data.append("mutu_standard_id", formData.mutu_standard_id);
 
@@ -95,7 +112,7 @@ export function DocumentsPage() {
 
       if (res.ok) {
         showToast("Dokumen berhasil diunggah!");
-        setFormData({ code: "", title: "", type: "kebijakan", mutu_standard_id: "" });
+        setFormData({ code: "", title: "", type: "kebijakan", document_date: "", category: "", owner: "", mutu_standard_id: "" });
         setSelectedFile(null);
         setShowUploadForm(false);
         fetchDocuments();
@@ -120,6 +137,19 @@ export function DocumentsPage() {
       }
     } catch (err) {
       alert("Gagal mengunduh file.");
+    }
+  };
+
+  const handlePreview = async (versionId: number) => {
+    try {
+      const res = await clientApiRequest(`/documents/versions/${versionId}/preview`);
+      const json = await res.json();
+      const previewUrl = json.data?.preview_url;
+      if (previewUrl) {
+        window.open(previewUrl, "_blank");
+      }
+    } catch (err) {
+      alert("Gagal membuka preview file.");
     }
   };
 
@@ -191,6 +221,37 @@ export function DocumentsPage() {
                     </select>
                   </div>
                   <div className="form-group mb-3">
+                    <label className="form-label">Tanggal Dokumen</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={formData.document_date}
+                      onChange={(e) => setFormData({...formData, document_date: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="form-group mb-3">
+                    <label className="form-label">Kategori</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="AMI / PPEPP / Standar"
+                      value={formData.category}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group mb-3">
+                    <label className="form-label">Penanggung Jawab</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="LPM / Prodi / Unit"
+                      value={formData.owner}
+                      onChange={(e) => setFormData({...formData, owner: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="form-group mb-3">
                     <label className="form-label">File (PDF/Gambar)</label>
                     <input 
                       type="file" className="form-control" 
@@ -220,23 +281,44 @@ export function DocumentsPage() {
                       <th>Kode</th>
                       <th>Judul</th>
                       <th>Tipe</th>
+                      <th>Metadata</th>
                       <th>Versi</th>
                       <th>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
-                      <tr><td colSpan={5} className="text-center">Memuat...</td></tr>
+                      <tr><td colSpan={6} className="text-center">Memuat...</td></tr>
                     ) : documents.map((doc) => (
                       <tr key={doc.id}>
                         <td>{doc.code}</td>
-                        <td>{doc.title}</td>
+                        <td>
+                          <strong>{doc.title}</strong>
+                          <p className="mb-0 text-muted" style={{ fontSize: "0.8rem" }}>
+                            Unit: {doc.metadata?.unit || doc.org_unit_code || "-"}
+                          </p>
+                        </td>
                         <td><span className="badge badge-outline-primary">{doc.type}</span></td>
+                        <td>
+                          <div style={{ fontSize: "0.82rem" }}>
+                            <div>Tgl: {doc.metadata?.tanggal || doc.document_date || "-"}</div>
+                            <div>Kategori: {doc.metadata?.kategori || doc.category || "-"}</div>
+                            <div>PJ: {doc.metadata?.penanggung_jawab || doc.owner || "-"}</div>
+                          </div>
+                        </td>
                         <td>v{doc.current_version}</td>
                         <td>
                           <button 
+                            className="btn btn-xs btn-outline-primary me-2"
+                            onClick={() => handlePreview(doc.versions[0]?.id)}
+                            disabled={!doc.versions[0]?.id}
+                          >
+                            <i className="la la-eye"></i> Preview
+                          </button>
+                          <button 
                             className="btn btn-xs btn-info"
                             onClick={() => handleDownload(doc.versions[0]?.id, doc.title)}
+                            disabled={!doc.versions[0]?.id}
                           >
                             <i className="la la-download"></i> Unduh
                           </button>
@@ -244,7 +326,7 @@ export function DocumentsPage() {
                       </tr>
                     ))}
                     {documents.length === 0 && !loading && (
-                      <tr><td colSpan={5} className="text-center text-muted">Belum ada dokumen.</td></tr>
+                      <tr><td colSpan={6} className="text-center text-muted">Belum ada dokumen.</td></tr>
                     )}
                   </tbody>
                 </table>

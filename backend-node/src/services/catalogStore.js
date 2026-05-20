@@ -317,6 +317,15 @@ const state = {
     type: item.type,
     status: item.status,
     org_unit_code: item.org_unit_code || (item.id % 2 === 0 ? "SI" : "LPM"),
+    document_date: item.document_date || "2026-05-20",
+    category: item.category || item.type,
+    owner: item.owner || (item.id % 2 === 0 ? "Program Studi Sistem Informasi" : "LPM"),
+    metadata: {
+      tanggal: item.document_date || "2026-05-20",
+      unit: item.org_unit_code || (item.id % 2 === 0 ? "SI" : "LPM"),
+      kategori: item.category || item.type,
+      penanggung_jawab: item.owner || (item.id % 2 === 0 ? "Program Studi Sistem Informasi" : "LPM"),
+    },
     approval: approvalSeed(item.status === "approved" ? "approved" : "draft", item.status === "approved" ? "approved" : "draft"),
     current_version: "1.0",
     versions: [
@@ -326,6 +335,7 @@ const state = {
         file_name: `${item.title}.pdf`,
         file_path: `/mock-downloads/${item.id}`,
         file_size: 0,
+        mime_type: "application/pdf",
         created_at: new Date().toISOString(),
       },
     ],
@@ -670,6 +680,15 @@ function addDocument(data, user) {
     type: data.type || "kebijakan",
     status: "draft",
     org_unit_code: data.org_unit_code || null,
+    document_date: data.document_date || data.tanggal || new Date().toISOString().slice(0, 10),
+    category: data.category || data.kategori || data.type || "kebijakan",
+    owner: data.owner || data.penanggung_jawab || user?.name || user?.email || "system",
+    metadata: {
+      tanggal: data.document_date || data.tanggal || new Date().toISOString().slice(0, 10),
+      unit: data.org_unit_code || null,
+      kategori: data.category || data.kategori || data.type || "kebijakan",
+      penanggung_jawab: data.owner || data.penanggung_jawab || user?.name || user?.email || "system",
+    },
     approval: getInitialApproval(user),
     current_version: "1.0",
     versions: [
@@ -677,14 +696,74 @@ function addDocument(data, user) {
         id: id * 10,
         version_number: 1,
         file_name: data.file_name || `${data.title || "document"}.pdf`,
-        file_path: `/mock-downloads/${id}`,
-        file_size: 0,
+        file_path: data.file_path || `/mock-downloads/${id}`,
+        file_size: Number(data.file_size || 0),
+        mime_type: data.mime_type || null,
         created_at: new Date().toISOString(),
+        uploaded_by: user?.email || null,
       },
     ],
   };
   state.documents.unshift(item);
   return item;
+}
+
+function findDocument(documentId) {
+  return state.documents.find((item) => String(item.id) === String(documentId) || item.code === documentId) || null;
+}
+
+function findDocumentVersion(versionId) {
+  for (const document of state.documents) {
+    const version = (document.versions || []).find((item) => String(item.id) === String(versionId));
+    if (version) return { document, version };
+  }
+  return null;
+}
+
+function findDuplicateDocument(data) {
+  const orgCode = data.org_unit_code || null;
+  return state.documents.find((item) => {
+    const sameCode = data.code && item.code === data.code;
+    const sameIdentity =
+      item.title?.toLowerCase() === String(data.title || "").toLowerCase() &&
+      item.type === (data.type || "kebijakan") &&
+      (item.org_unit_code || null) === orgCode;
+    return sameCode || sameIdentity;
+  }) || null;
+}
+
+function hasDuplicateFile(document, data) {
+  const fileName = data.file_name || "";
+  const fileSize = Number(data.file_size || 0);
+  return (document.versions || []).some(
+    (version) => version.file_name === fileName && Number(version.file_size || 0) === fileSize
+  );
+}
+
+function addDocumentVersion(documentId, data, user) {
+  const document = findDocument(documentId);
+  if (!document) return null;
+  if (hasDuplicateFile(document, data)) {
+    return { duplicate: true, document };
+  }
+
+  const versionNumber = (document.versions || []).reduce((max, item) => Math.max(max, Number(item.version_number || 0)), 0) + 1;
+  const version = {
+    id: Number(`${Date.now()}${versionNumber}`),
+    version_number: versionNumber,
+    file_name: data.file_name || `${document.title}-v${versionNumber}.pdf`,
+    file_path: data.file_path || `/mock-downloads/${document.id}/v${versionNumber}`,
+    file_size: Number(data.file_size || 0),
+    mime_type: data.mime_type || null,
+    created_at: new Date().toISOString(),
+    uploaded_by: user?.email || null,
+    notes: data.notes || "",
+  };
+
+  document.versions.unshift(version);
+  document.current_version = `${versionNumber}.0`;
+  document.status = data.status || document.status;
+  return { document, version };
 }
 
 function addFinding(auditId, data) {
@@ -1288,6 +1367,11 @@ module.exports = {
   deleteStandard,
   getNextStandardCode,
   addDocument,
+  addDocumentVersion,
+  findDocument,
+  findDocumentVersion,
+  findDuplicateDocument,
+  hasDuplicateFile,
   addFinding,
   addMeeting,
   updateMeetingAction,

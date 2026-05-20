@@ -60,7 +60,10 @@ router.put("/standards/:id", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compa
 router.delete("/standards/:id", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.deleteStandardRecord);
 router.get("/documents", optionalAuth, compatController.documents);
 router.post("/documents", verifyToken, requireRole(...ROLE_DOCUMENT_WRITE), upload.single("file"), compatController.createDocument);
+router.post("/documents/:id/versions", verifyToken, requireRole(...ROLE_DOCUMENT_WRITE), upload.single("file"), compatController.createDocumentVersion);
 router.get("/documents/versions/:versionId", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.documentVersion);
+router.get("/documents/versions/:versionId/download", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.documentVersionDownload);
+router.get("/documents/versions/:versionId/preview", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.documentVersionPreview);
 router.get("/ppepp/cycles", optionalAuth, compatController.ppeppCycles);
 router.post("/ppepp/cycles", verifyToken, requireRole(...ROLE_PPEPP_WRITE), compatController.createPpeppCycle);
 router.patch("/ppepp/cycles/:id/stages/:stage", verifyToken, requireRole(...ROLE_PPEPP_WRITE), compatController.updatePpeppCycleStage);

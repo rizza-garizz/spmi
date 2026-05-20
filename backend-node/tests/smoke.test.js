@@ -254,6 +254,80 @@ test("PUT and DELETE /standards keep revision history and hide deleted rows", as
   assert.equal(listPayload.data.some((item) => item.id === standardId), false);
 });
 
+test("documents support metadata, versions, preview, scoped download, and duplicate validation", async () => {
+  const token = await loginAs("unit@spmi.local");
+  const form = new FormData();
+  form.append("code", "DOC-UNIT-TEST");
+  form.append("title", "Dokumen Evaluasi Unit");
+  form.append("type", "laporan_ami");
+  form.append("category", "AMI");
+  form.append("document_date", "2026-05-20");
+  form.append("owner", "Unit Operator");
+  form.append("file", new Blob(["unit,dokumen"], { type: "text/csv" }), "dokumen-unit.csv");
+
+  const response = await fetch(`${baseUrl}/documents`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const payload = await response.json();
+  const document = payload.data;
+  const versionId = document.versions[0].id;
+
+  assert.equal(response.status, 201);
+  assert.equal(document.metadata.tanggal, "2026-05-20");
+  assert.equal(document.metadata.kategori, "AMI");
+  assert.equal(document.metadata.penanggung_jawab, "Unit Operator");
+  assert.equal(document.current_version, "1.0");
+
+  const duplicateForm = new FormData();
+  duplicateForm.append("code", "DOC-UNIT-TEST");
+  duplicateForm.append("title", "Dokumen Evaluasi Unit");
+  duplicateForm.append("type", "laporan_ami");
+  duplicateForm.append("file", new Blob(["unit,dokumen"], { type: "text/csv" }), "dokumen-unit.csv");
+  const duplicateResponse = await fetch(`${baseUrl}/documents`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: duplicateForm,
+  });
+  assert.equal(duplicateResponse.status, 409);
+
+  const versionForm = new FormData();
+  versionForm.append("notes", "Revisi bukti evaluasi.");
+  versionForm.append("file", new Blob(["unit,dokumen,revisi"], { type: "text/csv" }), "dokumen-unit-v2.csv");
+  const versionResponse = await fetch(`${baseUrl}/documents/${document.id}/versions`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: versionForm,
+  });
+  const versionPayload = await versionResponse.json();
+  assert.equal(versionResponse.status, 201);
+  assert.equal(versionPayload.data.current_version, "2.0");
+  assert.equal(versionPayload.data.versions.length, 2);
+
+  const metaResponse = await fetch(`${baseUrl}/documents/versions/${versionId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const metaPayload = await metaResponse.json();
+  assert.equal(metaResponse.status, 200);
+  assert.ok(metaPayload.data.download_url.includes("/download"));
+  assert.ok(metaPayload.data.preview_url.includes("/preview"));
+
+  const previewResponse = await fetch(`${baseUrl}/documents/versions/${versionId}/preview`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const previewPayload = await previewResponse.json();
+  assert.equal(previewResponse.status, 200);
+  assert.equal(previewPayload.data.document.id, document.id);
+
+  const downloadResponse = await fetch(`${baseUrl}/documents/versions/${versionId}/download`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const downloadPayload = await downloadResponse.json();
+  assert.equal(downloadResponse.status, 200);
+  assert.equal(downloadPayload.data.file_name, "dokumen-unit.csv");
+});
+
 test("POST /ppepp/cycles creates a local PPEPP cycle", async () => {
   const token = await loginAs("unit@spmi.local");
   const response = await fetch(`${baseUrl}/ppepp/cycles`, {

@@ -10,6 +10,11 @@ const {
   updateStandard,
   deleteStandard,
   addDocument,
+  addDocumentVersion,
+  findDocument,
+  findDocumentVersion,
+  findDuplicateDocument,
+  hasDuplicateFile,
   addFinding,
   addMeeting,
   updateMeetingAction,
@@ -113,24 +118,101 @@ function documents(req, res) {
 
 function createDocument(req, res) {
   const fileName = req.file?.originalname || req.body?.file_name || "mock-file.pdf";
+  const fileSize = req.file?.size || 0;
+  const mimeType = req.file?.mimetype || null;
   const payload = prepareScopedPayload(req);
   if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
+  const documentPayload = {
+    ...payload,
+    file_name: fileName,
+    file_path: req.file?.path || null,
+    file_size: fileSize,
+    mime_type: mimeType,
+  };
+
+  const duplicate = findDuplicateDocument(documentPayload);
+  if (duplicate) {
+    if (!canReadScopedItem(req, duplicate)) return failure(res, "Dokumen duplikat berada di luar scope akses Anda.", 403);
+    if (hasDuplicateFile(duplicate, documentPayload)) {
+      return failure(res, "File duplikat terdeteksi. Upload dibatalkan agar repository tetap bersih.", 409);
+    }
+
+    const versioned = addDocumentVersion(duplicate.id, documentPayload, req.user);
+    return success(res, versioned.document, "Dokumen sudah ada. File disimpan sebagai versi baru.", 201);
+  }
 
   return res.status(201).json({
     success: true,
-    data: addDocument({ ...payload, file_name: fileName }, req.user),
+    data: addDocument(documentPayload, req.user),
     message: "Dokumen berhasil disimpan di mode lokal.",
   });
 }
 
 function documentVersion(req, res) {
+  const found = findDocumentVersion(req.params.versionId);
+  if (!found) return failure(res, "Versi dokumen tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, found.document)) return failure(res, "Anda tidak dapat mengakses dokumen ini.", 403);
+
   return success(
     res,
     {
-      download_url: `http://127.0.0.1:4000/mock-downloads/${req.params.versionId}`,
+      version: found.version,
+      document: {
+        id: found.document.id,
+        code: found.document.code,
+        title: found.document.title,
+      },
+      download_url: `/documents/versions/${req.params.versionId}/download`,
+      preview_url: `/documents/versions/${req.params.versionId}/preview`,
     },
     "URL unduhan versi dokumen"
   );
+}
+
+function documentVersionDownload(req, res) {
+  const found = findDocumentVersion(req.params.versionId);
+  if (!found) return failure(res, "Versi dokumen tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, found.document)) return failure(res, "Anda tidak dapat mengakses dokumen ini.", 403);
+
+  return success(res, {
+    file_name: found.version.file_name,
+    file_size: found.version.file_size,
+    mime_type: found.version.mime_type,
+    download_url: found.version.file_path || `/mock-downloads/${req.params.versionId}`,
+  }, "Download dokumen siap.");
+}
+
+function documentVersionPreview(req, res) {
+  const found = findDocumentVersion(req.params.versionId);
+  if (!found) return failure(res, "Versi dokumen tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, found.document)) return failure(res, "Anda tidak dapat mengakses dokumen ini.", 403);
+
+  return success(res, {
+    document: found.document,
+    version: found.version,
+    preview_supported: Boolean(found.version.mime_type?.includes("pdf") || found.version.mime_type?.startsWith("image/")),
+    preview_url: found.version.file_path || `/mock-preview/${req.params.versionId}`,
+  }, "Preview dokumen siap.");
+}
+
+function createDocumentVersion(req, res) {
+  const document = findDocument(req.params.id);
+  if (!document) return failure(res, "Dokumen tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, document)) return failure(res, "Anda tidak dapat mengubah dokumen ini.", 403);
+
+  const result = addDocumentVersion(
+    req.params.id,
+    {
+      ...(req.body || {}),
+      file_name: req.file?.originalname || req.body?.file_name || null,
+      file_path: req.file?.path || null,
+      file_size: req.file?.size || 0,
+      mime_type: req.file?.mimetype || null,
+    },
+    req.user
+  );
+  if (result?.duplicate) return failure(res, "File duplikat terdeteksi. Versi baru tidak dibuat.", 409);
+  return success(res, result.document, "Versi dokumen berhasil ditambahkan.", 201);
 }
 
 function ppeppCycles(req, res) {
@@ -534,6 +616,9 @@ module.exports = {
   documents,
   createDocument,
   documentVersion,
+  documentVersionDownload,
+  documentVersionPreview,
+  createDocumentVersion,
   ppeppCycles,
   createPpeppCycle,
   updatePpeppCycleStage,
