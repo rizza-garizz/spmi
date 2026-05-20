@@ -29,6 +29,28 @@ const {
   deleteHrisDocument,
 } = require("../services/catalogStore");
 const { success, failure } = require("../utils/apiResponse");
+const {
+  canAccessOrgUnit,
+  scopeItemForUser,
+  transitionApproval,
+} = require("../services/accessPolicy");
+
+function canReadScopedItem(req, item, options = {}) {
+  if (!req.user) return true;
+  return canAccessOrgUnit(req.user, item.org_unit_code, options);
+}
+
+function scopedItems(req, items, options = {}) {
+  return items.filter((item) => canReadScopedItem(req, item, options));
+}
+
+function prepareScopedPayload(req) {
+  const payload = scopeItemForUser(req.body || {}, req.user);
+  if (!canAccessOrgUnit(req.user, payload.org_unit_code)) {
+    return null;
+  }
+  return payload;
+}
 
 function dashboardSummary(_req, res) {
   return success(res, getDashboardSummary(), "Ringkasan dashboard");
@@ -46,15 +68,18 @@ function createStandard(req, res) {
   return success(res, addStandard(req.body || {}), "Standar berhasil dibuat di mode lokal.", 201);
 }
 
-function documents(_req, res) {
-  return success(res, state.documents, "Daftar dokumen");
+function documents(req, res) {
+  return success(res, scopedItems(req, state.documents), "Daftar dokumen");
 }
 
 function createDocument(req, res) {
   const fileName = req.file?.originalname || req.body?.file_name || "mock-file.pdf";
+  const payload = prepareScopedPayload(req);
+  if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
+
   return res.status(201).json({
     success: true,
-    data: addDocument({ ...(req.body || {}), file_name: fileName }),
+    data: addDocument({ ...payload, file_name: fileName }, req.user),
     message: "Dokumen berhasil disimpan di mode lokal.",
   });
 }
@@ -69,26 +94,32 @@ function documentVersion(req, res) {
   );
 }
 
-function ppeppCycles(_req, res) {
-  return success(res, getCatalogSnapshot().ppeppCycles, "Daftar siklus PPEPP");
+function ppeppCycles(req, res) {
+  return success(res, scopedItems(req, getCatalogSnapshot().ppeppCycles), "Daftar siklus PPEPP");
 }
 
 function createPpeppCycle(req, res) {
+  const payload = prepareScopedPayload(req);
+  if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
+
   return res.status(201).json({
     success: true,
-    data: addPpeppCycle(req.body || {}),
+    data: addPpeppCycle(payload, req.user),
     message: "Siklus PPEPP berhasil dibuat di mode lokal.",
   });
 }
 
-function amiAudits(_req, res) {
-  return success(res, state.audits, "Daftar audit mutu internal");
+function amiAudits(req, res) {
+  return success(res, scopedItems(req, state.audits, { allowAuditor: true }), "Daftar audit mutu internal");
 }
 
 function createAmiAudit(req, res) {
+  const payload = prepareScopedPayload(req);
+  if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
+
   return res.status(201).json({
     success: true,
-    data: addAmiAudit(req.body || {}),
+    data: addAmiAudit(payload, req.user),
     message: "AMI audit berhasil dibuat di mode lokal.",
   });
 }
@@ -101,46 +132,100 @@ function createFinding(req, res) {
   });
 }
 
-function rtmMeetings(_req, res) {
-  return success(res, state.meetings, "Daftar rapat tinjauan manajemen");
+function rtmMeetings(req, res) {
+  const meetings = state.meetings
+    .map((meeting) => ({
+      ...meeting,
+      actions: scopedItems(req, meeting.actions || []),
+    }))
+    .filter((meeting) => canReadScopedItem(req, meeting) || meeting.actions.length > 0);
+
+  return success(res, meetings, "Daftar rapat tinjauan manajemen");
 }
 
 function createMeeting(req, res) {
+  const payload = prepareScopedPayload(req);
+  if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
+
   return res.status(201).json({
     success: true,
-    data: addMeeting(req.body || {}),
+    data: addMeeting(payload, req.user),
     message: "Rapat RTM berhasil dibuat di mode lokal.",
   });
 }
 
 function updateMeetingActionProgress(req, res) {
-  const action = updateMeetingAction(req.params.meetingId, req.params.actionId, req.body || {});
-  if (!action) {
+  const meeting = state.meetings.find((item) => String(item.id) === String(req.params.meetingId));
+  const action = meeting?.actions?.find((item) => String(item.id) === String(req.params.actionId));
+  if (!action) return failure(res, "Action RTL tidak ditemukan.", 404);
+  if (!canAccessOrgUnit(req.user, action.org_unit_code)) {
+    return failure(res, "Anda tidak dapat memperbarui RTL di luar scope unit kerja.", 403);
+  }
+
+  const updatedAction = updateMeetingAction(req.params.meetingId, req.params.actionId, req.body || {});
+  if (!updatedAction) {
     return failure(res, "Action RTL tidak ditemukan.", 404);
   }
 
-  return success(res, action, "Progres RTL berhasil diperbarui di mode lokal.");
+  return success(res, updatedAction, "Progres RTL berhasil diperbarui di mode lokal.");
 }
 
-function indicators(_req, res) {
-  return success(res, state.indicators, "Daftar indikator mutu");
+function indicators(req, res) {
+  return success(res, scopedItems(req, state.indicators), "Daftar indikator mutu");
 }
 
 function createIndicator(req, res) {
+  const payload = prepareScopedPayload(req);
+  if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
+
   return res.status(201).json({
     success: true,
-    data: addIndicator(req.body || {}),
+    data: addIndicator(payload, req.user),
     message: "Indikator berhasil dibuat di mode lokal.",
   });
 }
 
 function createIndicatorValue(req, res) {
+  const indicator = state.indicators.find((item) => String(item.id) === String(req.params.id));
+  if (!indicator) return failure(res, "Indikator tidak ditemukan.", 404);
+  if (!canAccessOrgUnit(req.user, indicator.org_unit_code)) {
+    return failure(res, "Anda tidak dapat mengisi capaian di luar scope unit kerja.", 403);
+  }
+
   const value = addIndicatorValue(req.params.id, req.body || {});
   if (!value) {
     return failure(res, "Indikator tidak ditemukan.", 404);
   }
 
   return success(res, value, "Capaian indikator berhasil disimpan di mode lokal.", 201);
+}
+
+function resolveGovernanceCollection(entity) {
+  if (entity === "documents") return state.documents;
+  if (entity === "ppepp") return state.ppeppCycles;
+  if (entity === "indicators") return state.indicators;
+  if (entity === "ami") return state.audits;
+  if (entity === "rtl") return state.meetings.flatMap((meeting) => meeting.actions || []);
+  return null;
+}
+
+function updateApproval(req, res) {
+  const collection = resolveGovernanceCollection(req.params.entity);
+  if (!collection) return failure(res, "Entitas approval tidak dikenal.", 404);
+
+  const item = collection.find((entry) => String(entry.id) === String(req.params.id));
+  if (!item) return failure(res, "Data approval tidak ditemukan.", 404);
+  if (!canAccessOrgUnit(req.user, item.org_unit_code, { allowAuditor: req.params.entity === "ami" })) {
+    return failure(res, "Anda tidak dapat mengakses approval di luar scope unit kerja.", 403);
+  }
+
+  const nextApproval = transitionApproval(item, req.user, req.body?.action, req.body?.note || "");
+  if (!nextApproval) return failure(res, "Role Anda tidak berwenang menjalankan tahap approval ini.", 403);
+
+  item.approval = nextApproval;
+  item.status = nextApproval.status === "approved" ? "approved" : item.status;
+
+  return success(res, item, "Status approval berhasil diperbarui di mode lokal.");
 }
 
 function orgUnits(_req, res) {
@@ -335,6 +420,7 @@ module.exports = {
   indicators,
   createIndicator,
   createIndicatorValue,
+  updateApproval,
   orgUnits,
   integrations,
   imports,

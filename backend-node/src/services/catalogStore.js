@@ -1,6 +1,15 @@
 const path = require("path");
 
 const catalog = require(path.resolve(__dirname, "../../data/spmi-catalog.json"));
+const { getInitialApproval } = require("./accessPolicy");
+
+function approvalSeed(step = "draft", status = "draft") {
+  return {
+    step,
+    status,
+    history: [],
+  };
+}
 
 const state = {
   standards: catalog.standards.map((item, index) => ({
@@ -13,6 +22,8 @@ const state = {
     title: item.title,
     type: item.type,
     status: item.status,
+    org_unit_code: item.org_unit_code || (item.id % 2 === 0 ? "SI" : "LPM"),
+    approval: approvalSeed(item.status === "approved" ? "approved" : "draft", item.status === "approved" ? "approved" : "draft"),
     current_version: "1.0",
     versions: [
       {
@@ -31,6 +42,8 @@ const state = {
     score: item.score,
     status: item.status,
     org_unit: item.org_unit,
+    org_unit_code: item.org_unit_code || "SI",
+    approval: approvalSeed(item.status === "selesai" ? "approved" : "review_lpm", item.status === "selesai" ? "approved" : "in_review"),
     findings: [],
   })),
   meetings: catalog.rtmMeetings.map((item) => ({
@@ -50,6 +63,8 @@ const state = {
               progress: 65,
               owner_notes: "Draft revisi sudah direview LPM, menunggu sinkronisasi final.",
               unit: { name: "LPM" },
+              org_unit_code: "LPM",
+              approval: approvalSeed("review_lpm", "in_review"),
               updated_at: "2026-05-10T08:00:00.000Z",
             },
             {
@@ -60,6 +75,8 @@ const state = {
               progress: 20,
               owner_notes: "Pengumpulan eviden dari fakultas masih berjalan.",
               unit: { name: "Fakultas Ilmu Komputer" },
+              org_unit_code: "FIKOM",
+              approval: approvalSeed("review_fakultas", "in_review"),
               updated_at: "2026-05-09T09:30:00.000Z",
             },
           ]
@@ -72,6 +89,8 @@ const state = {
               progress: 10,
               owner_notes: "Belum ada pembaruan dari unit kerja.",
               unit: { name: "Program Studi Sistem Informasi" },
+              org_unit_code: "SI",
+              approval: approvalSeed("review_prodi", "in_review"),
               updated_at: "2026-05-11T10:15:00.000Z",
             },
           ],
@@ -86,6 +105,8 @@ const state = {
       unit: "skor",
       source_type: "manual",
       standard: { id: 1, code: "STD-TAM-01", title: "Standar Tata Pamong" },
+      org_unit_code: "SI",
+      approval: approvalSeed("review_prodi", "in_review"),
       latest_value: {
         actual_value: 3.82,
         period: "2026-Q1",
@@ -108,6 +129,8 @@ const state = {
       unit: "%",
       source_type: "manual",
       standard: { id: 2, code: "STD-TAM-03", title: "Standar Sistem Informasi Mutu" },
+      org_unit_code: "LPM",
+      approval: approvalSeed("review_lpm", "in_review"),
       latest_value: {
         actual_value: 82.4,
         period: "2026-Q1",
@@ -130,6 +153,8 @@ const state = {
       unit: "%",
       source_type: "manual",
       standard: { id: 3, code: "STD-TAM-04", title: "Standar Audit Internal" },
+      org_unit_code: "FIKOM",
+      approval: approvalSeed("review_fakultas", "in_review"),
       latest_value: {
         actual_value: 68,
         period: "2026-Q1",
@@ -149,6 +174,8 @@ const state = {
     name: item.name,
     period: item.period,
     status: item.status,
+    org_unit_code: item.org_unit_code || (item.id % 2 === 0 ? "FIKOM" : "SI"),
+    approval: approvalSeed(item.status === "done" ? "approved" : "draft", item.status === "done" ? "approved" : "draft"),
   })),
   surveys: catalog.surveys.map((item) => ({
     id: item.id,
@@ -235,7 +262,7 @@ function addStandard(data) {
   return item;
 }
 
-function addDocument(data) {
+function addDocument(data, user) {
   const id = Date.now();
   const item = {
     id,
@@ -243,6 +270,8 @@ function addDocument(data) {
     title: data.title,
     type: data.type || "kebijakan",
     status: "draft",
+    org_unit_code: data.org_unit_code || null,
+    approval: getInitialApproval(user),
     current_version: "1.0",
     versions: [
       {
@@ -275,13 +304,15 @@ function addFinding(auditId, data) {
   return finding;
 }
 
-function addMeeting(data) {
+function addMeeting(data, user) {
   const item = {
     id: Date.now(),
     title: data.title,
     meeting_date: data.meeting_date,
     status: "scheduled",
     conclusion: data.conclusion || null,
+    org_unit_code: data.org_unit_code || null,
+    approval: getInitialApproval(user),
     actions: [],
   };
   state.meetings.unshift(item);
@@ -315,12 +346,14 @@ function updateMeetingAction(meetingId, actionId, data) {
   };
 }
 
-function addPpeppCycle(data) {
+function addPpeppCycle(data, user) {
   const item = {
     id: Date.now(),
     name: data.name || `Siklus ${new Date().getFullYear()}`,
     period: data.period || "yearly",
     status: data.status || "planned",
+    org_unit_code: data.org_unit_code || null,
+    approval: getInitialApproval(user),
     academic_year_start: data.academic_year_start || null,
     academic_year_end: data.academic_year_end || null,
   };
@@ -328,7 +361,7 @@ function addPpeppCycle(data) {
   return item;
 }
 
-function addAmiAudit(data) {
+function addAmiAudit(data, user) {
   const item = {
     id: Date.now(),
     audit_date: data.audit_date || null,
@@ -337,6 +370,8 @@ function addAmiAudit(data) {
     org_unit: {
       name: data.org_unit_name || `Unit ${data.org_unit_id || "Lokal"}`,
     },
+    org_unit_code: data.org_unit_code || null,
+    approval: getInitialApproval(user),
     findings: data.finding_summary
       ? [
           {
@@ -353,7 +388,7 @@ function addAmiAudit(data) {
   return item;
 }
 
-function addIndicator(data) {
+function addIndicator(data, user) {
   const item = {
     id: Date.now(),
     code: data.code,
@@ -365,6 +400,8 @@ function addIndicator(data) {
     standard: data.mutu_standard_id
       ? { id: data.mutu_standard_id, code: String(data.mutu_standard_id), title: "Standar terkait" }
       : null,
+    org_unit_code: data.org_unit_code || null,
+    approval: getInitialApproval(user),
     latest_value: null,
     history: [],
   };

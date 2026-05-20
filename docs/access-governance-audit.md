@@ -22,8 +22,8 @@ Catatan penting: role `Admin` terpisah dari `LPM / BPM` belum dipisah secara tek
 | Role pengguna sesuai struktur perguruan tinggi | Sebagian aman | Role inti sudah ada, tetapi Admin sistem dan LPM/BPM masih satu role. |
 | Hak akses menu sesuai kewenangan | Aman untuk tahap sekarang | Sidebar dan route frontend membaca `moduleRegistry`; backend juga punya `requireRole`. |
 | Scope fakultas/prodi/unit pada user | Diperkuat | Seed user lokal sekarang membawa `orgUnit` dan `roleAssignments.scopeOrgUnit`. |
-| Data antar prodi/unit tidak dapat diakses sembarangan | Belum aman penuh | Backend belum menerapkan row-level scope filtering secara konsisten pada semua endpoint. |
-| Approval workflow sesuai hierarki | Belum aman penuh | Policy chain sudah didefinisikan, tetapi belum menjadi workflow transaksional di data utama. |
+| Data antar prodi/unit tidak dapat diakses sembarangan | Aman untuk compat API | Endpoint lokal/compat untuk dokumen, PPEPP, indikator, AMI, dan RTL sudah memakai `org_unit_code` scope filtering. |
+| Approval workflow sesuai hierarki | Aman untuk compat API | Endpoint approval generic sudah menjalankan alur Unit/Sekprodi -> Kaprodi -> Fakultas -> LPM. |
 
 ## Matriks Kewenangan Target
 
@@ -47,16 +47,26 @@ Alur ideal:
 4. `review_lpm`: LPM/BPM melakukan validasi mutu akhir.
 5. `approved`: Data terkunci sebagai data resmi.
 
-Policy awal sudah dibuat di `backend-node/src/services/accessPolicy.js`.
+Policy sudah dibuat di `backend-node/src/services/accessPolicy.js` dan endpoint awal tersedia di:
+
+`PATCH /governance/:entity/:id/approval`
+
+Entitas yang didukung pada tahap ini:
+
+- `documents`
+- `ppepp`
+- `indicators`
+- `ami`
+- `rtl`
 
 ## Gap Yang Masih Perlu Dikerjakan
 
 1. Pisahkan role `admin` dan `lpm_bpm` bila kampus ingin Admin IT tidak otomatis punya kewenangan mutu.
-2. Tambahkan `scopeOrgUnitId` pada query list dan detail untuk dokumen, PPEPP, indikator, AMI, RTM, RTL, dan HRIS.
-3. Tambahkan tabel/field approval status di entitas utama.
-4. Semua endpoint update/delete harus memeriksa apakah user berada pada scope yang benar.
-5. Tambahkan test negatif: Kaprodi Prodi A tidak boleh melihat/mengubah data Prodi B.
+2. Bawa row-level access control ini ke controller database/Prisma penuh, bukan hanya endpoint compat/local.
+3. Tambahkan field approval permanen di schema database untuk dokumen, PPEPP, indikator, AMI, dan RTL.
+4. Tambahkan isolasi scope untuk HRIS bila data SDM nantinya dibuka ke fakultas/prodi.
+5. Tambahkan test multi-prodi tambahan: Kaprodi Prodi A tidak boleh melihat/mengubah data Prodi B ketika data Prodi B sudah ada.
 
 ## Kesimpulan
 
-Fondasi akses menu sudah rapi. Fondasi scope user sudah mulai aman. Yang belum cukup untuk produksi multi-prodi adalah row-level access control dan approval workflow transaksional.
+Fondasi akses menu sudah rapi. Endpoint compat/local sudah menerapkan row-level access control dan approval workflow hierarkis. Yang belum cukup untuk produksi penuh adalah migrasi enforcement yang sama ke controller database/Prisma dan schema approval permanen.

@@ -74,6 +74,7 @@ router.patch(
 router.get("/indicators", optionalAuth, compatController.indicators);
 router.post("/indicators", verifyToken, requireRole(...ROLE_INDICATOR_WRITE), compatController.createIndicator);
 router.post("/indicators/:id/values", verifyToken, requireRole(...ROLE_INDICATOR_WRITE), compatController.createIndicatorValue);
+router.patch("/governance/:entity/:id/approval", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.updateApproval);
 router.get("/org-units", optionalAuth, compatController.orgUnits);
 router.get("/integrations", optionalAuth, compatController.integrations);
 router.get("/hris", optionalAuth, compatController.hris);

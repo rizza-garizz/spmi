@@ -295,6 +295,151 @@ test("POST /indicators and /values create indicator data", async () => {
   assert.equal(createValuePayload.data.actual_value, 91);
 });
 
+test("row-level access filters prodi and faculty scoped indicators", async () => {
+  const adminToken = await loginAs("admin@spmi.local");
+  const dekanToken = await loginAs("dekan@spmi.local");
+  const unitToken = await loginAs("unit@spmi.local");
+
+  const [adminResponse, dekanResponse, unitResponse] = await Promise.all([
+    fetch(`${baseUrl}/indicators`, { headers: { Authorization: `Bearer ${adminToken}` } }),
+    fetch(`${baseUrl}/indicators`, { headers: { Authorization: `Bearer ${dekanToken}` } }),
+    fetch(`${baseUrl}/indicators`, { headers: { Authorization: `Bearer ${unitToken}` } }),
+  ]);
+
+  const adminPayload = await adminResponse.json();
+  const dekanPayload = await dekanResponse.json();
+  const unitPayload = await unitResponse.json();
+
+  assert.equal(adminResponse.status, 200);
+  assert.equal(dekanResponse.status, 200);
+  assert.equal(unitResponse.status, 200);
+  assert.ok(adminPayload.data.length >= 3);
+  assert.ok(dekanPayload.data.every((item) => ["FIKOM", "SI"].includes(item.org_unit_code)));
+  assert.ok(unitPayload.data.every((item) => item.org_unit_code === "SI"));
+});
+
+test("row-level access rejects writes outside user scope", async () => {
+  const unitToken = await loginAs("unit@spmi.local");
+
+  const createOutsideScope = await fetch(`${baseUrl}/indicators`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${unitToken}`,
+    },
+    body: JSON.stringify({
+      code: "IKU-FIKOM-FORBIDDEN",
+      name: "Indikator Luar Scope",
+      target_value: 80,
+      unit: "%",
+      org_unit_code: "FIKOM",
+    }),
+  });
+  const createPayload = await createOutsideScope.json();
+
+  assert.equal(createOutsideScope.status, 403);
+  assert.equal(createPayload.success, false);
+
+  const updateFacultyRtl = await fetch(`${baseUrl}/rtm/meetings/1/actions/102`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${unitToken}`,
+    },
+    body: JSON.stringify({
+      status: "done",
+      progress: 100,
+    }),
+  });
+  const updatePayload = await updateFacultyRtl.json();
+
+  assert.equal(updateFacultyRtl.status, 403);
+  assert.equal(updatePayload.success, false);
+});
+
+test("approval workflow follows unit prodi faculty lpm hierarchy", async () => {
+  const unitToken = await loginAs("unit@spmi.local");
+  const kaprodiToken = await loginAs("kaprodi@spmi.local");
+  const dekanToken = await loginAs("dekan@spmi.local");
+  const adminToken = await loginAs("admin@spmi.local");
+
+  const createResponse = await fetch(`${baseUrl}/indicators`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${unitToken}`,
+    },
+    body: JSON.stringify({
+      code: "IKU-APPROVAL-01",
+      name: "Indikator Approval",
+      target_value: 90,
+      unit: "%",
+    }),
+  });
+  const createPayload = await createResponse.json();
+  assert.equal(createResponse.status, 201);
+  assert.equal(createPayload.data.org_unit_code, "SI");
+  assert.equal(createPayload.data.approval.step, "draft");
+
+  const submitResponse = await fetch(`${baseUrl}/governance/indicators/${createPayload.data.id}/approval`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${unitToken}`,
+    },
+    body: JSON.stringify({ action: "submit", note: "Siap review prodi" }),
+  });
+  const submitPayload = await submitResponse.json();
+  assert.equal(submitResponse.status, 200);
+  assert.equal(submitPayload.data.approval.step, "review_prodi");
+
+  const forbiddenFacultyApproval = await fetch(`${baseUrl}/governance/indicators/${createPayload.data.id}/approval`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${dekanToken}`,
+    },
+    body: JSON.stringify({ action: "approve" }),
+  });
+  assert.equal(forbiddenFacultyApproval.status, 403);
+
+  const prodiResponse = await fetch(`${baseUrl}/governance/indicators/${createPayload.data.id}/approval`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${kaprodiToken}`,
+    },
+    body: JSON.stringify({ action: "approve", note: "Valid di prodi" }),
+  });
+  const prodiPayload = await prodiResponse.json();
+  assert.equal(prodiResponse.status, 200);
+  assert.equal(prodiPayload.data.approval.step, "review_fakultas");
+
+  const facultyResponse = await fetch(`${baseUrl}/governance/indicators/${createPayload.data.id}/approval`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${dekanToken}`,
+    },
+    body: JSON.stringify({ action: "approve", note: "Valid di fakultas" }),
+  });
+  const facultyPayload = await facultyResponse.json();
+  assert.equal(facultyResponse.status, 200);
+  assert.equal(facultyPayload.data.approval.step, "review_lpm");
+
+  const lpmResponse = await fetch(`${baseUrl}/governance/indicators/${createPayload.data.id}/approval`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${adminToken}`,
+    },
+    body: JSON.stringify({ action: "approve", note: "Disahkan LPM" }),
+  });
+  const lpmPayload = await lpmResponse.json();
+  assert.equal(lpmResponse.status, 200);
+  assert.equal(lpmPayload.data.approval.status, "approved");
+});
+
 test("PATCH /rtm/meetings/:meetingId/actions/:actionId updates RTL progress for unit role", async () => {
   const unitToken = await loginAs("unit@spmi.local");
   const adminToken = await loginAs("admin@spmi.local");
@@ -305,12 +450,14 @@ test("PATCH /rtm/meetings/:meetingId/actions/:actionId updates RTL progress for 
   });
   const listPayload = await listResponse.json();
   const meetings = listPayload.data;
-  const meetingWithAction = meetings.find((item) => Array.isArray(item.actions) && item.actions.length > 0);
+  const meetingWithAction = meetings.find((item) =>
+    Array.isArray(item.actions) && item.actions.some((entry) => entry.org_unit_code === "SI")
+  );
 
   assert.equal(listResponse.status, 200);
   assert.ok(meetingWithAction);
 
-  const action = meetingWithAction.actions[0];
+  const action = meetingWithAction.actions.find((entry) => entry.org_unit_code === "SI");
   const updateResponse = await fetch(
     `${baseUrl}/rtm/meetings/${meetingWithAction.id}/actions/${action.id}`,
     {
