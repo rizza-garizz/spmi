@@ -42,6 +42,9 @@ type HrisPanelManagerProps = {
   initialPositions: HrisPosition[];
   initialCompetencies: HrisCompetency[];
   initialDocuments: HrisDocument[];
+  sections?: Array<"positions" | "competencies" | "documents">;
+  competencyCategory?: string;
+  documentType?: string;
 };
 
 function getPayload<T>(result: { data?: T } | T) {
@@ -64,10 +67,17 @@ export function HrisPanelManager({
   initialPositions,
   initialCompetencies,
   initialDocuments,
+  sections = ["positions", "competencies", "documents"],
+  competencyCategory,
+  documentType,
 }: HrisPanelManagerProps) {
   const [positions, setPositions] = useState(initialPositions);
-  const [competencies, setCompetencies] = useState(initialCompetencies);
-  const [documents, setDocuments] = useState(initialDocuments);
+  const [competencies, setCompetencies] = useState(
+    competencyCategory ? initialCompetencies.filter((item) => item.category === competencyCategory) : initialCompetencies
+  );
+  const [documents, setDocuments] = useState(
+    documentType ? initialDocuments.filter((item) => item.type === documentType) : initialDocuments
+  );
   const [editingPosition, setEditingPosition] = useState<HrisPosition | null>(null);
   const [editingCompetency, setEditingCompetency] = useState<HrisCompetency | null>(null);
   const [editingDocument, setEditingDocument] = useState<HrisDocument | null>(null);
@@ -176,7 +186,7 @@ export function HrisPanelManager({
   return (
     <>
       <div className="row">
-        <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-jabatan">
+        {sections.includes("positions") ? <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-jabatan">
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">{editingPosition ? "Edit Jabatan" : "Input Jabatan"}</h4>
@@ -240,9 +250,9 @@ export function HrisPanelManager({
               </form>
             </div>
           </div>
-        </div>
+        </div> : null}
 
-        <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-kompetensi">
+        {sections.includes("competencies") ? <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-kompetensi">
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">{editingCompetency ? "Edit Kompetensi" : "Input Kompetensi"}</h4>
@@ -311,9 +321,9 @@ export function HrisPanelManager({
               </form>
             </div>
           </div>
-        </div>
+        </div> : null}
 
-        <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-dokumen">
+        {sections.includes("documents") ? <div className="col-xl-4 col-xxl-4 col-lg-4" id="hris-dokumen">
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">{editingDocument ? "Edit Dokumen" : "Input Dokumen"}</h4>
@@ -366,13 +376,13 @@ export function HrisPanelManager({
               </form>
             </div>
           </div>
-        </div>
+        </div> : null}
       </div>
 
       {message ? <div className="alert alert-info">{message}</div> : null}
 
       <div className="row">
-        <div className="col-xl-4 col-xxl-4 col-lg-4">
+        {sections.includes("positions") ? <div className="col-xl-4 col-xxl-4 col-lg-4">
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">Jabatan Aktif</h4>
@@ -395,9 +405,9 @@ export function HrisPanelManager({
               </div>
             </div>
           </div>
-        </div>
+        </div> : null}
 
-        <div className="col-xl-4 col-xxl-4 col-lg-4">
+        {sections.includes("competencies") ? <div className="col-xl-4 col-xxl-4 col-lg-4">
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">Kompetensi & Sertifikasi</h4>
@@ -420,9 +430,9 @@ export function HrisPanelManager({
               </div>
             </div>
           </div>
-        </div>
+        </div> : null}
 
-        <div className="col-xl-4 col-xxl-4 col-lg-4">
+        {sections.includes("documents") ? <div className="col-xl-4 col-xxl-4 col-lg-4">
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">Dokumen SDM</h4>
@@ -448,7 +458,7 @@ export function HrisPanelManager({
               </div>
             </div>
           </div>
-        </div>
+        </div> : null}
       </div>
     </>
   );
