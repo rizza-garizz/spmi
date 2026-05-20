@@ -1,12 +1,19 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { fallbackImports, fallbackImportTypes } from "@/lib/spmi-catalog-data";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
 
-export function CreateImportForm() {
+type ImportItem = { id: number | string; type: string; title: string; status: string };
+
+export function CreateImportForm({
+  initialItems,
+  importTypes,
+}: {
+  initialItems: ImportItem[];
+  importTypes: Array<{ value: string; label: string }>;
+}) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState(fallbackImports);
+  const [items, setItems] = useState(initialItems);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,10 +43,17 @@ export function CreateImportForm() {
             type?: string;
             title?: string;
             status?: string;
+            data?: {
+              id?: number;
+              type?: string;
+              title?: string;
+              status?: string;
+            };
           };
+          const item = created.data ?? created;
 
           setItems((current) => [
-            { id: created.id ?? Date.now(), type: created.type ?? type, title: created.title ?? title, status: created.status ?? "queued" },
+            { id: item.id ?? Date.now(), type: item.type ?? type, title: item.title ?? title, status: item.status ?? "queued" },
             ...current,
           ]);
           setMessage("Import berhasil dikirim ke backend.");
@@ -47,15 +61,9 @@ export function CreateImportForm() {
           event.currentTarget.reset();
           return;
         }
-      } catch {
-        // Fall back to local cache.
-      }
+      } catch {}
     }
-
-    setItems((current) => [{ id: Date.now(), type, title, status: "queued" }, ...current]);
-    setMessage("Import disimpan ke cache lokal.");
-    dispatchAppEvent("spmi-data-changed");
-    event.currentTarget.reset();
+    setMessage("Gagal mengirim ke backend. Data tidak ditulis agar tetap sinkron.");
   }
 
   return (
@@ -64,7 +72,7 @@ export function CreateImportForm() {
       <div className="field">
         <label htmlFor="type">Tipe</label>
         <select id="type" name="type" className="form-select">
-          {fallbackImportTypes.map((item) => (
+          {importTypes.map((item) => (
             <option key={item.value} value={item.value}>
               {item.label}
             </option>

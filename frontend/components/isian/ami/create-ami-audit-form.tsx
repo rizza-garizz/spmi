@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { fallbackAmiAudits } from "@/lib/spmi-catalog-data";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
 
 type AuditPreviewItem = {
@@ -11,16 +10,9 @@ type AuditPreviewItem = {
   status: string;
 };
 
-export function CreateAmiAuditForm() {
+export function CreateAmiAuditForm({ initialItems }: { initialItems: AuditPreviewItem[] }) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState<AuditPreviewItem[]>(
-    fallbackAmiAudits.map((item) => ({
-      id: item.id,
-      org_unit: { name: item.org_unit?.name ?? "Unit Lokal" },
-      score: item.score ?? 0,
-      status: item.status ?? "draft",
-    }))
-  );
+  const [items, setItems] = useState<AuditPreviewItem[]>(initialItems);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,18 +69,9 @@ export function CreateAmiAuditForm() {
           event.currentTarget.reset();
           return;
         }
-      } catch {
-        // Fall back to local cache.
-      }
+      } catch {}
     }
-
-    setItems((current) => [
-      { id: Date.now(), org_unit: { name: "Unit Lokal" }, score, status: "draft" },
-      ...current,
-    ]);
-    setMessage(`AMI audit disimpan ke cache lokal dengan skor ${score}.`);
-    dispatchAppEvent("spmi-data-changed");
-    event.currentTarget.reset();
+    setMessage("Gagal menyimpan ke backend. Data tidak ditulis agar tetap sinkron.");
   }
 
   return (

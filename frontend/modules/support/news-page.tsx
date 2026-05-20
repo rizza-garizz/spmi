@@ -1,7 +1,8 @@
-import catalog from "@/data/spmi-catalog.json";
+import { getCatalogSnapshot } from "@/lib/spmi-catalog-api";
 
-export function NewsPage() {
-  const news = (catalog as any).news || [];
+export async function NewsPage() {
+  const catalog = await getCatalogSnapshot();
+  const news = (catalog as { news?: any[] }).news || [];
 
   return (
     <main className="shell">
@@ -10,7 +11,7 @@ export function NewsPage() {
           <span className="eyebrow">Support</span>
           <h1>Berita & Kegiatan</h1>
           <p className="hero-copy">
-            Informasi terbaru, kegiatan, dan pembaruan seputar pelaksanaan SPMI di Universitas Malang.
+            Informasi terbaru, kegiatan, dan pembaruan seputar pelaksanaan SPMI di Universitas Junrejo Indah.
           </p>
         </div>
       </section>

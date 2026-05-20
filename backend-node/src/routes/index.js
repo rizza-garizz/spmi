@@ -51,19 +51,19 @@ const ROLE_ADMIN_ONLY = ["admin_lpm"];
 router.get("/health", healthController.health);
 router.get("/system/status", catchAsync(systemController.status));
 
-router.get("/catalog", verifyToken, compatController.catalog);
-router.get("/dashboard/summary", verifyToken, compatController.dashboardSummary);
-router.get("/standards", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.standards);
+router.get("/catalog", optionalAuth, compatController.catalog);
+router.get("/dashboard/summary", optionalAuth, compatController.dashboardSummary);
+router.get("/standards", optionalAuth, compatController.standards);
 router.post("/standards", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.createStandard);
-router.get("/documents", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.documents);
+router.get("/documents", optionalAuth, compatController.documents);
 router.post("/documents", verifyToken, requireRole(...ROLE_DOCUMENT_WRITE), upload.single("file"), compatController.createDocument);
 router.get("/documents/versions/:versionId", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.documentVersion);
-router.get("/ppepp/cycles", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.ppeppCycles);
+router.get("/ppepp/cycles", optionalAuth, compatController.ppeppCycles);
 router.post("/ppepp/cycles", verifyToken, requireRole(...ROLE_PPEPP_WRITE), compatController.createPpeppCycle);
-router.get("/ami/audits", verifyToken, requireRole(...ROLE_AMI_READ), compatController.amiAudits);
+router.get("/ami/audits", optionalAuth, compatController.amiAudits);
 router.post("/ami/audits", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.createAmiAudit);
 router.post("/ami/audits/:id/findings", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.createFinding);
-router.get("/rtm/meetings", verifyToken, requireRole(...ROLE_RTM_READ), compatController.rtmMeetings);
+router.get("/rtm/meetings", optionalAuth, compatController.rtmMeetings);
 router.post("/rtm/meetings", verifyToken, requireRole(...ROLE_RTM_WRITE), compatController.createMeeting);
 router.patch(
   "/rtm/meetings/:meetingId/actions/:actionId",
@@ -71,12 +71,30 @@ router.patch(
   requireRole(...ROLE_RTL_WRITE),
   compatController.updateMeetingActionProgress
 );
-router.get("/indicators", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.indicators);
+router.get("/indicators", optionalAuth, compatController.indicators);
 router.post("/indicators", verifyToken, requireRole(...ROLE_INDICATOR_WRITE), compatController.createIndicator);
 router.post("/indicators/:id/values", verifyToken, requireRole(...ROLE_INDICATOR_WRITE), compatController.createIndicatorValue);
-router.get("/org-units", verifyToken, requireRole(...ROLE_ORG_READ), compatController.orgUnits);
-router.get("/integrations", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.integrations);
-router.get("/imports", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.imports);
+router.get("/org-units", optionalAuth, compatController.orgUnits);
+router.get("/integrations", optionalAuth, compatController.integrations);
+router.get("/hris", optionalAuth, compatController.hris);
+router.get("/hris/employees", optionalAuth, compatController.hrisEmployees);
+router.get("/hris/employees/:id", optionalAuth, compatController.hrisEmployeeProfile);
+router.post("/hris/employees", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.createHrisEmployee);
+router.put("/hris/employees/:id", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.updateHrisEmployeeRecord);
+router.delete("/hris/employees/:id", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.deleteHrisEmployeeRecord);
+router.get("/hris/positions", optionalAuth, compatController.hrisPositions);
+router.post("/hris/positions", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.createHrisPosition);
+router.put("/hris/positions/:id", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.updateHrisPositionRecord);
+router.delete("/hris/positions/:id", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.deleteHrisPositionRecord);
+router.get("/hris/competencies", optionalAuth, compatController.hrisCompetencies);
+router.post("/hris/competencies", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.createHrisCompetency);
+router.put("/hris/competencies/:id", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.updateHrisCompetencyRecord);
+router.delete("/hris/competencies/:id", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.deleteHrisCompetencyRecord);
+router.get("/hris/documents", optionalAuth, compatController.hrisDocuments);
+router.post("/hris/documents", verifyToken, requireRole(...ROLE_ADMIN_ONLY), upload.single("file"), compatController.createHrisDocument);
+router.put("/hris/documents/:id", verifyToken, requireRole(...ROLE_ADMIN_ONLY), upload.single("file"), compatController.updateHrisDocumentRecord);
+router.delete("/hris/documents/:id", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.deleteHrisDocumentRecord);
+router.get("/imports", optionalAuth, compatController.imports);
 router.post("/imports", verifyToken, requireRole(...ROLE_ADMIN_ONLY), upload.single("file"), compatController.createImport);
 router.post(
   "/imports/aoa/preview",
@@ -92,7 +110,7 @@ router.post(
   upload.single("file"),
   catchAsync(migrationController.commitAoa)
 );
-router.get("/surveys", verifyToken, requireRole(...ROLE_SURVEY_READ), compatController.surveys);
+router.get("/surveys", optionalAuth, compatController.surveys);
 router.post("/surveys", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.createSurvey);
 
 router.post("/auth/login", validate(loginSchema), catchAsync(authController.login));

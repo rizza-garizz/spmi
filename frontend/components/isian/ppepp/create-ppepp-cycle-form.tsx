@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { fallbackPpeppCycles } from "@/lib/spmi-catalog-data";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
 
 type PpeppPreviewItem = {
@@ -11,16 +10,9 @@ type PpeppPreviewItem = {
   status: string;
 };
 
-export function CreatePpeppCycleForm() {
+export function CreatePpeppCycleForm({ initialItems }: { initialItems: PpeppPreviewItem[] }) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState<PpeppPreviewItem[]>(
-    fallbackPpeppCycles.map((item) => ({
-      id: item.id,
-      name: item.name ?? "Siklus Lokal",
-      period: item.period ?? "yearly",
-      status: item.status ?? "planned",
-    }))
-  );
+  const [items, setItems] = useState<PpeppPreviewItem[]>(initialItems);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,15 +69,9 @@ export function CreatePpeppCycleForm() {
           event.currentTarget.reset();
           return;
         }
-      } catch {
-        // Fall back to local cache.
-      }
+      } catch {}
     }
-
-    setItems((current) => [{ id: Date.now(), name, period, status }, ...current]);
-    setMessage("Siklus disimpan ke cache lokal.");
-    dispatchAppEvent("spmi-data-changed");
-    event.currentTarget.reset();
+    setMessage("Gagal menyimpan ke backend. Data tidak ditulis agar tetap sinkron.");
   }
 
   return (

@@ -1,6 +1,6 @@
 const path = require("path");
 
-const catalog = require(path.resolve(__dirname, "../../../frontend/data/spmi-catalog.json"));
+const catalog = require(path.resolve(__dirname, "../../data/spmi-catalog.json"));
 
 const state = {
   standards: catalog.standards.map((item, index) => ({
@@ -162,6 +162,14 @@ const state = {
     title: item.title,
     status: item.status,
   })),
+  hris: {
+    metrics: catalog.hris.metrics.map((item) => ({ ...item })),
+    employees: catalog.hris.employees.map((item) => ({ ...item })),
+    positions: catalog.hris.positions.map((item, index) => ({ id: item.id || `POS-${index + 1}`, ...item })),
+    competencies: catalog.hris.competencies.map((item, index) => ({ id: item.id || `CMP-${index + 1}`, ...item })),
+    documents: catalog.hris.documents.map((item, index) => ({ id: item.id || `DOC-HR-${index + 1}`, ...item })),
+    spmiLinks: [...catalog.hris.spmiLinks],
+  },
 };
 
 function getCatalogSnapshot() {
@@ -174,6 +182,28 @@ function getCatalogSnapshot() {
     ppeppCycles: state.ppeppCycles,
     surveys: state.surveys,
     imports: state.imports,
+    hris: state.hris,
+  };
+}
+
+function getHrisSummary() {
+  return state.hris;
+}
+
+function getHrisEmployeeProfile(employeeId) {
+  const employee = state.hris.employees.find(
+    (item) => String(item.id) === String(employeeId) || item.name === employeeId
+  );
+
+  if (!employee) {
+    return null;
+  }
+
+  return {
+    employee,
+    positions: state.hris.positions.filter((item) => item.holder === employee.name),
+    competencies: state.hris.competencies.filter((item) => item.employee === employee.name),
+    documents: state.hris.documents.filter((item) => item.employee === employee.name),
   };
 }
 
@@ -389,10 +419,223 @@ function addImport(data) {
   return item;
 }
 
+function refreshHrisMetrics() {
+  const total = state.hris.employees.length;
+  const lecturers = state.hris.employees.filter((item) => item.type.includes("Dosen") && item.status === "Aktif").length;
+  const staff = state.hris.employees.filter((item) => item.type === "Tendik" && item.status === "Aktif").length;
+  const certified = state.hris.competencies.filter((item) => item.category === "Sertifikasi" && item.status === "Tervalidasi").length;
+
+  state.hris.metrics = [
+    { label: "Total Pegawai", value: total },
+    { label: "Dosen Aktif", value: lecturers },
+    { label: "Tendik Aktif", value: staff },
+    { label: "Sertifikasi Dosen", value: certified },
+  ];
+}
+
+function addHrisEmployee(data) {
+  const item = {
+    id: `EMP-${Date.now()}`,
+    name: data.name || "Pegawai Baru",
+    employeeNumber: data.employeeNumber || data.employee_number || `HR-${Date.now()}`,
+    nidn: data.nidn || "-",
+    type: data.type || "Dosen",
+    status: data.status || "Aktif",
+    unit: data.unit || "Unit Kerja",
+    position: data.position || "Pegawai",
+    functionalPosition: data.functionalPosition || data.functional_position || "-",
+    education: data.education || "-",
+    email: data.email || "-",
+  };
+
+  state.hris.employees.unshift(item);
+  refreshHrisMetrics();
+  return item;
+}
+
+function updateHrisEmployee(employeeId, data) {
+  const employee = state.hris.employees.find((item) => String(item.id) === String(employeeId));
+  if (!employee) {
+    return null;
+  }
+
+  const previousName = employee.name;
+  Object.assign(employee, {
+    name: data.name || employee.name,
+    employeeNumber: data.employeeNumber || data.employee_number || employee.employeeNumber,
+    nidn: data.nidn || employee.nidn,
+    type: data.type || employee.type,
+    status: data.status || employee.status,
+    unit: data.unit || employee.unit,
+    position: data.position || employee.position,
+    functionalPosition: data.functionalPosition || data.functional_position || employee.functionalPosition,
+    education: data.education || employee.education,
+    email: data.email || employee.email,
+  });
+
+  if (employee.name !== previousName) {
+    state.hris.positions.forEach((item) => {
+      if (item.holder === previousName) item.holder = employee.name;
+    });
+    state.hris.competencies.forEach((item) => {
+      if (item.employee === previousName) item.employee = employee.name;
+    });
+    state.hris.documents.forEach((item) => {
+      if (item.employee === previousName) item.employee = employee.name;
+    });
+  }
+
+  refreshHrisMetrics();
+  return employee;
+}
+
+function deleteHrisEmployee(employeeId) {
+  const index = state.hris.employees.findIndex((item) => String(item.id) === String(employeeId));
+  if (index === -1) {
+    return null;
+  }
+
+  const [employee] = state.hris.employees.splice(index, 1);
+  state.hris.positions = state.hris.positions.filter((item) => item.holder !== employee.name);
+  state.hris.competencies = state.hris.competencies.filter((item) => item.employee !== employee.name);
+  state.hris.documents = state.hris.documents.filter((item) => item.employee !== employee.name);
+  refreshHrisMetrics();
+  return employee;
+}
+
+function addHrisPosition(data) {
+  const item = {
+    id: `POS-${Date.now()}`,
+    title: data.title || "Jabatan Baru",
+    unit: data.unit || "Unit Kerja",
+    holder: data.holder || "Belum ditetapkan",
+    period: data.period || String(new Date().getFullYear()),
+    status: data.status || "Aktif",
+  };
+
+  state.hris.positions.unshift(item);
+  return item;
+}
+
+function updateHrisPosition(positionId, data) {
+  const position = state.hris.positions.find((item) => String(item.id) === String(positionId));
+  if (!position) {
+    return null;
+  }
+
+  Object.assign(position, {
+    title: data.title || position.title,
+    unit: data.unit || position.unit,
+    holder: data.holder || position.holder,
+    period: data.period || position.period,
+    status: data.status || position.status,
+  });
+  return position;
+}
+
+function deleteHrisPosition(positionId) {
+  const index = state.hris.positions.findIndex((item) => String(item.id) === String(positionId));
+  if (index === -1) {
+    return null;
+  }
+
+  const [position] = state.hris.positions.splice(index, 1);
+  return position;
+}
+
+function addHrisCompetency(data) {
+  const item = {
+    id: `CMP-${Date.now()}`,
+    employee: data.employee || "Pegawai",
+    category: data.category || "Kompetensi",
+    name: data.name || "Kompetensi Baru",
+    year: Number(data.year || new Date().getFullYear()),
+    status: data.status || "Tervalidasi",
+  };
+
+  state.hris.competencies.unshift(item);
+  refreshHrisMetrics();
+  return item;
+}
+
+function updateHrisCompetency(competencyId, data) {
+  const competency = state.hris.competencies.find((item) => String(item.id) === String(competencyId));
+  if (!competency) {
+    return null;
+  }
+
+  Object.assign(competency, {
+    employee: data.employee || competency.employee,
+    category: data.category || competency.category,
+    name: data.name || competency.name,
+    year: Number(data.year || competency.year),
+    status: data.status || competency.status,
+  });
+  refreshHrisMetrics();
+  return competency;
+}
+
+function deleteHrisCompetency(competencyId) {
+  const index = state.hris.competencies.findIndex((item) => String(item.id) === String(competencyId));
+  if (index === -1) {
+    return null;
+  }
+
+  const [competency] = state.hris.competencies.splice(index, 1);
+  refreshHrisMetrics();
+  return competency;
+}
+
+function addHrisDocument(data) {
+  const item = {
+    id: `DOC-HR-${Date.now()}`,
+    employee: data.employee || "Pegawai",
+    type: data.type || "Dokumen SDM",
+    title: data.title || "Dokumen Baru",
+    status: data.status || "Valid",
+    fileName: data.fileName || data.file_name || null,
+    filePath: data.filePath || data.file_path || null,
+    fileSize: Number(data.fileSize || data.file_size || 0),
+  };
+
+  state.hris.documents.unshift(item);
+  return item;
+}
+
+function updateHrisDocument(documentId, data) {
+  const document = state.hris.documents.find((item) => String(item.id) === String(documentId));
+  if (!document) {
+    return null;
+  }
+
+  Object.assign(document, {
+    employee: data.employee || document.employee,
+    type: data.type || document.type,
+    title: data.title || document.title,
+    status: data.status || document.status,
+    fileName: data.fileName || data.file_name || document.fileName || null,
+    filePath: data.filePath || data.file_path || document.filePath || null,
+    fileSize: Number(data.fileSize || data.file_size || document.fileSize || 0),
+  });
+  return document;
+}
+
+function deleteHrisDocument(documentId) {
+  const index = state.hris.documents.findIndex((item) => String(item.id) === String(documentId));
+  if (index === -1) {
+    return null;
+  }
+
+  const [document] = state.hris.documents.splice(index, 1);
+  return document;
+}
+
 module.exports = {
   state,
   getCatalogSnapshot,
   getDashboardSummary,
+  getHrisSummary,
+  getHrisEmployeeProfile,
   addStandard,
   addDocument,
   addFinding,
@@ -404,4 +647,16 @@ module.exports = {
   addIndicatorValue,
   addSurvey,
   addImport,
+  addHrisEmployee,
+  updateHrisEmployee,
+  deleteHrisEmployee,
+  addHrisPosition,
+  updateHrisPosition,
+  deleteHrisPosition,
+  addHrisCompetency,
+  updateHrisCompetency,
+  deleteHrisCompetency,
+  addHrisDocument,
+  updateHrisDocument,
+  deleteHrisDocument,
 };

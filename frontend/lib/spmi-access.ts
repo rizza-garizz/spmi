@@ -81,6 +81,7 @@ export const routeRules: RouteRule[] = [
   { path: "/organization", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
   { path: "/accreditation", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] },
   { path: "/integrations", roles: ["admin_lpm"] },
+  { path: "/hris", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
   { path: "/imports", roles: ["admin_lpm"] },
   { path: "/documents", roles: activeRoles },
   { path: "/ppepp", roles: activeRoles },

@@ -10,9 +10,17 @@ import { DataRefreshBridge } from "@/components/layout/data-refresh-bridge";
 import { TopbarSession } from "@/components/layout/topbar-session";
 import { ErrorBoundary } from "@/components/support/ErrorBoundary";
 
+type NavItem = {
+  href: string;
+  icon: string;
+  text: string;
+  roles: AppRole[];
+  children?: NavItem[];
+};
+
 const navSections: Array<{
   label: string;
-  items: Array<{ href: string; icon: string; text: string; roles: AppRole[] }>;
+  items: NavItem[];
 }> = [
   {
     label: "Strategic Dashboard",
@@ -52,6 +60,20 @@ const navSections: Array<{
   {
     label: "Pengaturan & Integrasi",
     items: [
+      {
+        href: "/hris",
+        icon: "la-id-card",
+        text: "HRIS / SDM",
+        roles: ["admin_lpm", "dekan", "wakil_dekan"],
+        children: [
+          { href: "/hris#hris-dashboard", icon: "la-chart-pie", text: "Ringkasan SDM", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
+          { href: "/hris#hris-pegawai", icon: "la-users", text: "Master Pegawai", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
+          { href: "/hris#hris-jabatan", icon: "la-user-shield", text: "Jabatan Aktif", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
+          { href: "/hris#hris-kompetensi", icon: "la-certificate", text: "Kompetensi", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
+          { href: "/hris#hris-dokumen", icon: "la-folder-open", text: "Dokumen SDM", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
+          { href: "/hris#hris-spmi", icon: "la-link", text: "Koneksi SPMI", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
+        ],
+      },
       { href: "/organization", icon: "la-sitemap", text: "Organization", roles: ["admin_lpm", "dekan", "wakil_dekan"] },
       { href: "/accreditation", icon: "la-graduation-cap", text: "Accreditation", roles: ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"] },
       { href: "/imports", icon: "la-upload", text: "Imports", roles: ["admin_lpm"] },
@@ -61,11 +83,16 @@ const navSections: Array<{
   },
 ];
 
+function getHrefPath(href: string) {
+  return href.split("#")[0];
+}
+
 export function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
   const isPublicReferencePage = pathname === "/access-info";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const roles = useCurrentRoles();
 
   if (isLoginPage || isPublicReferencePage) {
@@ -99,7 +126,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
             <nav className="navbar navbar-expand">
               <div className="collapse navbar-collapse justify-content-between">
                 <div className="header-left">
-                  <h3 style={{ margin: 0, paddingLeft: "15px" }}>SPMI Universitas Junrejo Nusantara</h3>
+                  <h3 style={{ margin: 0, paddingLeft: "15px" }}>SPMI Universitas Junrejo Indah</h3>
                 </div>
                 <ul className="navbar-nav header-right">
                   <TopbarSession />
@@ -113,7 +140,12 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
           <div className="dlabnav-scroll">
             <ul className="metismenu" id="menu">
               {navSections.map((section, sectionIndex) => {
-                const allowedItems = section.items.filter((item) => hasRoleAccess(item.roles, roles));
+                const allowedItems = section.items
+                  .map((item) => ({
+                    ...item,
+                    children: item.children?.filter((child) => hasRoleAccess(child.roles, roles)),
+                  }))
+                  .filter((item) => hasRoleAccess(item.roles, roles));
                 if (allowedItems.length === 0) {
                   return null;
                 }
@@ -122,14 +154,47 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
                   <li key={section.label}>
                     <span className={`nav-label ${sectionIndex === 0 ? "first" : ""}`}>{section.label}</span>
                     <ul className="spmi-nav-sublist">
-                      {allowedItems.map((item) => (
-                        <li key={item.href}>
-                          <a href={item.href}>
-                            <i className={`la ${item.icon}`}></i>
-                            <span className="nav-text">{item.text}</span>
-                          </a>
-                        </li>
-                      ))}
+                      {allowedItems.map((item) => {
+                        const hasChildren = Boolean(item.children?.length);
+                        const isActive = getHrefPath(item.href) === pathname;
+                        const isOpen = openMenus[item.href] ?? isActive;
+
+                        return (
+                          <li key={item.href} className={hasChildren ? "spmi-nav-has-children" : ""}>
+                            {hasChildren ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className={`spmi-nav-parent ${isActive ? "is-active" : ""}`}
+                                  aria-expanded={isOpen}
+                                  onClick={() => setOpenMenus((current) => ({ ...current, [item.href]: !isOpen }))}
+                                >
+                                  <i className={`la ${item.icon}`}></i>
+                                  <span className="nav-text">{item.text}</span>
+                                  <i className={`la la-angle-${isOpen ? "up" : "down"} spmi-nav-chevron`}></i>
+                                </button>
+                                {isOpen ? (
+                                  <ul className="spmi-nav-children">
+                                    {item.children?.map((child) => (
+                                      <li key={child.href}>
+                                        <a className="spmi-nav-child-link" href={child.href}>
+                                          <i className={`la ${child.icon}`}></i>
+                                          <span className="nav-text">{child.text}</span>
+                                        </a>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : null}
+                              </>
+                            ) : (
+                              <a className={isActive ? "is-active" : ""} href={item.href}>
+                                <i className={`la ${item.icon}`}></i>
+                                <span className="nav-text">{item.text}</span>
+                              </a>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </li>
                 );

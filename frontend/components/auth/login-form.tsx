@@ -15,14 +15,10 @@ import {
   BadgeCheck,
   Database,
 } from "lucide-react";
-import { fallbackSeedUsers } from "@/lib/spmi-catalog-data";
 import {
-  AUTH_SESSION_KEY,
   clientApiRequest,
   dispatchAppEvent,
-  LOCAL_USER_KEY,
   saveAuthSession,
-  saveLocalSession,
 } from "@/lib/spmi-session-client";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
@@ -51,13 +47,6 @@ export function LoginForm() {
       rememberMe: true,
     },
   });
-
-  const seedUsers = fallbackSeedUsers.length > 0 ? fallbackSeedUsers : [{
-    email: "admin@spmi.local",
-    password: "Password123!",
-    role: "admin",
-    name: "SPMI Admin",
-  }];
 
   async function finalizeLogin(email: string, name?: string) {
     setSubmitState("success");
@@ -123,47 +112,10 @@ export function LoginForm() {
       setSubmitMessage(failedPayload?.message || "Kredensial tidak valid atau akses ditolak.");
       return;
     } catch {
-      // Fall back to local session below when API is unavailable.
-    }
-
-    const matchedSeedUser = seedUsers.find(
-      (item) => item.email === normalizedUsername && item.password === normalizedPassword
-    );
-
-    if (!matchedSeedUser) {
       setSubmitState("error");
-      setSubmitMessage("API tidak terjangkau dan akun demo yang dimasukkan tidak cocok.");
+      setSubmitMessage("API tidak terjangkau. Login dibatalkan agar sesi tetap sinkron dengan backend.");
       return;
     }
-
-    const role = matchedSeedUser.role || "admin";
-
-    saveLocalSession({
-      user: {
-        name: matchedSeedUser.name || "Local User",
-        email: normalizedUsername,
-      },
-      roles: [role],
-      isLocal: true,
-    });
-    window.localStorage.setItem("spmi_token", `local-${role}`);
-    window.localStorage.setItem(
-      "spmi_user",
-      JSON.stringify({ name: matchedSeedUser.name || "Local User", email: normalizedUsername })
-    );
-    window.localStorage.removeItem(AUTH_SESSION_KEY);
-    window.localStorage.setItem(
-      LOCAL_USER_KEY,
-      JSON.stringify({
-        user: { name: matchedSeedUser.name || "Local User", email: normalizedUsername },
-        roles: [role],
-        isLocal: true,
-      })
-    );
-    dispatchAppEvent("spmi-session-changed");
-    dispatchAppEvent("spmi-data-changed");
-
-    await finalizeLogin(normalizedUsername, matchedSeedUser.name);
   });
 
   return (
@@ -172,7 +124,7 @@ export function LoginForm() {
         <div className="spmi-login-brand-mark" aria-hidden="true">
           <ShieldCheck size={20} strokeWidth={2} />
         </div>
-        <span>SPMI Universitas Junrejo Nusantara</span>
+        <span>SPMI Universitas Junrejo Indah</span>
       </div>
 
       <header className="spmi-login-header">

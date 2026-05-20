@@ -12,7 +12,7 @@ export async function IntegrationsPage() {
           <span className="eyebrow">Support</span>
           <h1>Integrasi Sistem</h1>
           <p className="hero-copy">
-            Peta koneksi sumber data yang akan menyuplai indikator, role, dan bukti mutu Universitas Junrejo Nusantara.
+            Peta koneksi sumber data yang akan menyuplai indikator, role, dan bukti mutu Universitas Junrejo Indah.
           </p>
         </div>
       </section>

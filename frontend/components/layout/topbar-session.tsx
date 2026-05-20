@@ -110,7 +110,7 @@ export function TopbarSession() {
           <p className="fs-12 mb-0">{user?.email || "Belum Login"}</p>
           <small className="header-role-copy">{roleLabel}</small>
         </div>
-        <img src="/envato/images/profile/17.jpg" width="20" alt="" />
+        <img src="/envato/images/user.jpg" width="20" alt="" />
       </button>
       <div
         className={`dropdown-menu dropdown-menu-end ${open ? "show" : ""}`}

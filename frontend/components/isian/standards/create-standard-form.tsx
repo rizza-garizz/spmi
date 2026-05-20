@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { fallbackStandardCategories, fallbackStandards } from "@/lib/spmi-catalog-data";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
 
 type StandardPreviewItem = {
@@ -12,9 +11,20 @@ type StandardPreviewItem = {
   description: string;
 };
 
-export function CreateStandardForm() {
+type StandardCategory = {
+  key: string;
+  label: string;
+};
+
+export function CreateStandardForm({
+  initialItems,
+  categories,
+}: {
+  initialItems: StandardPreviewItem[];
+  categories: StandardCategory[];
+}) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState<StandardPreviewItem[]>(fallbackStandards);
+  const [items, setItems] = useState<StandardPreviewItem[]>(initialItems);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,15 +57,23 @@ export function CreateStandardForm() {
             title?: string;
             category?: string;
             description?: string;
+            data?: {
+              id?: number;
+              code?: string;
+              title?: string;
+              category?: string;
+              description?: string;
+            };
           };
+          const item = created.data ?? created;
 
           setItems((current) => [
             {
-              id: created.id ?? Date.now(),
-              code: created.code ?? code,
-              title: created.title ?? title,
-              category: created.category ?? category,
-              description: created.description ?? description,
+              id: item.id ?? Date.now(),
+              code: item.code ?? code,
+              title: item.title ?? title,
+              category: item.category ?? category,
+              description: item.description ?? description,
             },
             ...current,
           ]);
@@ -64,18 +82,9 @@ export function CreateStandardForm() {
           event.currentTarget.reset();
           return;
         }
-      } catch {
-        // Fall back to local cache.
-      }
+      } catch {}
     }
-
-    setItems((current) => [
-      { id: Date.now(), code, title, category, description },
-      ...current,
-    ]);
-    setMessage("Standar disimpan ke cache lokal.");
-    dispatchAppEvent("spmi-data-changed");
-    event.currentTarget.reset();
+    setMessage("Gagal menyimpan ke backend. Data tidak ditulis agar tetap sinkron.");
   }
 
   return (
@@ -92,7 +101,7 @@ export function CreateStandardForm() {
       <div className="field">
         <label htmlFor="category">Kategori</label>
         <select id="category" name="category" className="form-select">
-          {fallbackStandardCategories.map((category) => (
+          {categories.map((category) => (
             <option key={category.key} value={category.key}>
               {category.label}
             </option>

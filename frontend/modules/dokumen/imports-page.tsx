@@ -1,11 +1,12 @@
 import { CreateImportForm } from "@/components/isian/imports/create-import-form";
 import { AoaMigrationForm } from "@/components/isian/imports/aoa-migration-form";
-import { getDashboardSummary, getImports } from "@/lib/spmi-catalog-api";
+import { getCatalogSnapshot, getDashboardSummary, getImports } from "@/lib/spmi-catalog-api";
 import { NilaiCardGrid } from "@/components/nilai/core";
 
 export default async function ImportsPage() {
   let summary = { metrics: [] as Array<{ label: string; value: number }> };
   let imports = { data: [] as Array<{ id: number; type: string; title: string; status: string }> };
+  const catalog = await getCatalogSnapshot();
 
   try {
     summary = await getDashboardSummary();
@@ -35,7 +36,7 @@ export default async function ImportsPage() {
           </div>
           <div className="section-tag">Data ingest</div>
         </div>
-        <CreateImportForm />
+        <CreateImportForm initialItems={imports.data} importTypes={catalog.importTypes} />
       </section>
 
       <section className="section">

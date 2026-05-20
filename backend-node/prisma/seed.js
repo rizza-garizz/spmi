@@ -7,7 +7,7 @@ async function main() {
   const institution = await prisma.institution.upsert({
     where: { code: "DEFAULT" },
     update: {
-      name: "Universitas Junrejo Nusantara",
+      name: "Universitas Junrejo Indah",
       systemName: "SPMI Command Center",
       academicYear: "2026/2027",
       configuration: {
@@ -18,7 +18,7 @@ async function main() {
     create: {
       id: "inst-default",
       code: "DEFAULT",
-      name: "Universitas Junrejo Nusantara",
+      name: "Universitas Junrejo Indah",
       systemName: "SPMI Command Center",
       academicYear: "2026/2027",
       configuration: {
@@ -267,7 +267,7 @@ async function main() {
     update: {},
     create: {
       institutionId: institution.id,
-      institutionName: "Universitas Junrejo Nusantara",
+      institutionName: "Universitas Junrejo Indah",
       academicYear: "2026/2027",
       systemName: "SPMI Command Center",
       configuration: {

@@ -1,9 +1,10 @@
-import { getSurveys } from "@/lib/spmi-catalog-api";
+import { getCatalogSnapshot, getSurveys } from "@/lib/spmi-catalog-api";
 import { CreateSurveyForm } from "@/components/isian/surveys/create-survey-form";
 import { NilaiCardGrid } from "@/components/nilai/core";
 
 export default async function SurveysPage() {
   let surveys: any[] = [];
+  const catalog = await getCatalogSnapshot();
   try {
     surveys = (await getSurveys()).data;
   } catch {
@@ -46,7 +47,7 @@ export default async function SurveysPage() {
             <p>Input baru bisa ditambahkan tanpa mengubah pola tampilan yang sudah seragam.</p>
           </div>
         </div>
-        <CreateSurveyForm />
+        <CreateSurveyForm initialItems={surveys} surveyTargets={catalog.surveyTargets} />
       </section>
     </main>
   );

@@ -182,7 +182,14 @@
     { "key": "siakad", "domain": "xd.ingenio.id", "status": "discovery" },
     { "key": "hris", "domain": "HRIS / SDM", "status": "planned" },
     { "key": "research", "domain": "Riset & Pengabdian", "status": "planned" },
-    { "key": "studentdesk", "domain": "Layanan Mahasiswa", "status": "planned" }
+    { "key": "studentdesk", "domain": "Layanan Mahasiswa", "status": "planned" },
+    { "key": "finance", "domain": "Keuangan", "status": "planned" },
+    { "key": "facilities", "domain": "Sarpras / Aset", "status": "planned" },
+    { "key": "library", "domain": "Perpustakaan / Repository", "status": "planned" },
+    { "key": "tracer", "domain": "Tracer Study & Alumni", "status": "planned" },
+    { "key": "lms", "domain": "LMS / E-learning", "status": "planned" },
+    { "key": "legaldocs", "domain": "Dokumen / Arsip Legal", "status": "planned" },
+    { "key": "admission", "domain": "PMB / Admisi", "status": "planned" }
   ],
   "siakadIntegrationMap": [
     {
@@ -234,28 +241,136 @@
       "spmiUse": "Evaluasi standar pembelajaran, indikator akademik, dan bukti PPEPP."
     },
     {
+      "key": "perkuliahan-kurikulum",
+      "source": "Perkuliahan > Data Kurikulum",
+      "siakadData": "Tahun kurikulum, mata kuliah, kurikulum prodi, skala nilai, komposisi nilai, predikat kelulusan, aturan evaluasi, ekuivalensi mata kuliah, kurikulum konsentrasi, prasyarat mata kuliah, dan grup MK wajib-pilihan.",
+      "spmiUse": "Audit kesesuaian kurikulum, evaluasi standar pendidikan, bukti review kurikulum, dan dasar indikator mutu pembelajaran."
+    },
+    {
+      "key": "perkuliahan-kelas",
+      "source": "Perkuliahan > Data Kelas",
+      "siakadData": "Tahun ajaran, kelas kuliah, detail kelas, dosen pengajar, jadwal perkuliahan, peserta kelas, presensi kelas, nilai perkuliahan, jadwal dan presensi, serta pemutihan nilai.",
+      "spmiUse": "Indikator proses pembelajaran, kepatuhan pelaksanaan kelas, evaluasi beban mengajar, monitoring kehadiran, dan bukti pelaksanaan standar pendidikan."
+    },
+    {
+      "key": "perkuliahan-administrasi",
+      "source": "Perkuliahan > Administrasi",
+      "siakadData": "Status semester, pembimbing akademik, transfer mahasiswa, evaluasi mahasiswa, konversi nilai, paket kuliah, dan sunting KRS.",
+      "spmiUse": "Monitoring keberlanjutan studi, layanan akademik, efektivitas pembimbingan, kepatuhan KRS, mobilitas mahasiswa, dan dasar indikator retensi serta kemajuan studi."
+    },
+    {
       "key": "perkuliahan-tugas-akhir",
       "source": "Perkuliahan > Proposal Tugas Akhir",
-      "siakadData": "Proses proposal dan progres tugas akhir mahasiswa.",
-      "spmiUse": "Indikator kelulusan, masa studi, dan evaluasi efektivitas bimbingan."
+      "siakadData": "Tahap proposal, syarat ujian, unsur nilai, daftar proposal, dan detail proposal tugas akhir mahasiswa.",
+      "spmiUse": "Monitoring kesiapan tugas akhir, evaluasi mutu pembimbingan, keterlacakan penilaian, indikator masa studi, dan bukti proses kelulusan."
     },
     {
       "key": "perkuliahan-kegiatan",
-      "source": "Perkuliahan > Kegiatan Pendukung / Kuesioner",
-      "siakadData": "Kegiatan pendukung pembelajaran dan instrumen umpan balik akademik.",
-      "spmiUse": "Bukti implementasi, survei pembelajaran, dan evaluasi kepuasan akademik."
+      "source": "Perkuliahan > Kegiatan Pendukung",
+      "siakadData": "Daftar kegiatan, peserta, pembimbing, rincian kegiatan, serta nilai atau konversi kegiatan pendukung.",
+      "spmiUse": "Bukti implementasi pembelajaran, rekognisi aktivitas non-kelas, dan evaluasi capaian kegiatan."
+    },
+    {
+      "key": "perkuliahan-kuesioner",
+      "source": "Perkuliahan > Kuesioner",
+      "siakadData": "Daftar pertanyaan dan daftar jawaban kuesioner akademik.",
+      "spmiUse": "Evaluasi kepuasan pembelajaran, umpan balik mahasiswa, pemantauan mutu layanan akademik, dan bahan evaluasi PPEPP."
     },
     {
       "key": "perkuliahan-lifecycle",
-      "source": "Perkuliahan > Berhenti Studi / Yudisium / Wisuda",
-      "siakadData": "Status akhir perjalanan studi mahasiswa.",
-      "spmiUse": "Indikator retensi, kelulusan, outcome lulusan, dan bukti akreditasi."
+      "source": "Perkuliahan > Berhenti Studi",
+      "siakadData": "Pengajuan cuti dan status berhenti studi mahasiswa.",
+      "spmiUse": "Indikator retensi, monitoring mahasiswa nonaktif, evaluasi layanan akademik, dan bahan pengendalian risiko putus studi."
+    },
+    {
+      "key": "perkuliahan-yudisium",
+      "source": "Perkuliahan > Data Yudisium",
+      "siakadData": "Periode yudisium, syarat yudisium, eligible yudisium, tambah peserta, dan daftar yudisium.",
+      "spmiUse": "Monitoring kesiapan kelulusan, validasi persyaratan akhir studi, ketepatan proses akademik, dan bukti kelulusan."
+    },
+    {
+      "key": "perkuliahan-wisuda",
+      "source": "Perkuliahan > Data Wisuda",
+      "siakadData": "Periode wisuda dan peserta wisuda.",
+      "spmiUse": "Indikator kelulusan, ketepatan penyelesaian studi, outcome lulusan, dan bukti akreditasi."
     },
     {
       "key": "kampus-merdeka",
       "source": "Kampus Merdeka",
       "siakadData": "Aktivitas MBKM dan nilai konversi mahasiswa.",
       "spmiUse": "Indikator IKU, evaluasi pembelajaran, dan kesiapan akreditasi."
+    },
+    {
+      "key": "kampus-merdeka-kelas",
+      "source": "Kampus Merdeka > Kelas Kuliah",
+      "siakadData": "Daftar kelas MBKM, tambah kelas MBKM, dosen pengajar, jadwal dan presensi, peserta dan nilai, serta mapping kelas reguler.",
+      "spmiUse": "Monitoring pelaksanaan MBKM, rekognisi pembelajaran, evaluasi pengajaran, konversi kelas reguler, dan indikator IKU kampus merdeka."
+    },
+    {
+      "key": "kampus-merdeka-mahasiswa",
+      "source": "Kampus Merdeka > Mahasiswa",
+      "siakadData": "Data mahasiswa eksternal, detail mahasiswa MBKM, dan peserta kelas eksternal.",
+      "spmiUse": "Monitoring mobilitas mahasiswa, validasi peserta MBKM inbound/outbound, rekognisi pembelajaran eksternal, dan bukti capaian IKU."
+    },
+    {
+      "key": "kampus-merdeka-aktivitas",
+      "source": "Kampus Merdeka > Aktivitas MBKM",
+      "siakadData": "Kegiatan MBKM, peserta, dan pembimbing.",
+      "spmiUse": "Bukti pelaksanaan aktivitas MBKM, monitoring pendampingan, evaluasi partisipasi mahasiswa, dan capaian pembelajaran luar kampus."
+    },
+    {
+      "key": "kampus-merdeka-konversi",
+      "source": "Kampus Merdeka > Konversi Nilai",
+      "siakadData": "Nilai konversi MBKM, tampilan di transkrip, dan SKPI.",
+      "spmiUse": "Rekognisi hasil belajar MBKM, validasi konversi nilai, bukti capaian pembelajaran, dan integrasi luaran ke transkrip serta SKPI."
+    },
+    {
+      "key": "data-pelengkap-perguruan-tinggi",
+      "source": "Data Pelengkap > Perguruan Tinggi",
+      "siakadData": "Data perguruan tinggi, fakultas, program studi, detail program studi, konsentrasi, kegiatan akademik, kalender akademik, serta data unit atau jabatan struktural.",
+      "spmiUse": "Master referensi institusi, struktur unit mutu, cakupan prodi, kalender PPEPP, sinkronisasi jabatan, dan dasar pelaporan akreditasi."
+    },
+    {
+      "key": "data-pelengkap-mahasiswa",
+      "source": "Data Pelengkap > Mahasiswa",
+      "siakadData": "Status mahasiswa dan data diajukan mahasiswa.",
+      "spmiUse": "Referensi status akademik, validasi data mahasiswa, monitoring mahasiswa aktif/nonaktif, dan dasar indikator retensi."
+    },
+    {
+      "key": "data-pelengkap-perkuliahan",
+      "source": "Data Pelengkap > Perkuliahan",
+      "siakadData": "Grup mata kuliah wajib pilihan, unsur nilai, dan kelompok unsur nilai.",
+      "spmiUse": "Referensi kurikulum, komponen penilaian, konsistensi instrumen evaluasi, dan dasar audit standar pembelajaran."
+    },
+    {
+      "key": "data-pelengkap-pegawai",
+      "source": "Data Pelengkap > Pegawai",
+      "siakadData": "Jenis honor dan tarif honor pegawai.",
+      "spmiUse": "Referensi tata kelola SDM, transparansi pembiayaan akademik, evaluasi beban kegiatan, dan dukungan standar sumber daya."
+    },
+    {
+      "key": "data-pelengkap-template-laporan",
+      "source": "Data Pelengkap > Template Laporan",
+      "siakadData": "Surat keterangan aktif, header, kalimat pembuka, dan kalimat penutup laporan.",
+      "spmiUse": "Standarisasi format dokumen, konsistensi bukti administrasi, dukungan pelaporan mutu, dan arsip eviden akreditasi."
+    },
+    {
+      "key": "kemahasiswaan-aktivitas",
+      "source": "Kemahasiswaan > Aktivitas",
+      "siakadData": "Kelompok aktivitas, peringkat aktivitas, aktivitas dan prestasi, validasi aktivitas, serta tampilan aktivitas di SKPI.",
+      "spmiUse": "Indikator partisipasi mahasiswa, bukti capaian non-akademik, validasi prestasi, penguatan SKPI, dan bahan akreditasi bidang kemahasiswaan."
+    },
+    {
+      "key": "kemahasiswaan-skpi",
+      "source": "Kemahasiswaan > SKPI",
+      "siakadData": "SKPI mahasiswa dan informasi tambahan pendamping ijazah.",
+      "spmiUse": "Bukti capaian lulusan, rekam kompetensi tambahan, outcome mahasiswa, dan dokumen pendukung akreditasi."
+    },
+    {
+      "key": "kemahasiswaan-prestasi",
+      "source": "Kemahasiswaan > Prestasi",
+      "siakadData": "Daftar prestasi dan validasi prestasi mahasiswa.",
+      "spmiUse": "Indikator prestasi mahasiswa, bukti daya saing, validasi luaran non-akademik, dan bahan akreditasi kemahasiswaan."
     }
   ],
   "imports": [
@@ -458,6 +573,89 @@
       "role": "unit_kerja"
     }
   ],
+  "hris": {
+    "metrics": [
+      { "label": "Total Pegawai", "value": 128 },
+      { "label": "Dosen Aktif", "value": 84 },
+      { "label": "Tendik Aktif", "value": 36 },
+      { "label": "Sertifikasi Dosen", "value": 52 }
+    ],
+    "employees": [
+      {
+        "id": "EMP-001",
+        "name": "Dr. Anindya Pratama",
+        "employeeNumber": "198706122019031001",
+        "nidn": "0712068701",
+        "type": "Dosen dengan Tugas Tambahan",
+        "status": "Aktif",
+        "unit": "Program Studi Sistem Informasi",
+        "position": "Kaprodi",
+        "functionalPosition": "Lektor",
+        "education": "S3 Sistem Informasi",
+        "email": "anindya@junrejoindah.ac.id"
+      },
+      {
+        "id": "EMP-002",
+        "name": "Maya Saraswati, M.Kom.",
+        "employeeNumber": "199104082020032002",
+        "nidn": "0708049102",
+        "type": "Dosen dengan Tugas Tambahan",
+        "status": "Aktif",
+        "unit": "Fakultas Ilmu Komputer",
+        "position": "Dosen Tetap",
+        "functionalPosition": "Asisten Ahli",
+        "education": "S2 Informatika",
+        "email": "maya@junrejoindah.ac.id"
+      },
+      {
+        "id": "EMP-003",
+        "name": "Bagas Mahendra",
+        "employeeNumber": "HR-2021-014",
+        "nidn": "-",
+        "type": "Tendik",
+        "status": "Aktif",
+        "unit": "Biro SDM",
+        "position": "Staff SDM",
+        "functionalPosition": "-",
+        "education": "S1 Manajemen",
+        "email": "bagas@junrejoindah.ac.id"
+      },
+      {
+        "id": "EMP-004",
+        "name": "Prof. Lestari Wibowo",
+        "employeeNumber": "197912022010012001",
+        "nidn": "0702127901",
+        "type": "Dosen",
+        "status": "Aktif",
+        "unit": "Fakultas Ilmu Komputer",
+        "position": "Dekan",
+        "functionalPosition": "Guru Besar",
+        "education": "S3 Ilmu Komputer",
+        "email": "lestari@junrejoindah.ac.id"
+      }
+    ],
+    "positions": [
+      { "title": "Dekan", "unit": "Fakultas Ilmu Komputer", "holder": "Prof. Lestari Wibowo", "period": "2025-2029", "status": "Aktif" },
+      { "title": "Kaprodi", "unit": "Program Studi Sistem Informasi", "holder": "Dr. Anindya Pratama", "period": "2025-2029", "status": "Aktif" },
+      { "title": "Staff SDM", "unit": "Biro SDM", "holder": "Bagas Mahendra", "period": "2026", "status": "Aktif" }
+    ],
+    "competencies": [
+      { "employee": "Dr. Anindya Pratama", "category": "Sertifikasi", "name": "Sertifikasi Pendidik", "year": 2024, "status": "Tervalidasi" },
+      { "employee": "Maya Saraswati, M.Kom.", "category": "Pelatihan", "name": "Outcome Based Education", "year": 2026, "status": "Tervalidasi" },
+      { "employee": "Prof. Lestari Wibowo", "category": "Kompetensi", "name": "Asesor Akreditasi Internal", "year": 2025, "status": "Tervalidasi" }
+    ],
+    "documents": [
+      { "employee": "Dr. Anindya Pratama", "type": "SK Jabatan", "title": "SK Kaprodi Sistem Informasi", "status": "Valid" },
+      { "employee": "Maya Saraswati, M.Kom.", "type": "Sertifikat", "title": "Sertifikat Pendidik", "status": "Perlu Review" },
+      { "employee": "Bagas Mahendra", "type": "SK Pengangkatan", "title": "SK Staff SDM", "status": "Valid" }
+    ],
+    "spmiLinks": [
+      "Rasio dosen-mahasiswa dan kecukupan dosen per prodi.",
+      "Validasi jabatan struktural untuk role Dekan, Kaprodi, dan Sekprodi.",
+      "Eviden sertifikasi, pendidikan terakhir, dan kompetensi dosen.",
+      "Daftar auditor internal berbasis pegawai aktif dan kompetensi."
+    ]
+  },
   "faculties": [
     {
       "code": "FB",
@@ -575,15 +773,15 @@
   "news": [
     {
       "id": 1,
-      "title": "Universitas Malang Mengadakan Penguatan SPMI Menuju PTS Berkualitas",
+      "title": "Universitas Junrejo Indah Mengadakan Penguatan SPMI Menuju PTS Berkualitas",
       "date": "2026-02-09",
       "category": "Penjaminan Mutu",
-      "excerpt": "Kegiatan penguatan SPMI sesuai Permendikti Saintek No. 39/2025, menghadirkan narasumber Prof. Zainal Arifin Hasibuan dari IPB.",
+      "excerpt": "Kegiatan penguatan SPMI sesuai Permendikti Saintek No. 39/2025 untuk memperkuat budaya mutu Universitas Junrejo Indah.",
       "author": "Admin SPMI"
     },
     {
       "id": 2,
-      "title": "UKWMS Sukses Laksanakan Benchmarking SPMI dengan Universitas Malang",
+      "title": "Universitas Junrejo Indah Sukses Laksanakan Benchmarking SPMI Internal",
       "date": "2025-08-22",
       "category": "Benchmarking",
       "excerpt": "Pertukaran pengalaman strategi budaya mutu, mekanisme audit internal, dan inovasi pengelolaan mutu berkelanjutan.",

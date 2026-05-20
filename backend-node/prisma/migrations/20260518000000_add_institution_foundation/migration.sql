@@ -17,7 +17,7 @@ INSERT INTO "Institution" ("id", "code", "name", "systemName", "academicYear", "
 VALUES (
     'inst-default',
     'DEFAULT',
-    'Universitas Junrejo Nusantara',
+    'Universitas Junrejo Indah',
     'SPMI Command Center',
     '2026/2027',
     '{"locale":"id-ID","timezone":"Asia/Jakarta"}',

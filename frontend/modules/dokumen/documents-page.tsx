@@ -30,6 +30,7 @@ export function DocumentsPage() {
   const roles = useCurrentRoles();
   const canUpload = hasRoleAccess(["admin_lpm", "kaprodi", "sekprodi", "unit_kerja"], roles);
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<Array<{ value: string; label: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -54,8 +55,20 @@ export function DocumentsPage() {
     }
   };
 
+  const fetchCatalog = async () => {
+    try {
+      const res = await clientApiRequest("/catalog");
+      const json = await res.json();
+      const catalog = parseApiPayload(json, { documentTypes: [] as Array<{ value: string; label: string }> });
+      setDocumentTypes(catalog.documentTypes ?? []);
+    } catch (err) {
+      console.error("Gagal memuat katalog dokumen", err);
+    }
+  };
+
   useEffect(() => {
     fetchDocuments();
+    fetchCatalog();
   }, []);
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -149,13 +162,11 @@ export function DocumentsPage() {
                       className="form-control" 
                       value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})}
                     >
-                      <option value="kebijakan">Kebijakan</option>
-                      <option value="manual">Manual</option>
-                      <option value="standar">Standar</option>
-                      <option value="sop">SOP</option>
-                      <option value="laporan_ami">Laporan AMI</option>
-                      <option value="laporan_rtm">Laporan RTM</option>
-                      <option value="bukti">Bukti Pelaksanaan</option>
+                      {documentTypes.map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="form-group mb-3">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { fallbackRtmMeetings } from "@/lib/spmi-catalog-data";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
 
 type RtmPreviewItem = {
@@ -10,15 +9,9 @@ type RtmPreviewItem = {
   status: string;
 };
 
-export function CreateRtmMeetingForm() {
+export function CreateRtmMeetingForm({ initialItems }: { initialItems: RtmPreviewItem[] }) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState<RtmPreviewItem[]>(
-    fallbackRtmMeetings.map((item) => ({
-      id: item.id,
-      title: item.title ?? "RTM Lokal",
-      status: item.status ?? "draft",
-    }))
-  );
+  const [items, setItems] = useState<RtmPreviewItem[]>(initialItems);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -72,15 +65,9 @@ export function CreateRtmMeetingForm() {
           event.currentTarget.reset();
           return;
         }
-      } catch {
-        // Fall back to local cache.
-      }
+      } catch {}
     }
-
-    setItems((current) => [{ id: Date.now(), title, status }, ...current]);
-    setMessage("RTM disimpan ke cache lokal.");
-    dispatchAppEvent("spmi-data-changed");
-    event.currentTarget.reset();
+    setMessage("Gagal menyimpan ke backend. Data tidak ditulis agar tetap sinkron.");
   }
 
   return (

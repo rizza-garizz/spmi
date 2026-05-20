@@ -1,5 +1,4 @@
 import { getCatalogSnapshot, getDashboardSummary, getAmiAudits, getImports, getRtmMeetings, getSurveys } from "@/lib/spmi-catalog-api";
-import { fallbackDashboardModules, fallbackDocumentGroups, fallbackMetrics, fallbackPpeppSteps } from "@/lib/spmi-catalog-data";
 
 export async function NilaiPage() {
   const catalog = await getCatalogSnapshot();
@@ -34,8 +33,8 @@ export async function NilaiPage() {
     surveys = [];
   }
 
-  const quickStats = summary.metrics ?? fallbackMetrics;
-  const modules = summary.modules ?? fallbackDashboardModules;
+  const quickStats = summary.metrics ?? [];
+  const modules = summary.modules ?? [];
 
   return (
     <>
@@ -194,9 +193,7 @@ export async function NilaiPage() {
             </div>
             <div className="card-body">
               <div className="d-flex flex-wrap gap-2">
-                {(catalog.documentGroups.length > 0 ? catalog.documentGroups : fallbackDocumentGroups)
-                  .slice(0, 6)
-                  .map((item) => (
+                {catalog.documentGroups.slice(0, 6).map((item) => (
                     <span className="badge badge-outline-primary mb-2 me-2" key={item}>{item}</span>
                   ))}
               </div>
@@ -222,7 +219,7 @@ export async function NilaiPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(catalog.ppeppSteps.length > 0 ? catalog.ppeppSteps : fallbackPpeppSteps).map((step, index) => (
+                    {catalog.ppeppSteps.map((step, index) => (
                       <tr key={`${step.name}-${index}`}>
                         <td><strong>{step.name}</strong></td>
                         <td>{step.description}</td>

@@ -1,12 +1,19 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { fallbackSurveys, fallbackSurveyTargets } from "@/lib/spmi-catalog-data";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
 
-export function CreateSurveyForm() {
+type SurveyItem = { id: number | string; title: string; target: string };
+
+export function CreateSurveyForm({
+  initialItems,
+  surveyTargets,
+}: {
+  initialItems: SurveyItem[];
+  surveyTargets: Array<{ value: string; label: string }>;
+}) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState(fallbackSurveys);
+  const [items, setItems] = useState(initialItems);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,13 +44,19 @@ export function CreateSurveyForm() {
             id?: number;
             title?: string;
             target?: string;
+            data?: {
+              id?: number;
+              title?: string;
+              target?: string;
+            };
           };
+          const item = created.data ?? created;
 
           setItems((current) => [
             {
-              id: created.id ?? Date.now(),
-              title: created.title ?? title,
-              target: created.target ?? target,
+              id: item.id ?? Date.now(),
+              title: item.title ?? title,
+              target: item.target ?? target,
             },
             ...current,
           ]);
@@ -52,15 +65,9 @@ export function CreateSurveyForm() {
           event.currentTarget.reset();
           return;
         }
-      } catch {
-        // Fall back to local cache.
-      }
+      } catch {}
     }
-
-    setItems((current) => [{ id: Date.now(), title, target }, ...current]);
-    setMessage("Survei disimpan ke cache lokal.");
-    dispatchAppEvent("spmi-data-changed");
-    event.currentTarget.reset();
+    setMessage("Gagal menyimpan ke backend. Data tidak ditulis agar tetap sinkron.");
   }
 
   return (
@@ -73,7 +80,7 @@ export function CreateSurveyForm() {
       <div className="field">
         <label htmlFor="target">Target</label>
         <select id="target" name="target" className="form-select">
-          {fallbackSurveyTargets.map((item) => (
+          {surveyTargets.map((item) => (
             <option key={item.value} value={item.value}>
               {item.label}
             </option>

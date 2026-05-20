@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { RoleGate } from "@/components/auth/RoleGate";
 import { getDashboardSummary } from "@/lib/spmi-catalog-api";
-import { fallbackMetrics } from "@/lib/spmi-catalog-data";
 import { SimpleTrendChart } from "@/components/charts/SimpleTrendChart";
 import { RadarCriteriaChart } from "@/components/charts/RadarCriteriaChart";
 
@@ -14,7 +13,7 @@ const controlLinks = [
 
 export async function DashboardPage() {
   const summary = await getDashboardSummary();
-  const quickStats = summary.metrics ?? fallbackMetrics;
+  const quickStats = summary.metrics ?? [];
   const performanceItems = Array.isArray(summary.performance) ? summary.performance : [];
 
   return (
@@ -175,7 +174,7 @@ export async function DashboardPage() {
         <div className="col-xl-12 col-xxl-12 col-lg-12">
           <div className="card">
             <div className="card-header">
-              <h4 className="card-title">Monitoring Capaian IKU (Benchmark IPB)</h4>
+              <h4 className="card-title">Monitoring Capaian IKU Universitas Junrejo Indah</h4>
             </div>
             <div className="card-body">
               <div className="table-responsive">

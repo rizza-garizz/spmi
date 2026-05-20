@@ -1,7 +1,6 @@
 import { getCatalogSnapshot, getStandards } from "@/lib/spmi-catalog-api";
 import { CreateStandardForm } from "@/components/isian/standards/create-standard-form";
 import { RoleGate } from "@/components/auth/RoleGate";
-import { fallbackStandards } from "@/lib/spmi-catalog-data";
 
 export async function StandardsPage() {
   const catalog = await getCatalogSnapshot();
@@ -12,7 +11,7 @@ export async function StandardsPage() {
     standards = catalog.standards;
   }
 
-  const standardsData = standards.length > 0 ? standards : fallbackStandards;
+  const standardsData = standards;
 
   return (
     <>
@@ -103,7 +102,10 @@ export async function StandardsPage() {
                 <h4 className="card-title">Tambah Standar Baru</h4>
               </div>
               <div className="card-body">
-                <CreateStandardForm />
+                <CreateStandardForm
+                  initialItems={standardsData}
+                  categories={catalog.standardCategories}
+                />
               </div>
             </div>
           </div>

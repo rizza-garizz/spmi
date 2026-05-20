@@ -1,6 +1,6 @@
 const path = require("path");
 
-const catalog = require(path.resolve(__dirname, "../../../frontend/data/spmi-catalog.json"));
+const catalog = require(path.resolve(__dirname, "../../data/spmi-catalog.json"));
 
 const roleMap = {
   admin: "admin_lpm",

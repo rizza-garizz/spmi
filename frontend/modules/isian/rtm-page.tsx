@@ -47,7 +47,7 @@ export default async function RtmPage() {
             <p>Form ini dipakai untuk menyiapkan agenda rapat baru dan tindak lanjutnya.</p>
           </div>
         </div>
-        <CreateRtmMeetingForm />
+        <CreateRtmMeetingForm initialItems={meetings} />
       </section>
     </main>
   );

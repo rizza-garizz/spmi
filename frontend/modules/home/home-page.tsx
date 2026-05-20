@@ -16,7 +16,7 @@ export async function HomePage() {
       <div className="row page-titles mx-0">
         <div className="col-sm-6 p-md-0">
           <div className="welcome-text">
-            <h4>Selamat Datang di SPMI Universitas Junrejo Nusantara</h4>
+            <h4>Selamat Datang di SPMI Universitas Junrejo Indah</h4>
             <p className="mb-0">Pintu masuk utama untuk seluruh kegiatan kerja mutu harian.</p>
           </div>
         </div>

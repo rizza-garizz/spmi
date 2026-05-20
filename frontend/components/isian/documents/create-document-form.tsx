@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { fallbackDocumentTypes, fallbackDocuments } from "@/lib/spmi-catalog-data";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
 
 type DocumentPreviewItem = {
@@ -11,16 +10,15 @@ type DocumentPreviewItem = {
   status: string;
 };
 
-export function CreateDocumentForm() {
+export function CreateDocumentForm({
+  initialItems,
+  documentTypes,
+}: {
+  initialItems: DocumentPreviewItem[];
+  documentTypes: Array<{ value: string; label: string }>;
+}) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState<DocumentPreviewItem[]>(
-    fallbackDocuments.map((item) => ({
-      id: item.id,
-      title: item.title ?? "Dokumen Lokal",
-      type: item.type ?? "lainnya",
-      status: item.status ?? "draft",
-    }))
-  );
+  const [items, setItems] = useState<DocumentPreviewItem[]>(initialItems);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -70,18 +68,9 @@ export function CreateDocumentForm() {
           event.currentTarget.reset();
           return;
         }
-      } catch {
-        // Fall back to local cache.
-      }
+      } catch {}
     }
-
-    setItems((current) => [
-      { id: Date.now(), title, type, status: "draft" },
-      ...current,
-    ]);
-    setMessage("Dokumen disimpan ke cache lokal.");
-    dispatchAppEvent("spmi-data-changed");
-    event.currentTarget.reset();
+    setMessage("Gagal mengunggah ke backend. Data tidak ditulis agar tetap sinkron.");
   }
 
   return (
@@ -98,7 +87,7 @@ export function CreateDocumentForm() {
       <div className="field">
         <label htmlFor="type">Tipe</label>
         <select id="type" name="type" className="form-select">
-          {fallbackDocumentTypes.map((item) => (
+          {documentTypes.map((item) => (
             <option key={item.value} value={item.value}>
               {item.label}
             </option>

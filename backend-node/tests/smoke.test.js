@@ -440,6 +440,262 @@ test("POST /surveys allows auditor role", async () => {
   assert.equal(payload.data.title, "Survei Audit");
 });
 
+test("POST /hris resources creates position, competency, and document", async () => {
+  const token = await loginAs("admin@spmi.local");
+
+  const positionResponse = await fetch(`${baseUrl}/hris/positions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      title: "Kepala Biro SDM",
+      holder: "Bagas Mahendra",
+      unit: "Biro SDM",
+      period: "2026-2030",
+      status: "Aktif",
+    }),
+  });
+  const positionPayload = await positionResponse.json();
+
+  const competencyResponse = await fetch(`${baseUrl}/hris/competencies`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      employee: "Dr. Anindya Pratama",
+      category: "Sertifikasi",
+      name: "Sertifikasi Auditor Mutu Internal",
+      year: 2026,
+      status: "Tervalidasi",
+    }),
+  });
+  const competencyPayload = await competencyResponse.json();
+
+  const documentResponse = await fetch(`${baseUrl}/hris/documents`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      employee: "Dr. Anindya Pratama",
+      type: "SK Jabatan",
+      title: "SK Kaprodi Sistem Informasi",
+      status: "Valid",
+    }),
+  });
+  const documentPayload = await documentResponse.json();
+
+  assert.equal(positionResponse.status, 201);
+  assert.equal(positionPayload.success, true);
+  assert.equal(positionPayload.data.title, "Kepala Biro SDM");
+
+  assert.equal(competencyResponse.status, 201);
+  assert.equal(competencyPayload.success, true);
+  assert.equal(competencyPayload.data.name, "Sertifikasi Auditor Mutu Internal");
+
+  assert.equal(documentResponse.status, 201);
+  assert.equal(documentPayload.success, true);
+  assert.equal(documentPayload.data.title, "SK Kaprodi Sistem Informasi");
+});
+
+test("GET /hris/employees/:id returns related HRIS profile", async () => {
+  const response = await fetch(`${baseUrl}/hris/employees/EMP-001`);
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.success, true);
+  assert.equal(payload.data.employee.name, "Dr. Anindya Pratama");
+  assert.ok(payload.data.positions.length >= 1);
+  assert.ok(payload.data.competencies.length >= 1);
+  assert.ok(payload.data.documents.length >= 1);
+});
+
+test("PUT /hris resources updates HRIS records", async () => {
+  const token = await loginAs("admin@spmi.local");
+
+  const employeeResponse = await fetch(`${baseUrl}/hris/employees/EMP-003`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      name: "Bagas Mahendra",
+      employeeNumber: "HR-2021-014",
+      nidn: "-",
+      type: "Tendik",
+      status: "Cuti",
+      unit: "Biro SDM",
+      position: "Staff SDM",
+      functionalPosition: "-",
+      education: "S1 Manajemen",
+      email: "bagas@junrejoindah.ac.id",
+    }),
+  });
+  const employeePayload = await employeeResponse.json();
+
+  const positionResponse = await fetch(`${baseUrl}/hris/positions/POS-3`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      title: "Koordinator SDM",
+      holder: "Bagas Mahendra",
+      unit: "Biro SDM",
+      period: "2026",
+      status: "Aktif",
+    }),
+  });
+  const positionPayload = await positionResponse.json();
+
+  const competencyResponse = await fetch(`${baseUrl}/hris/competencies/CMP-1`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      employee: "Dr. Anindya Pratama",
+      category: "Sertifikasi",
+      name: "Sertifikasi Pendidik Nasional",
+      year: 2024,
+      status: "Tervalidasi",
+    }),
+  });
+  const competencyPayload = await competencyResponse.json();
+
+  const documentResponse = await fetch(`${baseUrl}/hris/documents/DOC-HR-2`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      employee: "Maya Saraswati, M.Kom.",
+      type: "Sertifikat",
+      title: "Sertifikat Pendidik",
+      status: "Valid",
+    }),
+  });
+  const documentPayload = await documentResponse.json();
+
+  assert.equal(employeeResponse.status, 200);
+  assert.equal(employeePayload.data.status, "Cuti");
+  assert.equal(positionResponse.status, 200);
+  assert.equal(positionPayload.data.title, "Koordinator SDM");
+  assert.equal(competencyResponse.status, 200);
+  assert.equal(competencyPayload.data.name, "Sertifikasi Pendidik Nasional");
+  assert.equal(documentResponse.status, 200);
+  assert.equal(documentPayload.data.status, "Valid");
+});
+
+test("HRIS documents support upload and HRIS records can be deleted", async () => {
+  const token = await loginAs("admin@spmi.local");
+
+  const documentForm = new FormData();
+  documentForm.append("employee", "Dr. Anindya Pratama");
+  documentForm.append("type", "SK Jabatan");
+  documentForm.append("title", "SK Penguji Mutu Internal");
+  documentForm.append("status", "Valid");
+  documentForm.append("file", new Blob(["mock pdf"], { type: "application/pdf" }), "sk-penguji.pdf");
+
+  const documentResponse = await fetch(`${baseUrl}/hris/documents`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: documentForm,
+  });
+  const documentPayload = await documentResponse.json();
+
+  assert.equal(documentResponse.status, 201);
+  assert.equal(documentPayload.success, true);
+  assert.equal(documentPayload.data.fileName, "sk-penguji.pdf");
+  assert.ok(documentPayload.data.filePath);
+
+  const positionResponse = await fetch(`${baseUrl}/hris/positions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      title: "Reviewer Dokumen Mutu",
+      holder: "Dr. Anindya Pratama",
+      unit: "LPM",
+      period: "2026",
+      status: "Aktif",
+    }),
+  });
+  const positionPayload = await positionResponse.json();
+
+  const competencyResponse = await fetch(`${baseUrl}/hris/competencies`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      employee: "Dr. Anindya Pratama",
+      category: "Pelatihan",
+      name: "Workshop Dokumen Mutu",
+      year: 2026,
+      status: "Tervalidasi",
+    }),
+  });
+  const competencyPayload = await competencyResponse.json();
+
+  const employeeResponse = await fetch(`${baseUrl}/hris/employees`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      name: "Pegawai Hapus HRIS",
+      employeeNumber: "HR-DEL-001",
+      nidn: "-",
+      type: "Tendik",
+      status: "Aktif",
+      unit: "Biro SDM",
+      position: "Staff Arsip",
+      functionalPosition: "-",
+      education: "S1",
+      email: "hapus.hris@junrejoindah.ac.id",
+    }),
+  });
+  const employeePayload = await employeeResponse.json();
+
+  const deleteDocument = await fetch(`${baseUrl}/hris/documents/${documentPayload.data.id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const deletePosition = await fetch(`${baseUrl}/hris/positions/${positionPayload.data.id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const deleteCompetency = await fetch(`${baseUrl}/hris/competencies/${competencyPayload.data.id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const deleteEmployee = await fetch(`${baseUrl}/hris/employees/${employeePayload.data.id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  assert.equal(deleteDocument.status, 200);
+  assert.equal(deletePosition.status, 200);
+  assert.equal(deleteCompetency.status, 200);
+  assert.equal(deleteEmployee.status, 200);
+});
+
 test("POST /imports allows admin role only", async () => {
   const adminToken = await loginAs("admin@spmi.local");
   const unitToken = await loginAs("unit@spmi.local");

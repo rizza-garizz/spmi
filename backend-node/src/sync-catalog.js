@@ -21,7 +21,7 @@ async function syncCatalog() {
     create: {
       id: "inst-default",
       code: "DEFAULT",
-      name: "Universitas Junrejo Nusantara",
+      name: "Universitas Junrejo Indah",
       systemName: "SPMI Command Center",
       academicYear: "2026/2027",
     },

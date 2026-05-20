@@ -2,6 +2,8 @@ const {
   state,
   getCatalogSnapshot,
   getDashboardSummary,
+  getHrisSummary,
+  getHrisEmployeeProfile,
   addStandard,
   addDocument,
   addFinding,
@@ -13,6 +15,18 @@ const {
   addIndicatorValue,
   addSurvey,
   addImport,
+  addHrisEmployee,
+  updateHrisEmployee,
+  deleteHrisEmployee,
+  addHrisPosition,
+  updateHrisPosition,
+  deleteHrisPosition,
+  addHrisCompetency,
+  updateHrisCompetency,
+  deleteHrisCompetency,
+  addHrisDocument,
+  updateHrisDocument,
+  deleteHrisDocument,
 } = require("../services/catalogStore");
 const { success, failure } = require("../utils/apiResponse");
 
@@ -155,6 +169,132 @@ function imports(_req, res) {
   return success(res, getCatalogSnapshot().imports, "Riwayat import");
 }
 
+function hris(_req, res) {
+  return success(res, getHrisSummary(), "Ringkasan HRIS");
+}
+
+function hrisEmployees(_req, res) {
+  return success(res, getHrisSummary().employees, "Daftar pegawai HRIS");
+}
+
+function hrisEmployeeProfile(req, res) {
+  const profile = getHrisEmployeeProfile(req.params.id);
+  if (!profile) {
+    return failure(res, "Pegawai HRIS tidak ditemukan.", 404);
+  }
+
+  return success(res, profile, "Profil pegawai HRIS");
+}
+
+function createHrisEmployee(req, res) {
+  return success(res, addHrisEmployee(req.body || {}), "Pegawai HRIS berhasil dibuat di mode lokal.", 201);
+}
+
+function updateHrisEmployeeRecord(req, res) {
+  const employee = updateHrisEmployee(req.params.id, req.body || {});
+  if (!employee) {
+    return failure(res, "Pegawai HRIS tidak ditemukan.", 404);
+  }
+
+  return success(res, employee, "Pegawai HRIS berhasil diperbarui di mode lokal.");
+}
+
+function deleteHrisEmployeeRecord(req, res) {
+  const employee = deleteHrisEmployee(req.params.id);
+  if (!employee) {
+    return failure(res, "Pegawai HRIS tidak ditemukan.", 404);
+  }
+
+  return success(res, employee, "Pegawai HRIS berhasil dihapus di mode lokal.");
+}
+
+function hrisPositions(_req, res) {
+  return success(res, getHrisSummary().positions, "Daftar jabatan HRIS");
+}
+
+function createHrisPosition(req, res) {
+  return success(res, addHrisPosition(req.body || {}), "Jabatan HRIS berhasil dibuat di mode lokal.", 201);
+}
+
+function updateHrisPositionRecord(req, res) {
+  const position = updateHrisPosition(req.params.id, req.body || {});
+  if (!position) {
+    return failure(res, "Jabatan HRIS tidak ditemukan.", 404);
+  }
+
+  return success(res, position, "Jabatan HRIS berhasil diperbarui di mode lokal.");
+}
+
+function deleteHrisPositionRecord(req, res) {
+  const position = deleteHrisPosition(req.params.id);
+  if (!position) {
+    return failure(res, "Jabatan HRIS tidak ditemukan.", 404);
+  }
+
+  return success(res, position, "Jabatan HRIS berhasil dihapus di mode lokal.");
+}
+
+function hrisCompetencies(_req, res) {
+  return success(res, getHrisSummary().competencies, "Daftar kompetensi HRIS");
+}
+
+function createHrisCompetency(req, res) {
+  return success(res, addHrisCompetency(req.body || {}), "Kompetensi HRIS berhasil dibuat di mode lokal.", 201);
+}
+
+function updateHrisCompetencyRecord(req, res) {
+  const competency = updateHrisCompetency(req.params.id, req.body || {});
+  if (!competency) {
+    return failure(res, "Kompetensi HRIS tidak ditemukan.", 404);
+  }
+
+  return success(res, competency, "Kompetensi HRIS berhasil diperbarui di mode lokal.");
+}
+
+function deleteHrisCompetencyRecord(req, res) {
+  const competency = deleteHrisCompetency(req.params.id);
+  if (!competency) {
+    return failure(res, "Kompetensi HRIS tidak ditemukan.", 404);
+  }
+
+  return success(res, competency, "Kompetensi HRIS berhasil dihapus di mode lokal.");
+}
+
+function hrisDocuments(_req, res) {
+  return success(res, getHrisSummary().documents, "Daftar dokumen HRIS");
+}
+
+function buildHrisDocumentPayload(req) {
+  return {
+    ...(req.body || {}),
+    fileName: req.file?.originalname || req.body?.fileName || req.body?.file_name || null,
+    filePath: req.file?.path || req.body?.filePath || req.body?.file_path || null,
+    fileSize: req.file?.size || req.body?.fileSize || req.body?.file_size || 0,
+  };
+}
+
+function createHrisDocument(req, res) {
+  return success(res, addHrisDocument(buildHrisDocumentPayload(req)), "Dokumen HRIS berhasil dibuat di mode lokal.", 201);
+}
+
+function updateHrisDocumentRecord(req, res) {
+  const document = updateHrisDocument(req.params.id, buildHrisDocumentPayload(req));
+  if (!document) {
+    return failure(res, "Dokumen HRIS tidak ditemukan.", 404);
+  }
+
+  return success(res, document, "Dokumen HRIS berhasil diperbarui di mode lokal.");
+}
+
+function deleteHrisDocumentRecord(req, res) {
+  const document = deleteHrisDocument(req.params.id);
+  if (!document) {
+    return failure(res, "Dokumen HRIS tidak ditemukan.", 404);
+  }
+
+  return success(res, document, "Dokumen HRIS berhasil dihapus di mode lokal.");
+}
+
 function surveys(_req, res) {
   return success(res, getCatalogSnapshot().surveys, "Daftar survei");
 }
@@ -198,6 +338,24 @@ module.exports = {
   orgUnits,
   integrations,
   imports,
+  hris,
+  hrisEmployees,
+  hrisEmployeeProfile,
+  createHrisEmployee,
+  updateHrisEmployeeRecord,
+  deleteHrisEmployeeRecord,
+  hrisPositions,
+  createHrisPosition,
+  updateHrisPositionRecord,
+  deleteHrisPositionRecord,
+  hrisCompetencies,
+  createHrisCompetency,
+  updateHrisCompetencyRecord,
+  deleteHrisCompetencyRecord,
+  hrisDocuments,
+  createHrisDocument,
+  updateHrisDocumentRecord,
+  deleteHrisDocumentRecord,
   surveys,
   createSurvey,
   createImport,

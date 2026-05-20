@@ -58,7 +58,7 @@ export default async function PpeppPage() {
             </div>
           }
         >
-          <CreatePpeppCycleForm />
+          <CreatePpeppCycleForm initialItems={cycles} />
         </RoleGate>
       </section>
     </main>
