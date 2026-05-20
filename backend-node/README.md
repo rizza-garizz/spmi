@@ -129,6 +129,11 @@ npm run dev
 - `POST /ppepp/cycles/:id/stages/:stage/evidence`
 - `GET/POST /ami/audits`
 - `POST /ami/audits/:id/findings`
+- `PATCH /ami/audits/:id/assignment`
+- `PATCH /ami/audits/:id/instruments/:instrumentId`
+- `PATCH /ami/audits/:id/findings/:findingId/follow-up`
+- `PATCH /ami/audits/:id/findings/:findingId/verification`
+- `GET /ami/audits/:id/summary`
 - `GET/POST /rtm/meetings`
 - `GET/POST /indicators`
 - `POST /indicators/:id/values`

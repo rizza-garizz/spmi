@@ -1,5 +1,6 @@
 import { getAmiAudits } from "@/lib/spmi-catalog-api";
 import { CreateAmiAuditForm } from "@/components/isian/ami/create-ami-audit-form";
+import { AmiAuditWorkflow } from "@/components/isian/ami/ami-audit-workflow";
 import { ProgressiveSection } from "@/components/support/progressive-section";
 
 export default async function AmiPage() {
@@ -11,15 +12,17 @@ export default async function AmiPage() {
   }
 
   const total = audits.length;
-  const selesai = audits.filter(a => a.status === "selesai").length;
-  const berjalan = audits.filter(a => a.status === "berjalan").length;
+  const selesai = audits.filter(a => a.status === "selesai" || a.status === "approved").length;
+  const berjalan = audits.filter(a => a.status === "berjalan" || a.status === "in_review").length;
   const terjadwal = audits.filter(a => a.status === "terjadwal").length;
+  const totalTemuan = audits.reduce((sum, audit) => sum + Number(audit.recap?.total_findings || audit.findings?.length || 0), 0);
 
   const stats = [
     { label: "Total Audit", value: total, icon: "la-check-circle", color: "bg-primary" },
     { label: "Selesai", value: selesai, icon: "la-check", color: "bg-success" },
     { label: "Sedang Berjalan", value: berjalan, icon: "la-refresh", color: "bg-warning" },
     { label: "Terjadwal", value: terjadwal, icon: "la-clock-o", color: "bg-info" },
+    { label: "Temuan", value: totalTemuan, icon: "la-flag", color: "bg-danger" },
   ];
 
   return (
@@ -82,25 +85,25 @@ export default async function AmiPage() {
                       <tr key={audit.id}>
                         <td>
                           <strong>{audit.org_unit.name}</strong>
-                          <p className="mb-0 text-muted" style={{ fontSize: "0.8rem" }}>Auditor: {audit.auditor} · {audit.scheduled_date}</p>
+                          <p className="mb-0 text-muted" style={{ fontSize: "0.8rem" }}>Auditor: {audit.auditor?.name || "-"} · {audit.scheduled_date || audit.audit_date || "-"}</p>
                         </td>
                         <td>
                           <span className={`badge badge-${audit.status === 'selesai' ? 'success' : audit.status === 'berjalan' ? 'warning' : 'info'}`}>
-                            {audit.status.toUpperCase()}
+                            {String(audit.status).toUpperCase()}
                           </span>
                         </td>
                         <td>
-                          {audit.findings ? (
+                          {audit.recap ? (
                             <div className="d-flex gap-2">
-                              <span className="badge badge-danger" title="Kritis">{audit.findings.kritis}</span>
-                              <span className="badge badge-warning text-white" title="Tinggi">{audit.findings.tinggi}</span>
-                              <span className="badge badge-info" title="Sedang">{audit.findings.sedang}</span>
-                              <span className="badge badge-light" title="Rendah">{audit.findings.rendah}</span>
+                              <span className="badge badge-warning text-white" title="Minor">{audit.recap.categories.minor}</span>
+                              <span className="badge badge-danger" title="Mayor">{audit.recap.categories.mayor}</span>
+                              <span className="badge badge-info" title="Observasi">{audit.recap.categories.observasi}</span>
+                              <span className="badge badge-success" title="Terverifikasi">{audit.recap.verified}</span>
                             </div>
                           ) : "-"}
                         </td>
                         <td>
-                          <h4 className="mb-0">{audit.score ? audit.score.toFixed(1) : "-"}</h4>
+                          <h4 className="mb-0">{audit.recap?.score ?? (audit.score ? audit.score.toFixed(1) : "-")}</h4>
                         </td>
                         <td>
                           <button className="btn btn-sm btn-primary">Detail</button>
@@ -110,6 +113,19 @@ export default async function AmiPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-xl-12 col-xxl-12 col-sm-12">
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title">Workflow AMI Lengkap</h4>
+            </div>
+            <div className="card-body">
+              <AmiAuditWorkflow audits={audits} />
             </div>
           </div>
         </div>

@@ -118,6 +118,145 @@ const PPEPP_STAGE_DEFINITIONS = [
   },
 ];
 
+const AMI_FINDING_CATEGORIES = {
+  minor: "Minor",
+  mayor: "Mayor",
+  major: "Mayor",
+  observasi: "Observasi",
+  observation: "Observasi",
+};
+
+const DEFAULT_AMI_INSTRUMENTS = [
+  {
+    id: "AMI-INS-01",
+    code: "STD-PEND-01",
+    title: "Kesesuaian standar pendidikan dan pembelajaran",
+    status: "not_checked",
+    score: null,
+    notes: "",
+  },
+  {
+    id: "AMI-INS-02",
+    code: "STD-TK-01",
+    title: "Kelengkapan tata kelola dan dokumen mutu",
+    status: "not_checked",
+    score: null,
+    notes: "",
+  },
+  {
+    id: "AMI-INS-03",
+    code: "STD-SDM-01",
+    title: "Kecukupan SDM dan pembagian tugas",
+    status: "not_checked",
+    score: null,
+    notes: "",
+  },
+];
+
+function normalizeAmiFindingCategory(value) {
+  return AMI_FINDING_CATEGORIES[String(value || "").toLowerCase()] || "Observasi";
+}
+
+function normalizeAmiFinding(finding = {}) {
+  const category = normalizeAmiFindingCategory(finding.category || finding.severity);
+  const createdAt = finding.created_at || new Date().toISOString();
+  return {
+    id: finding.id || Date.now(),
+    title: finding.title || category,
+    description: finding.description || "",
+    category,
+    severity: category.toLowerCase(),
+    recommendation: finding.recommendation || "",
+    root_cause: finding.root_cause || "",
+    follow_up: {
+      plan: finding.follow_up?.plan || finding.rtlPlan || finding.recommendation || "",
+      status: finding.follow_up?.status || finding.rtlStatus || "open",
+      due_date: finding.follow_up?.due_date || finding.dueDate || null,
+      progress: Number(finding.follow_up?.progress ?? 0),
+      evidence: Array.isArray(finding.follow_up?.evidence) ? finding.follow_up.evidence : [],
+    },
+    verification: {
+      status: finding.verification?.status || "pending",
+      verified_by: finding.verification?.verified_by || null,
+      verified_at: finding.verification?.verified_at || null,
+      notes: finding.verification?.notes || "",
+    },
+    created_at: createdAt,
+  };
+}
+
+function calculateAmiRecap(audit) {
+  const findings = Array.isArray(audit.findings) ? audit.findings : [];
+  const instruments = Array.isArray(audit.instruments) ? audit.instruments : [];
+  const counts = findings.reduce(
+    (acc, finding) => {
+      const category = normalizeAmiFindingCategory(finding.category || finding.severity);
+      if (category === "Mayor") acc.mayor += 1;
+      if (category === "Minor") acc.minor += 1;
+      if (category === "Observasi") acc.observasi += 1;
+      return acc;
+    },
+    { minor: 0, mayor: 0, observasi: 0 }
+  );
+  const verified = findings.filter((finding) => finding.verification?.status === "verified").length;
+  const openFollowUps = findings.filter((finding) => finding.follow_up?.status !== "done").length;
+  const instrumentScore = instruments.length
+    ? Math.round(
+        instruments.reduce((sum, instrument) => sum + Number(instrument.score || 0), 0) / instruments.length
+      )
+    : 0;
+  const score = Number(audit.score || instrumentScore || Math.max(0, 100 - counts.mayor * 12 - counts.minor * 6 - counts.observasi * 2));
+
+  return {
+    total_findings: findings.length,
+    categories: counts,
+    follow_up_open: openFollowUps,
+    follow_up_done: findings.length - openFollowUps,
+    verified,
+    unverified: findings.length - verified,
+    instrument_checked: instruments.filter((instrument) => instrument.status !== "not_checked").length,
+    instrument_total: instruments.length,
+    score,
+  };
+}
+
+function buildAmiTimeline(item) {
+  const existing = Array.isArray(item.timeline) ? item.timeline : [];
+  if (existing.length) return existing;
+  return [
+    {
+      at: item.created_at || "2026-05-20T00:00:00.000Z",
+      actor: "system",
+      action: "scheduled",
+      note: "Audit dijadwalkan.",
+    },
+  ];
+}
+
+function normalizeAmiAudit(item) {
+  const findings = Array.isArray(item.findings) ? item.findings : [];
+  const instruments = Array.isArray(item.instruments) && item.instruments.length
+    ? item.instruments
+    : DEFAULT_AMI_INSTRUMENTS.map((instrument) => ({ ...instrument }));
+  const audit = {
+    ...item,
+    title: item.title || `AMI ${item.org_unit?.name || "Unit"}`,
+    scheduled_date: item.scheduled_date || item.audit_date || null,
+    audit_date: item.audit_date || item.scheduled_date || null,
+    auditor: item.auditor || {
+      name: item.auditor_name || "Internal Auditor",
+      email: item.auditor_email || "auditor@spmi.local",
+      role: "auditor",
+    },
+    instruments,
+    findings: findings.map((finding) => normalizeAmiFinding(finding)),
+    timeline: buildAmiTimeline(item),
+  };
+  audit.recap = calculateAmiRecap(audit);
+  audit.score = audit.recap.score;
+  return audit;
+}
+
 function buildPpeppStages(source = {}) {
   const sourceStages = Array.isArray(source.stages) ? source.stages : [];
   return PPEPP_STAGE_DEFINITIONS.map((definition) => {
@@ -191,16 +330,20 @@ const state = {
       },
     ],
   })),
-  audits: catalog.amiAudits.map((item) => ({
-    id: item.id,
-    audit_date: "2026-05-01",
-    score: item.score,
-    status: item.status,
-    org_unit: item.org_unit,
-    org_unit_code: item.org_unit_code || "SI",
-    approval: approvalSeed(item.status === "selesai" ? "approved" : "review_lpm", item.status === "selesai" ? "approved" : "in_review"),
-    findings: [],
-  })),
+  audits: catalog.amiAudits.map((item) =>
+    normalizeAmiAudit({
+      id: item.id,
+      audit_date: item.audit_date || "2026-05-01",
+      scheduled_date: item.scheduled_date || "2026-05-01",
+      score: item.score,
+      status: item.status,
+      org_unit: item.org_unit,
+      org_unit_code: item.org_unit_code || "SI",
+      approval: approvalSeed(item.status === "selesai" ? "approved" : "review_lpm", item.status === "selesai" ? "approved" : "in_review"),
+      findings: item.findings || [],
+      created_at: "2026-05-20T00:00:00.000Z",
+    })
+  ),
   meetings: catalog.rtmMeetings.map((item) => ({
     id: item.id,
     title: item.title,
@@ -546,16 +689,32 @@ function addDocument(data, user) {
 
 function addFinding(auditId, data) {
   const audit = state.audits.find((item) => String(item.id) === String(auditId));
-  const finding = {
+  const finding = normalizeAmiFinding({
     id: Date.now(),
+    title: data.title || data.category || data.severity || "Temuan AMI",
     description: data.description || "",
-    severity: data.severity || "observation",
+    category: data.category || data.severity || "observasi",
     recommendation: data.recommendation || "",
     root_cause: data.root_cause || "",
-  };
+    follow_up: {
+      plan: data.follow_up_plan || data.rencana_tindak_lanjut || data.recommendation || "",
+      status: data.follow_up_status || data.status_rtl || "open",
+      due_date: data.due_date || data.tenggat || null,
+      progress: Number(data.progress || 0),
+      evidence: [],
+    },
+  });
   if (audit) {
     audit.findings = audit.findings || [];
     audit.findings.unshift(finding);
+    audit.recap = calculateAmiRecap(audit);
+    audit.score = audit.recap.score;
+    audit.timeline.unshift({
+      at: new Date().toISOString(),
+      actor: data.changed_by || "system",
+      action: "finding_created",
+      note: `${finding.category}: ${finding.description}`,
+    });
   }
   return finding;
 }
@@ -694,30 +853,147 @@ function addPpeppEvidence(cycleId, stageKey, data, user) {
 }
 
 function addAmiAudit(data, user) {
-  const item = {
+  const item = normalizeAmiAudit({
     id: Date.now(),
+    title: data.title || data.name || "Audit Mutu Internal",
     audit_date: data.audit_date || null,
+    scheduled_date: data.scheduled_date || data.audit_date || null,
     score: Number(data.score || 0),
-    status: data.status || "draft",
+    status: data.status || "terjadwal",
     org_unit: {
       name: data.org_unit_name || `Unit ${data.org_unit_id || "Lokal"}`,
     },
     org_unit_code: data.org_unit_code || null,
+    auditor: {
+      name: data.auditor_name || data.auditor || user?.name || "Internal Auditor",
+      email: data.auditor_email || user?.email || "auditor@spmi.local",
+      role: "auditor",
+    },
     approval: getInitialApproval(user),
     findings: data.finding_summary
       ? [
           {
             id: Date.now() + 1,
+            title: "Temuan awal",
             description: data.finding_summary,
-            severity: "observation",
+            category: data.finding_category || "observasi",
             recommendation: "",
             root_cause: "",
           },
         ]
       : [],
-  };
+    created_at: new Date().toISOString(),
+  });
   state.audits.unshift(item);
   return item;
+}
+
+function updateAmiAssignment(auditId, data, user) {
+  const audit = state.audits.find((item) => String(item.id) === String(auditId));
+  if (!audit) return null;
+
+  audit.title = data.title || audit.title;
+  audit.scheduled_date = data.scheduled_date || data.audit_date || audit.scheduled_date;
+  audit.audit_date = data.audit_date || audit.audit_date || audit.scheduled_date;
+  audit.status = data.status || audit.status;
+  audit.auditor = {
+    ...audit.auditor,
+    name: data.auditor_name || data.auditor || audit.auditor?.name || "Internal Auditor",
+    email: data.auditor_email || audit.auditor?.email || "auditor@spmi.local",
+    role: "auditor",
+  };
+  audit.timeline.unshift({
+    at: new Date().toISOString(),
+    actor: user?.email || "system",
+    action: "assignment_updated",
+    note: `Auditor ${audit.auditor.name}, jadwal ${audit.scheduled_date || "-"}.`,
+  });
+  audit.recap = calculateAmiRecap(audit);
+  return audit;
+}
+
+function updateAmiInstrument(auditId, instrumentId, data, user) {
+  const audit = state.audits.find((item) => String(item.id) === String(auditId));
+  if (!audit) return null;
+
+  const instrument = audit.instruments.find((item) => String(item.id) === String(instrumentId));
+  if (!instrument) return null;
+
+  instrument.status = data.status || instrument.status;
+  instrument.score = data.score === undefined ? instrument.score : Number(data.score);
+  instrument.notes = data.notes ?? instrument.notes;
+  instrument.checked_at = new Date().toISOString();
+  instrument.checked_by = user?.email || "system";
+  audit.timeline.unshift({
+    at: instrument.checked_at,
+    actor: instrument.checked_by,
+    action: "instrument_checked",
+    note: instrument.title,
+  });
+  audit.recap = calculateAmiRecap(audit);
+  audit.score = audit.recap.score;
+  return audit;
+}
+
+function updateAmiFindingFollowUp(auditId, findingId, data, user) {
+  const audit = state.audits.find((item) => String(item.id) === String(auditId));
+  if (!audit) return null;
+
+  const finding = audit.findings.find((item) => String(item.id) === String(findingId));
+  if (!finding) return null;
+
+  finding.follow_up = {
+    ...finding.follow_up,
+    plan: data.plan || data.follow_up_plan || finding.follow_up.plan,
+    status: data.status || data.follow_up_status || finding.follow_up.status,
+    due_date: data.due_date ?? finding.follow_up.due_date,
+    progress: Number(data.progress ?? finding.follow_up.progress ?? 0),
+    evidence: finding.follow_up.evidence || [],
+  };
+  if (data.evidence_title || data.file_name) {
+    finding.follow_up.evidence.unshift({
+      id: `AMI-EV-${Date.now()}`,
+      title: data.evidence_title || data.file_name,
+      file_name: data.file_name || null,
+      uploaded_at: new Date().toISOString(),
+      uploaded_by: user?.email || "system",
+    });
+  }
+  audit.timeline.unshift({
+    at: new Date().toISOString(),
+    actor: user?.email || "system",
+    action: "follow_up_updated",
+    note: finding.title,
+  });
+  audit.recap = calculateAmiRecap(audit);
+  return audit;
+}
+
+function verifyAmiFinding(auditId, findingId, data, user) {
+  const audit = state.audits.find((item) => String(item.id) === String(auditId));
+  if (!audit) return null;
+
+  const finding = audit.findings.find((item) => String(item.id) === String(findingId));
+  if (!finding) return null;
+
+  finding.verification = {
+    status: data.status || "verified",
+    verified_by: user?.email || "system",
+    verified_at: new Date().toISOString(),
+    notes: data.notes || "",
+  };
+  if (finding.verification.status === "verified") {
+    finding.follow_up.status = "done";
+    finding.follow_up.progress = 100;
+  }
+  audit.timeline.unshift({
+    at: finding.verification.verified_at,
+    actor: finding.verification.verified_by,
+    action: "finding_verified",
+    note: finding.title,
+  });
+  audit.recap = calculateAmiRecap(audit);
+  return audit;
 }
 
 function addIndicator(data, user) {
@@ -1019,6 +1295,10 @@ module.exports = {
   updatePpeppStage,
   addPpeppEvidence,
   addAmiAudit,
+  updateAmiAssignment,
+  updateAmiInstrument,
+  updateAmiFindingFollowUp,
+  verifyAmiFinding,
   addIndicator,
   addIndicatorValue,
   addSurvey,

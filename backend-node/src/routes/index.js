@@ -73,7 +73,12 @@ router.post(
 );
 router.get("/ami/audits", optionalAuth, compatController.amiAudits);
 router.post("/ami/audits", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.createAmiAudit);
+router.get("/ami/audits/:id/summary", verifyToken, requireRole(...ROLE_AMI_READ), compatController.amiAuditSummary);
+router.patch("/ami/audits/:id/assignment", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.updateAmiAuditAssignment);
+router.patch("/ami/audits/:id/instruments/:instrumentId", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.updateAmiAuditInstrument);
 router.post("/ami/audits/:id/findings", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.createFinding);
+router.patch("/ami/audits/:id/findings/:findingId/follow-up", verifyToken, requireRole(...ROLE_RTL_WRITE), compatController.updateAmiFindingFollowUpRecord);
+router.patch("/ami/audits/:id/findings/:findingId/verification", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.verifyAmiFindingRecord);
 router.get("/rtm/meetings", optionalAuth, compatController.rtmMeetings);
 router.post("/rtm/meetings", verifyToken, requireRole(...ROLE_RTM_WRITE), compatController.createMeeting);
 router.patch(

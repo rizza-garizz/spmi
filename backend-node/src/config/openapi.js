@@ -359,6 +359,75 @@ module.exports = {
         },
       },
     },
+    "/ami/audits/{id}/assignment": {
+      patch: {
+        tags: ["AMI"],
+        summary: "Update audit schedule and auditor assignment",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Audit assignment updated" },
+          404: { description: "Audit not found" },
+        },
+      },
+    },
+    "/ami/audits/{id}/instruments/{instrumentId}": {
+      patch: {
+        tags: ["AMI"],
+        summary: "Update audit instrument result",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+          { name: "instrumentId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Audit instrument updated" },
+          404: { description: "Audit or instrument not found" },
+        },
+      },
+    },
+    "/ami/audits/{id}/findings/{findingId}/follow-up": {
+      patch: {
+        tags: ["AMI"],
+        summary: "Update finding follow-up progress",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+          { name: "findingId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Finding follow-up updated" },
+          404: { description: "Audit or finding not found" },
+        },
+      },
+    },
+    "/ami/audits/{id}/findings/{findingId}/verification": {
+      patch: {
+        tags: ["AMI"],
+        summary: "Verify finding correction",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+          { name: "findingId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Finding correction verified" },
+          404: { description: "Audit or finding not found" },
+        },
+      },
+    },
+    "/ami/audits/{id}/summary": {
+      get: {
+        tags: ["AMI"],
+        summary: "Get automatic audit summary",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Audit summary" },
+          404: { description: "Audit not found" },
+        },
+      },
+    },
     "/rtm/meetings": {
       get: {
         tags: ["RTM"],

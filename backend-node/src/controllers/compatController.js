@@ -17,6 +17,10 @@ const {
   updatePpeppStage,
   addPpeppEvidence,
   addAmiAudit,
+  updateAmiAssignment,
+  updateAmiInstrument,
+  updateAmiFindingFollowUp,
+  verifyAmiFinding,
   addIndicator,
   addIndicatorValue,
   addSurvey,
@@ -179,8 +183,10 @@ function amiAudits(req, res) {
 }
 
 function createAmiAudit(req, res) {
-  const payload = prepareScopedPayload(req);
-  if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
+  const payload = scopeItemForUser(req.body || {}, req.user);
+  if (!canAccessOrgUnit(req.user, payload.org_unit_code, { allowAuditor: true })) {
+    return failure(res, "Anda tidak dapat membuat audit di luar scope unit kerja.", 403);
+  }
 
   return res.status(201).json({
     success: true,
@@ -190,11 +196,62 @@ function createAmiAudit(req, res) {
 }
 
 function createFinding(req, res) {
-  return res.status(201).json({
-    success: true,
-    data: addFinding(req.params.id, req.body || {}),
-    message: "Temuan berhasil ditambahkan di mode lokal.",
-  });
+  const audit = state.audits.find((item) => String(item.id) === String(req.params.id));
+  if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat mengubah audit di luar scope.", 403);
+
+  return success(
+    res,
+    addFinding(req.params.id, { ...(req.body || {}), changed_by: req.user?.email || "system" }),
+    "Temuan audit berhasil ditambahkan.",
+    201
+  );
+}
+
+function updateAmiAuditAssignment(req, res) {
+  const audit = state.audits.find((item) => String(item.id) === String(req.params.id));
+  if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat mengubah audit di luar scope.", 403);
+
+  return success(res, updateAmiAssignment(req.params.id, req.body || {}, req.user), "Penugasan audit berhasil diperbarui.");
+}
+
+function updateAmiAuditInstrument(req, res) {
+  const audit = state.audits.find((item) => String(item.id) === String(req.params.id));
+  if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat mengubah audit di luar scope.", 403);
+
+  const updated = updateAmiInstrument(req.params.id, req.params.instrumentId, req.body || {}, req.user);
+  if (!updated) return failure(res, "Instrumen audit tidak ditemukan.", 404);
+  return success(res, updated, "Instrumen audit berhasil diperbarui.");
+}
+
+function updateAmiFindingFollowUpRecord(req, res) {
+  const audit = state.audits.find((item) => String(item.id) === String(req.params.id));
+  if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat mengubah audit di luar scope.", 403);
+
+  const updated = updateAmiFindingFollowUp(req.params.id, req.params.findingId, req.body || {}, req.user);
+  if (!updated) return failure(res, "Temuan audit tidak ditemukan.", 404);
+  return success(res, updated, "Tindak lanjut temuan berhasil diperbarui.");
+}
+
+function verifyAmiFindingRecord(req, res) {
+  const audit = state.audits.find((item) => String(item.id) === String(req.params.id));
+  if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat memverifikasi audit di luar scope.", 403);
+
+  const updated = verifyAmiFinding(req.params.id, req.params.findingId, req.body || {}, req.user);
+  if (!updated) return failure(res, "Temuan audit tidak ditemukan.", 404);
+  return success(res, updated, "Perbaikan temuan berhasil diverifikasi.");
+}
+
+function amiAuditSummary(req, res) {
+  const audit = state.audits.find((item) => String(item.id) === String(req.params.id));
+  if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat membaca audit di luar scope.", 403);
+
+  return success(res, audit.recap, "Rekap hasil audit");
 }
 
 function rtmMeetings(req, res) {
@@ -484,6 +541,11 @@ module.exports = {
   amiAudits,
   createAmiAudit,
   createFinding,
+  updateAmiAuditAssignment,
+  updateAmiAuditInstrument,
+  updateAmiFindingFollowUpRecord,
+  verifyAmiFindingRecord,
+  amiAuditSummary,
   rtmMeetings,
   createMeeting,
   updateMeetingActionProgress,

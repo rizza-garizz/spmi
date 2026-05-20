@@ -138,7 +138,31 @@ const emptyCatalog = {
     }>;
     timeline?: Array<unknown>;
   }>,
-  amiAudits: [] as Array<{ id: number; org_unit: { name: string }; score: number; status: string }>,
+  amiAudits: [] as Array<{
+    id: number | string;
+    title?: string;
+    org_unit: { name: string };
+    org_unit_code?: string;
+    audit_date?: string;
+    scheduled_date?: string;
+    auditor?: { name: string; email?: string; role?: string };
+    instruments?: Array<unknown>;
+    findings?: Array<unknown>;
+    recap?: {
+      total_findings: number;
+      categories: { minor: number; mayor: number; observasi: number };
+      follow_up_open: number;
+      follow_up_done: number;
+      verified: number;
+      unverified: number;
+      instrument_checked: number;
+      instrument_total: number;
+      score: number;
+    };
+    score: number;
+    status: string;
+    timeline?: Array<unknown>;
+  }>,
   rtmMeetings: [] as Array<{ id: number; title: string; status: string }>,
   surveys: [] as Array<{ id: number; title: string; target: string }>,
   integrations: [] as Array<{ key: string; domain: string; status: string }>,
