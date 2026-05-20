@@ -2,6 +2,7 @@ import { getPpeppCycles } from "@/lib/spmi-catalog-api";
 import { RoleGate } from "@/components/auth/RoleGate";
 import { CreatePpeppCycleForm } from "@/components/isian/ppepp/create-ppepp-cycle-form";
 import { NilaiCardGrid } from "@/components/nilai/core";
+import { ProgressiveSection } from "@/components/support/progressive-section";
 
 export default async function PpeppPage() {
   let cycles: any[] = [];
@@ -42,12 +43,6 @@ export default async function PpeppPage() {
       </section>
 
       <section className="section">
-        <div className="section-head">
-          <div>
-            <h2>Tambah Siklus</h2>
-            <p>Data siklus baru bisa ditambahkan setelah alur backend siap dipakai penuh.</p>
-          </div>
-        </div>
         <RoleGate
           allowedRoles={["admin_lpm", "kaprodi", "sekprodi", "unit_kerja"]}
           fallback={
@@ -58,7 +53,14 @@ export default async function PpeppPage() {
             </div>
           }
         >
-          <CreatePpeppCycleForm initialItems={cycles} />
+          <ProgressiveSection
+            eyebrow="Workflow"
+            title="Kelola Siklus PPEPP"
+            description="Siklus berjalan tetap mudah dipantau. Form tambah siklus dibuka hanya saat operator perlu membuat periode baru."
+            actionLabel="Tambah Siklus"
+          >
+            <CreatePpeppCycleForm initialItems={cycles} />
+          </ProgressiveSection>
         </RoleGate>
       </section>
     </main>

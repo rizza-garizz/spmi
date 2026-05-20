@@ -1,6 +1,7 @@
 import { getRtmMeetings } from "@/lib/spmi-catalog-api";
 import { CreateRtmMeetingForm } from "@/components/isian/rtm/create-rtm-meeting-form";
 import { NilaiCardGrid } from "@/components/nilai/core";
+import { ProgressiveSection } from "@/components/support/progressive-section";
 
 export default async function RtmPage() {
   let meetings: any[] = [];
@@ -41,13 +42,14 @@ export default async function RtmPage() {
       </section>
 
       <section className="section">
-        <div className="section-head">
-          <div>
-            <h2>Tambah RTM</h2>
-            <p>Form ini dipakai untuk menyiapkan agenda rapat baru dan tindak lanjutnya.</p>
-          </div>
-        </div>
-        <CreateRtmMeetingForm initialItems={meetings} />
+        <ProgressiveSection
+          eyebrow="Decision Log"
+          title="Kelola Agenda RTM"
+          description="Agenda dan status rapat tetap menjadi tampilan utama. Form RTM baru muncul saat perlu dijadwalkan."
+          actionLabel="Tambah RTM"
+        >
+          <CreateRtmMeetingForm initialItems={meetings} />
+        </ProgressiveSection>
       </section>
     </main>
   );

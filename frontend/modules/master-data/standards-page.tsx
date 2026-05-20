@@ -1,6 +1,7 @@
 import { getCatalogSnapshot, getStandards } from "@/lib/spmi-catalog-api";
 import { CreateStandardForm } from "@/components/isian/standards/create-standard-form";
 import { RoleGate } from "@/components/auth/RoleGate";
+import { ProgressiveSection } from "@/components/support/progressive-section";
 
 export async function StandardsPage() {
   const catalog = await getCatalogSnapshot();
@@ -97,17 +98,21 @@ export async function StandardsPage() {
       <RoleGate allowedRoles={["admin_lpm"]}>
         <div className="row">
           <div className="col-xl-12 col-xxl-12 col-sm-12">
-            <div className="card">
-              <div className="card-header">
-                <h4 className="card-title">Tambah Standar Baru</h4>
+            <ProgressiveSection
+              eyebrow="Master Data"
+              title="Kelola Standar Mutu"
+              description="Daftar standar tetap menjadi fokus utama. Form tambah dibuka hanya saat diperlukan."
+              actionLabel="Tambah Standar"
+            >
+              <div className="card">
+                <div className="card-body">
+                  <CreateStandardForm
+                    initialItems={standardsData}
+                    categories={catalog.standardCategories}
+                  />
+                </div>
               </div>
-              <div className="card-body">
-                <CreateStandardForm
-                  initialItems={standardsData}
-                  categories={catalog.standardCategories}
-                />
-              </div>
-            </div>
+            </ProgressiveSection>
           </div>
         </div>
       </RoleGate>

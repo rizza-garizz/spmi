@@ -132,12 +132,25 @@ export function AmiPage() {
         </div>
       </div>
 
-      {/* Modal Tambah Temuan (Simple Version) */}
+      {selectedAudit && (
+        <div className="row">
+          <div className="col-xl-12">
+            <div className="hris-page-toolbar">
+              <div>
+                <span>Audit Finding</span>
+                <strong>Input Temuan: {selectedAudit.org_unit?.name}</strong>
+                <p>Temuan audit dibuka dari audit yang dipilih, jadi operator tetap paham konteks datanya.</p>
+              </div>
+              <div className="hris-toolbar-actions">
+                <button type="button" className="btn btn-light" onClick={() => setSelectedAudit(null)}>Tutup Form</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedAudit && (
         <div className="card mt-4 border-primary">
-          <div className="card-header bg-primary">
-            <h4 className="card-title text-white">Input Temuan: {selectedAudit.org_unit?.name}</h4>
-          </div>
           <div className="card-body">
             <form onSubmit={handleAddFinding}>
               <div className="row">

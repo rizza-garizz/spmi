@@ -159,23 +159,33 @@ export function IndicatorsPage() {
       )}
 
       {/* Action Bar */}
-      <div className="row mb-3">
-        <div className="col-12">
-          {canEditIndicators ? (
+      {canEditIndicators ? (
+        <div className="hris-page-toolbar">
+          <div>
+            <span>Indikator Mutu</span>
+            <strong>Kelola IKU/IKT</strong>
+            <p>Daftar indikator menjadi tampilan utama. Form tambah dan input capaian dibuka sesuai kebutuhan.</p>
+          </div>
+          <div className="hris-toolbar-actions">
             <button
-              className="btn btn-primary"
+              className={showAddForm ? "btn btn-light" : "btn btn-primary"}
               onClick={() => setShowAddForm(!showAddForm)}
+              type="button"
             >
               <i className="la la-plus me-1"></i>
               {showAddForm ? "Tutup Form" : "Tambah Indikator Baru"}
             </button>
-          ) : (
+          </div>
+        </div>
+      ) : (
+        <div className="row mb-3">
+          <div className="col-12">
             <div className="alert alert-outline-primary mb-0">
               Role Anda berada pada mode baca. Penambahan indikator dan input capaian hanya tersedia untuk admin/LPM atau unit kerja.
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Form Tambah Indikator */}
       {showAddForm && canEditIndicators && (

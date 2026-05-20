@@ -33,6 +33,7 @@ export function DocumentsPage() {
   const [documentTypes, setDocumentTypes] = useState<Array<{ value: string; label: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -96,6 +97,7 @@ export function DocumentsPage() {
         showToast("Dokumen berhasil diunggah!");
         setFormData({ code: "", title: "", type: "kebijakan", mutu_standard_id: "" });
         setSelectedFile(null);
+        setShowUploadForm(false);
         fetchDocuments();
       } else {
         const errJson = await res.json();
@@ -132,9 +134,28 @@ export function DocumentsPage() {
         </div>
       </div>
 
+      {canUpload ? (
+        <div className="hris-page-toolbar">
+          <div>
+            <span>Repository</span>
+            <strong>Kelola Dokumen SPMI</strong>
+            <p>Daftar repository menjadi fokus utama. Upload dokumen baru dibuka saat diperlukan.</p>
+          </div>
+          <div className="hris-toolbar-actions">
+            <button
+              className={showUploadForm ? "btn btn-light" : "btn btn-primary"}
+              type="button"
+              onClick={() => setShowUploadForm((current) => !current)}
+            >
+              {showUploadForm ? "Tutup Form" : "Upload Dokumen"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="row">
         {/* Form Upload */}
-        {canUpload ? (
+        {canUpload && showUploadForm ? (
           <div className="col-xl-4 col-lg-5">
             <div className="card">
               <div className="card-header">
@@ -186,7 +207,7 @@ export function DocumentsPage() {
         ) : null}
 
         {/* Tabel List */}
-        <div className={canUpload ? "col-xl-8 col-lg-7" : "col-xl-12 col-lg-12"}>
+        <div className={canUpload && showUploadForm ? "col-xl-8 col-lg-7" : "col-xl-12 col-lg-12"}>
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">Daftar Repository</h4>

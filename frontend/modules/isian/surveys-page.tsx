@@ -1,6 +1,7 @@
 import { getCatalogSnapshot, getSurveys } from "@/lib/spmi-catalog-api";
 import { CreateSurveyForm } from "@/components/isian/surveys/create-survey-form";
 import { NilaiCardGrid } from "@/components/nilai/core";
+import { ProgressiveSection } from "@/components/support/progressive-section";
 
 export default async function SurveysPage() {
   let surveys: any[] = [];
@@ -41,13 +42,14 @@ export default async function SurveysPage() {
       </section>
 
       <section className="section">
-        <div className="section-head">
-          <div>
-            <h2>Tambah Survei</h2>
-            <p>Input baru bisa ditambahkan tanpa mengubah pola tampilan yang sudah seragam.</p>
-          </div>
-        </div>
-        <CreateSurveyForm initialItems={surveys} surveyTargets={catalog.surveyTargets} />
+        <ProgressiveSection
+          eyebrow="Insight"
+          title="Kelola Survei"
+          description="Daftar survei tetap bersih. Form survei baru dibuka hanya saat tim akan membuat instrumen."
+          actionLabel="Tambah Survei"
+        >
+          <CreateSurveyForm initialItems={surveys} surveyTargets={catalog.surveyTargets} />
+        </ProgressiveSection>
       </section>
     </main>
   );

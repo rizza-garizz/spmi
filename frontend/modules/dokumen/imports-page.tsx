@@ -2,6 +2,7 @@ import { CreateImportForm } from "@/components/isian/imports/create-import-form"
 import { AoaMigrationForm } from "@/components/isian/imports/aoa-migration-form";
 import { getCatalogSnapshot, getDashboardSummary, getImports } from "@/lib/spmi-catalog-api";
 import { NilaiCardGrid } from "@/components/nilai/core";
+import { ProgressiveSection } from "@/components/support/progressive-section";
 
 export default async function ImportsPage() {
   let summary = { metrics: [] as Array<{ label: string; value: number }> };
@@ -29,25 +30,25 @@ export default async function ImportsPage() {
       </section>
 
       <section className="section">
-        <div className="section-head">
-          <div>
-            <h2>Upload Import</h2>
-            <p>Area ini dipakai untuk simulasi proses ingest data dari file evaluasi.</p>
-          </div>
-          <div className="section-tag">Data ingest</div>
-        </div>
-        <CreateImportForm initialItems={imports.data} importTypes={catalog.importTypes} />
+        <ProgressiveSection
+          eyebrow="Data Ingest"
+          title="Upload Import"
+          description="Riwayat dan ringkasan tetap terlihat lebih dulu. Upload spreadsheet dibuka saat operator sudah siap mengirim data."
+          actionLabel="Upload Data"
+        >
+          <CreateImportForm initialItems={imports.data} importTypes={catalog.importTypes} />
+        </ProgressiveSection>
       </section>
 
       <section className="section">
-        <div className="section-head">
-          <div>
-            <h2>Migrasi AOA</h2>
-            <p>Gunakan preview untuk memeriksa baris invalid dan duplikat sebelum commit ke standar mutu.</p>
-          </div>
-          <div className="section-tag">Safe migration</div>
-        </div>
-        <AoaMigrationForm />
+        <ProgressiveSection
+          eyebrow="Safe Migration"
+          title="Migrasi AOA"
+          description="Preview migrasi dibuat terpisah agar proses validasi tidak bercampur dengan dashboard utama."
+          actionLabel="Buka Migrasi"
+        >
+          <AoaMigrationForm />
+        </ProgressiveSection>
       </section>
 
       <section className="section">

@@ -1,5 +1,6 @@
 import { getAmiAudits } from "@/lib/spmi-catalog-api";
 import { CreateAmiAuditForm } from "@/components/isian/ami/create-ami-audit-form";
+import { ProgressiveSection } from "@/components/support/progressive-section";
 
 export default async function AmiPage() {
   let audits: any[] = [];
@@ -116,14 +117,18 @@ export default async function AmiPage() {
 
       <div className="row">
         <div className="col-xl-12 col-xxl-12 col-sm-12">
-          <div className="card">
-            <div className="card-header">
-              <h4 className="card-title">Jadwalkan Audit Baru</h4>
+          <ProgressiveSection
+            eyebrow="Audit"
+            title="Jadwalkan Audit Baru"
+            description="Operator bisa fokus membaca daftar audit. Penjadwalan baru dibuka saat diperlukan."
+            actionLabel="Jadwalkan Audit"
+          >
+            <div className="card">
+              <div className="card-body">
+                <CreateAmiAuditForm initialItems={audits} />
+              </div>
             </div>
-            <div className="card-body">
-              <CreateAmiAuditForm initialItems={audits} />
-            </div>
-          </div>
+          </ProgressiveSection>
         </div>
       </div>
     </>

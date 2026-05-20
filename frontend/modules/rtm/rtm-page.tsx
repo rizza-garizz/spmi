@@ -80,19 +80,32 @@ export function RtmPage() {
         </div>
       </div>
 
-      <div className="row mb-4">
-        <div className="col-12">
-          {canManageMeetings ? (
-            <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)}>
+      {canManageMeetings ? (
+        <div className="hris-page-toolbar">
+          <div>
+            <span>Decision Log</span>
+            <strong>Kelola Agenda RTM</strong>
+            <p>Riwayat rapat tetap menjadi fokus utama. Jadwal baru dibuka saat pimpinan perlu membuat agenda.</p>
+          </div>
+          <div className="hris-toolbar-actions">
+            <button
+              className={showAddForm ? "btn btn-light" : "btn btn-primary"}
+              onClick={() => setShowAddForm(!showAddForm)}
+              type="button"
+            >
               <i className="la la-plus me-1"></i> {showAddForm ? "Batal" : "Jadwalkan RTM Baru"}
             </button>
-          ) : (
+          </div>
+        </div>
+      ) : (
+        <div className="row mb-4">
+          <div className="col-12">
             <div className="alert alert-outline-primary mb-0">
               Anda berada pada mode baca. Penjadwalan RTM hanya tersedia untuk admin/LPM, dekan, dan wakil dekan.
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {showAddForm && canManageMeetings && (
         <div className="row">
