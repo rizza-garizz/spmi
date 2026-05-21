@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/components/support/Toast";
 import { clientApiRequest, parseApiPayload } from "@/lib/spmi-session-client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4000";
-
 interface Audit {
   id: number;
   audit_date: string;
@@ -20,6 +18,10 @@ export function AmiPage() {
   const [audits, setAudits] = useState<Audit[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAudit, setSelectedAudit] = useState<Audit | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   
   // Finding Form State
   const [findingData, setFindingData] = useState({
@@ -45,6 +47,10 @@ export function AmiPage() {
     fetchAudits();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
   const handleAddFinding = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAudit) return;
@@ -69,6 +75,36 @@ export function AmiPage() {
     }
   };
 
+  const filteredAudits = audits.filter((audit) => {
+    const haystack = [
+      audit.org_unit?.name,
+      audit.audit_date,
+      audit.status,
+      String(audit.score || ""),
+    ].join(" ").toLowerCase();
+    return haystack.includes(searchTerm.toLowerCase()) && (!statusFilter || audit.status === statusFilter);
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredAudits.length / pageSize));
+  const paginatedAudits = filteredAudits.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const handleReport = async (audit: Audit) => {
+    try {
+      const response = await clientApiRequest(`/ami/audits/${audit.id}/report`);
+      if (!response.ok) {
+        showToast("Gagal membuat laporan AMI.", "danger");
+        return;
+      }
+      const html = await response.text();
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch {
+      showToast("Gagal membuka laporan AMI.", "danger");
+    }
+  };
+
   return (
     <>
       <div className="row page-titles mx-0">
@@ -87,6 +123,31 @@ export function AmiPage() {
               <h4 className="card-title">Daftar Audit Berjalan</h4>
             </div>
             <div className="card-body">
+              <div className="row mb-3">
+                <div className="col-md-7 mb-2 mb-md-0">
+                  <input
+                    className="form-control"
+                    placeholder="Cari unit, tanggal, status, atau skor..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                  />
+                </div>
+                <div className="col-md-3 mb-2 mb-md-0">
+                  <select className="form-control" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                    <option value="">Semua status</option>
+                    <option value="terjadwal">Terjadwal</option>
+                    <option value="berjalan">Berjalan</option>
+                    <option value="in_review">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="selesai">Selesai</option>
+                  </select>
+                </div>
+                <div className="col-md-2">
+                  <button className="btn btn-light w-100" type="button" onClick={() => { setSearchTerm(""); setStatusFilter(""); }}>
+                    Reset
+                  </button>
+                </div>
+              </div>
               <div className="table-responsive">
                 <table className="table table-bordered table-responsive-sm">
                   <thead>
@@ -101,7 +162,7 @@ export function AmiPage() {
                   <tbody>
                     {loading ? (
                       <tr><td colSpan={5} className="text-center">Memuat...</td></tr>
-                    ) : audits.map((audit) => (
+                    ) : paginatedAudits.map((audit) => (
                       <tr key={audit.id}>
                         <td><strong>{audit.org_unit?.name || "Unit"}</strong></td>
                         <td>{audit.audit_date || "-"}</td>
@@ -113,19 +174,36 @@ export function AmiPage() {
                         </td>
                         <td>
                           <button
-                            className="btn btn-xs btn-primary"
+                            className="btn btn-xs btn-primary me-2"
                             onClick={() => setSelectedAudit(audit)}
                           >
                             + Tambah Temuan
                           </button>
+                          <button className="btn btn-xs btn-outline-primary" type="button" onClick={() => handleReport(audit)}>
+                            <i className="la la-file-text-o"></i> Laporan
+                          </button>
                         </td>
                       </tr>
                     ))}
-                    {audits.length === 0 && !loading && (
+                    {filteredAudits.length === 0 && !loading && (
                       <tr><td colSpan={5} className="text-center text-muted">Belum ada jadwal audit.</td></tr>
                     )}
                   </tbody>
                 </table>
+              </div>
+              <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <small className="text-muted">
+                  Menampilkan {paginatedAudits.length} dari {filteredAudits.length} audit
+                </small>
+                <div>
+                  <button className="btn btn-sm btn-light me-2" type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+                    Sebelumnya
+                  </button>
+                  <span className="text-muted small">Halaman {currentPage} / {totalPages}</span>
+                  <button className="btn btn-sm btn-light ms-2" type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>
+                    Berikutnya
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -45,6 +45,10 @@ export function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Form State
   const [formData, setFormData] = useState({
@@ -85,6 +89,10 @@ export function DocumentsPage() {
     fetchDocuments();
     fetchCatalog();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,14 +137,17 @@ export function DocumentsPage() {
 
   const handleDownload = async (versionId: number, fileName: string) => {
     try {
-      const res = await clientApiRequest(`/documents/versions/${versionId}`);
+      const res = await clientApiRequest(`/documents/versions/${versionId}/download`);
       const json = await res.json();
       const downloadUrl = json.data?.download_url || json.download_url;
       if (downloadUrl) {
-        window.open(downloadUrl, "_blank");
+        const url = downloadUrl.startsWith("http") ? downloadUrl : `${API_URL}${downloadUrl}`;
+        window.open(url, "_blank");
+      } else {
+        showToast(`Metadata unduhan ${fileName} belum tersedia.`, "warning");
       }
     } catch (err) {
-      alert("Gagal mengunduh file.");
+      showToast("Gagal mengunduh file.", "danger");
     }
   };
 
@@ -146,11 +157,56 @@ export function DocumentsPage() {
       const json = await res.json();
       const previewUrl = json.data?.preview_url;
       if (previewUrl) {
-        window.open(previewUrl, "_blank");
+        const url = previewUrl.startsWith("http") ? previewUrl : `${API_URL}${previewUrl}`;
+        window.open(url, "_blank");
       }
     } catch (err) {
-      alert("Gagal membuka preview file.");
+      showToast("Gagal membuka preview file.", "danger");
     }
+  };
+
+  const filteredDocuments = documents.filter((doc) => {
+    const haystack = [
+      doc.code,
+      doc.title,
+      doc.type,
+      doc.category,
+      doc.owner,
+      doc.org_unit_code,
+      doc.metadata?.unit,
+      doc.metadata?.kategori,
+      doc.metadata?.penanggung_jawab,
+    ].join(" ").toLowerCase();
+    const matchesSearch = haystack.includes(searchTerm.toLowerCase());
+    const matchesType = !typeFilter || doc.type === typeFilter;
+    return matchesSearch && matchesType;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredDocuments.length / pageSize));
+  const paginatedDocuments = filteredDocuments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const exportCsv = () => {
+    const rows = [
+      ["Kode", "Judul", "Tipe", "Tanggal", "Kategori", "Penanggung Jawab", "Unit", "Versi"],
+      ...filteredDocuments.map((doc) => [
+        doc.code,
+        doc.title,
+        doc.type,
+        doc.metadata?.tanggal || doc.document_date || "",
+        doc.metadata?.kategori || doc.category || "",
+        doc.metadata?.penanggung_jawab || doc.owner || "",
+        doc.metadata?.unit || doc.org_unit_code || "",
+        `v${doc.current_version}`,
+      ]),
+    ];
+    const csv = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "repository-dokumen-spmi.csv";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -172,6 +228,9 @@ export function DocumentsPage() {
             <p>Daftar repository menjadi fokus utama. Upload dokumen baru dibuka saat diperlukan.</p>
           </div>
           <div className="hris-toolbar-actions">
+            <button className="btn btn-outline-primary" type="button" onClick={exportCsv}>
+              <i className="la la-file-excel-o me-1"></i> Export CSV
+            </button>
             <button
               className={showUploadForm ? "btn btn-light" : "btn btn-primary"}
               type="button"
@@ -274,6 +333,29 @@ export function DocumentsPage() {
               <h4 className="card-title">Daftar Repository</h4>
             </div>
             <div className="card-body">
+              <div className="row mb-3">
+                <div className="col-md-7 mb-2 mb-md-0">
+                  <input
+                    className="form-control"
+                    placeholder="Cari kode, judul, unit, kategori, atau penanggung jawab..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                  />
+                </div>
+                <div className="col-md-3 mb-2 mb-md-0">
+                  <select className="form-control" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+                    <option value="">Semua tipe</option>
+                    {documentTypes.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-md-2">
+                  <button className="btn btn-light w-100" type="button" onClick={() => { setSearchTerm(""); setTypeFilter(""); }}>
+                    Reset
+                  </button>
+                </div>
+              </div>
               <div className="table-responsive">
                 <table className="table table-bordered table-responsive-sm">
                   <thead>
@@ -289,7 +371,7 @@ export function DocumentsPage() {
                   <tbody>
                     {loading ? (
                       <tr><td colSpan={6} className="text-center">Memuat...</td></tr>
-                    ) : documents.map((doc) => (
+                    ) : paginatedDocuments.map((doc) => (
                       <tr key={doc.id}>
                         <td>{doc.code}</td>
                         <td>
@@ -325,11 +407,25 @@ export function DocumentsPage() {
                         </td>
                       </tr>
                     ))}
-                    {documents.length === 0 && !loading && (
+                    {filteredDocuments.length === 0 && !loading && (
                       <tr><td colSpan={6} className="text-center text-muted">Belum ada dokumen.</td></tr>
                     )}
                   </tbody>
                 </table>
+              </div>
+              <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <small className="text-muted">
+                  Menampilkan {paginatedDocuments.length} dari {filteredDocuments.length} dokumen
+                </small>
+                <div>
+                  <button className="btn btn-sm btn-light me-2" type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+                    Sebelumnya
+                  </button>
+                  <span className="text-muted small">Halaman {currentPage} / {totalPages}</span>
+                  <button className="btn btn-sm btn-light ms-2" type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>
+                    Berikutnya
+                  </button>
+                </div>
               </div>
             </div>
           </div>

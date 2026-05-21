@@ -1,5 +1,6 @@
 import { getCatalogSnapshot, getStandards } from "@/lib/spmi-catalog-api";
 import { CreateStandardForm } from "@/components/isian/standards/create-standard-form";
+import { StandardsManager } from "@/components/isian/standards/standards-manager";
 import { RoleGate } from "@/components/auth/RoleGate";
 import { ProgressiveSection } from "@/components/support/progressive-section";
 
@@ -50,52 +51,7 @@ export async function StandardsPage() {
 
       <div className="row">
         <div className="col-lg-12">
-          <div className="card">
-            <div className="card-header">
-              <h4 className="card-title">Daftar Standar Mutu Tersedia</h4>
-            </div>
-            <div className="card-body">
-              <div className="table-responsive">
-                <table className="table table-bordered verticle-middle table-responsive-sm">
-                  <thead>
-                    <tr>
-                      <th scope="col">Kode</th>
-                      <th scope="col">Judul Standar</th>
-                      <th scope="col">Kategori</th>
-                      <th scope="col">Versi</th>
-                      <th scope="col">Revisi</th>
-                      <th scope="col">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {standardsData.map((standard) => (
-                      <tr key={standard.id || standard.code}>
-                        <td><strong>{standard.code ?? "-"}</strong></td>
-                        <td>
-                          {standard.title}
-                          {standard.description && <p className="mb-0 text-muted" style={{ fontSize: "0.8rem" }}>{standard.description}</p>}
-                        </td>
-                        <td><span className="badge badge-primary">{standard.category}</span></td>
-                        <td><span className="badge badge-light">v{standard.version ?? "1.0"}</span></td>
-                        <td>{standard.revisions?.length ?? 0} catatan</td>
-                        <td>
-                          <RoleGate
-                            allowedRoles={["admin_lpm"]}
-                            fallback={<span className="text-muted">Read only</span>}
-                          >
-                            <span>
-                              <a href="#" className="me-4" data-bs-toggle="tooltip" data-placement="top" title="Edit"><i className="fa fa-pencil color-muted"></i> </a>
-                              <a href="#" data-bs-toggle="tooltip" data-placement="top" title="Hapus"><i className="fa fa-close color-danger"></i></a>
-                            </span>
-                          </RoleGate>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+          <StandardsManager initialItems={standardsData} categories={catalog.standardCategories} />
         </div>
       </div>
 

@@ -38,6 +38,10 @@ export function IndicatorsPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showValueForm, setShowValueForm] = useState<number | null>(null);
   const [message, setMessage] = useState<{ type: string; text: string } | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Form state - Tambah Indikator
   const [newIndicator, setNewIndicator] = useState({
@@ -72,6 +76,10 @@ export function IndicatorsPage() {
   useEffect(() => {
     fetchIndicators();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   const handleAddIndicator = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,6 +135,46 @@ export function IndicatorsPage() {
     }
   };
 
+  const filteredIndicators = indicators.filter((item) => {
+    const status = item.latest_value?.status || "No Data";
+    const haystack = [
+      item.code,
+      item.name,
+      item.description,
+      item.standard?.code,
+      item.standard?.title,
+      status,
+    ].join(" ").toLowerCase();
+    return haystack.includes(searchTerm.toLowerCase()) && (!statusFilter || status === statusFilter);
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredIndicators.length / pageSize));
+  const paginatedIndicators = filteredIndicators.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const exportCsv = () => {
+    const rows = [
+      ["Kode", "Indikator", "Standar", "Target", "Satuan", "Capaian Terakhir", "Periode", "Status"],
+      ...filteredIndicators.map((item) => [
+        item.code,
+        item.name,
+        item.standard?.code || "",
+        String(item.target_value),
+        item.unit,
+        String(item.latest_value?.actual_value ?? ""),
+        item.latest_value?.period || "",
+        item.latest_value?.status || "No Data",
+      ]),
+    ];
+    const csv = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "indikator-mutu.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
@@ -167,6 +215,9 @@ export function IndicatorsPage() {
             <p>Daftar indikator menjadi tampilan utama. Form tambah dan input capaian dibuka sesuai kebutuhan.</p>
           </div>
           <div className="hris-toolbar-actions">
+            <button className="btn btn-outline-primary" type="button" onClick={exportCsv}>
+              <i className="la la-file-excel-o me-1"></i> Export CSV
+            </button>
             <button
               className={showAddForm ? "btn btn-light" : "btn btn-primary"}
               onClick={() => setShowAddForm(!showAddForm)}
@@ -279,6 +330,30 @@ export function IndicatorsPage() {
               <h4 className="card-title">Daftar Indikator Kinerja Utama (IKU/IKT)</h4>
             </div>
             <div className="card-body">
+              <div className="row mb-3">
+                <div className="col-md-7 mb-2 mb-md-0">
+                  <input
+                    className="form-control"
+                    placeholder="Cari kode, indikator, standar, atau status..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                  />
+                </div>
+                <div className="col-md-3 mb-2 mb-md-0">
+                  <select className="form-control" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                    <option value="">Semua status</option>
+                    <option value="achieved">Achieved</option>
+                    <option value="warning">Warning</option>
+                    <option value="risk">Risk</option>
+                    <option value="No Data">No Data</option>
+                  </select>
+                </div>
+                <div className="col-md-2">
+                  <button className="btn btn-light w-100" type="button" onClick={() => { setSearchTerm(""); setStatusFilter(""); }}>
+                    Reset
+                  </button>
+                </div>
+              </div>
               {loading ? (
                 <p>Memuat data...</p>
               ) : (
@@ -297,7 +372,7 @@ export function IndicatorsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {indicators.map((item) => {
+                      {paginatedIndicators.map((item) => {
                         const actual = item.latest_value?.actual_value ?? 0;
                         const pct = Math.min((actual / item.target_value) * 100, 100);
                         const color = pct >= 100 ? "success" : pct > 50 ? "warning" : "danger";
@@ -349,7 +424,7 @@ export function IndicatorsPage() {
                           </tr>
                         );
                       })}
-                      {indicators.length === 0 && (
+                      {filteredIndicators.length === 0 && (
                         <tr>
                           <td colSpan={8} className="text-center">Belum ada indikator terdaftar.</td>
                         </tr>
@@ -358,6 +433,20 @@ export function IndicatorsPage() {
                   </table>
                 </div>
               )}
+              <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <small className="text-muted">
+                  Menampilkan {paginatedIndicators.length} dari {filteredIndicators.length} indikator
+                </small>
+                <div>
+                  <button className="btn btn-sm btn-light me-2" type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+                    Sebelumnya
+                  </button>
+                  <span className="text-muted small">Halaman {currentPage} / {totalPages}</span>
+                  <button className="btn btn-sm btn-light ms-2" type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>
+                    Berikutnya
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

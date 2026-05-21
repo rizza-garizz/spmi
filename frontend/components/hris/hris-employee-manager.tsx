@@ -23,6 +23,65 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
   const [editingEmployee, setEditingEmployee] = useState<HrisEmployee | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const filteredEmployees = employees.filter((employee) => {
+    const haystack = [
+      employee.name,
+      employee.email,
+      employee.employeeNumber,
+      employee.nidn,
+      employee.type,
+      employee.status,
+      employee.unit,
+      employee.position,
+      employee.functionalPosition,
+    ].join(" ").toLowerCase();
+    return (
+      haystack.includes(searchTerm.toLowerCase()) &&
+      (!typeFilter || employee.type === typeFilter) &&
+      (!statusFilter || employee.status === statusFilter)
+    );
+  });
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / pageSize));
+  const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  function resetFilters() {
+    setSearchTerm("");
+    setTypeFilter("");
+    setStatusFilter("");
+    setCurrentPage(1);
+  }
+
+  function exportCsv() {
+    const rows = [
+      ["Nama", "NIP", "NIDN", "Email", "Tipe", "Status", "Unit", "Jabatan", "Jabatan Fungsional", "Pendidikan"],
+      ...filteredEmployees.map((employee) => [
+        employee.name,
+        employee.employeeNumber,
+        employee.nidn,
+        employee.email,
+        employee.type,
+        employee.status,
+        employee.unit,
+        employee.position,
+        employee.functionalPosition,
+        employee.education,
+      ]),
+    ];
+    const csv = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "master-pegawai-hris.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -115,16 +174,21 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
             <strong>Master Pegawai</strong>
             <p>Kelola data pegawai dari satu tabel. Form hanya muncul saat dibutuhkan.</p>
           </div>
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={() => {
-              setEditingEmployee(null);
-              setShowForm((current) => !current);
-            }}
-          >
-            {showForm ? "Tutup Form" : "Tambah Pegawai"}
-          </button>
+          <div className="hris-toolbar-actions">
+            <button className="btn btn-outline-primary" type="button" onClick={exportCsv}>
+              <i className="la la-file-excel-o me-1"></i> Export CSV
+            </button>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => {
+                setEditingEmployee(null);
+                setShowForm((current) => !current);
+              }}
+            >
+              {showForm ? "Tutup Form" : "Tambah Pegawai"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -209,6 +273,39 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
             <h4 className="card-title">Master Pegawai</h4>
           </div>
           <div className="card-body">
+            <div className="row mb-3">
+              <div className="col-md-5 mb-2 mb-md-0">
+                <input
+                  className="form-control"
+                  placeholder="Cari nama, NIP, email, unit, atau jabatan..."
+                  value={searchTerm}
+                  onChange={(event) => { setSearchTerm(event.target.value); setCurrentPage(1); }}
+                />
+              </div>
+              <div className="col-md-3 mb-2 mb-md-0">
+                <select className="form-control" value={typeFilter} onChange={(event) => { setTypeFilter(event.target.value); setCurrentPage(1); }}>
+                  <option value="">Semua tipe</option>
+                  <option value="Dosen">Dosen</option>
+                  <option value="Tendik">Tendik</option>
+                  <option value="Dosen dengan Tugas Tambahan">Dosen dengan Tugas Tambahan</option>
+                </select>
+              </div>
+              <div className="col-md-2 mb-2 mb-md-0">
+                <select className="form-control" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setCurrentPage(1); }}>
+                  <option value="">Semua status</option>
+                  <option value="Aktif">Aktif</option>
+                  <option value="Nonaktif">Nonaktif</option>
+                  <option value="Cuti">Cuti</option>
+                  <option value="Berhenti">Berhenti</option>
+                  <option value="Pensiun">Pensiun</option>
+                </select>
+              </div>
+              <div className="col-md-2">
+                <button className="btn btn-light w-100" type="button" onClick={resetFilters}>
+                  Reset
+                </button>
+              </div>
+            </div>
             <div className="table-responsive">
               <table className="table table-bordered table-responsive-sm">
                 <thead>
@@ -223,7 +320,7 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
                   </tr>
                 </thead>
                 <tbody>
-                  {employees.map((employee) => (
+                  {paginatedEmployees.map((employee) => (
                     <tr key={employee.id}>
                       <td>
                         <strong>{employee.name}</strong>
@@ -256,11 +353,25 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
                       </td>
                     </tr>
                   ))}
-                  {employees.length === 0 && (
+                  {filteredEmployees.length === 0 && (
                     <tr><td colSpan={7} className="text-center text-muted">Belum ada data pegawai.</td></tr>
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+              <small className="text-muted">
+                Menampilkan {paginatedEmployees.length} dari {filteredEmployees.length} pegawai
+              </small>
+              <div>
+                <button className="btn btn-sm btn-light me-2" type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+                  Sebelumnya
+                </button>
+                <span className="text-muted small">Halaman {currentPage} / {totalPages}</span>
+                <button className="btn btn-sm btn-light ms-2" type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>
+                  Berikutnya
+                </button>
+              </div>
             </div>
           </div>
         </div>
