@@ -2,8 +2,8 @@ import { getPpeppCycles } from "@/lib/spmi-catalog-api";
 import { RoleGate } from "@/components/auth/RoleGate";
 import { CreatePpeppCycleForm } from "@/components/isian/ppepp/create-ppepp-cycle-form";
 import { PpeppCycleMonitor } from "@/components/isian/ppepp/ppepp-cycle-monitor";
-import { NilaiCardGrid } from "@/components/nilai/core";
 import { ProgressiveSection } from "@/components/support/progressive-section";
+import { ManagedCardGrid } from "@/components/support/managed-card-grid";
 
 export default async function PpeppPage() {
   let cycles: any[] = [];
@@ -33,8 +33,10 @@ export default async function PpeppPage() {
           </div>
           <div className="section-tag">Cycle view</div>
         </div>
-        <NilaiCardGrid
+        <ManagedCardGrid
           columns={3}
+          exportName="siklus-ppepp.csv"
+          searchPlaceholder="Cari nama siklus, periode, status, atau tahap..."
           items={(cycles.length > 0 ? cycles : [{ name: "Siklus 2025/2026" }]).map((cycle, index) => ({
             key: String(cycle.id ?? index),
             title: cycle.name,

@@ -26,6 +26,10 @@ export function RtlPage() {
   const [loading, setLoading] = useState(true);
   const [savingActionId, setSavingActionId] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Record<number, { status: string; progress: number; owner_notes: string }>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const canUpdateActions = hasRoleAccess(["admin_lpm", "kaprodi", "sekprodi", "unit_kerja"], roles);
 
@@ -115,6 +119,52 @@ export function RtlPage() {
     fetchActions();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const filteredActions = actions.filter((action) => {
+    const draft = drafts[action.id];
+    const status = draft?.status || action.status || "open";
+    const haystack = [
+      action.action_item,
+      action.meeting.title,
+      action.unit?.name,
+      action.due_date,
+      status,
+      draft?.owner_notes || action.owner_notes,
+    ].join(" ").toLowerCase();
+    return haystack.includes(searchTerm.toLowerCase()) && (!statusFilter || status === statusFilter);
+  });
+  const totalPages = Math.max(1, Math.ceil(filteredActions.length / pageSize));
+  const paginatedActions = filteredActions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  function exportCsv() {
+    const rows = [
+      ["Tindak Lanjut", "Sumber RTM", "PIC", "Deadline", "Status", "Progress", "Catatan"],
+      ...filteredActions.map((action) => {
+        const draft = drafts[action.id] || { status: action.status || "open", progress: Number(action.progress ?? 0), owner_notes: action.owner_notes || "" };
+        return [
+          action.action_item,
+          action.meeting.title,
+          action.unit?.name || "Rektorat",
+          action.due_date,
+          draft.status,
+          String(draft.status === "done" ? 100 : draft.progress),
+          draft.owner_notes,
+        ];
+      }),
+    ];
+    const csv = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "monitoring-rtl.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <>
       <div className="row page-titles mx-0">
@@ -130,14 +180,43 @@ export function RtlPage() {
         <div className="col-lg-12">
           <div className="card">
             <div className="card-header">
-              <h4 className="card-title">Tracking Penugasan Strategis</h4>
-              <p className="mb-0 text-muted">
-                {canUpdateActions
-                  ? "Perbarui status dan progres tindak lanjut langsung dari halaman ini."
-                  : "Mode baca aktif. Hanya admin LPM dan unit kerja yang dapat memperbarui progres RTL."}
-              </p>
+              <div>
+                <h4 className="card-title">Tracking Penugasan Strategis</h4>
+                <p className="mb-0 text-muted">
+                  {canUpdateActions
+                    ? "Perbarui status dan progres tindak lanjut langsung dari halaman ini."
+                    : "Mode baca aktif. Hanya admin LPM dan unit kerja yang dapat memperbarui progres RTL."}
+                </p>
+              </div>
+              <button className="btn btn-outline-primary btn-sm" type="button" onClick={exportCsv}>
+                Export CSV
+              </button>
             </div>
             <div className="card-body">
+              <div className="row mb-3">
+                <div className="col-md-7 mb-2 mb-md-0">
+                  <input
+                    className="form-control"
+                    placeholder="Cari tindak lanjut, RTM, PIC, deadline, atau catatan..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                  />
+                </div>
+                <div className="col-md-3 mb-2 mb-md-0">
+                  <select className="form-control" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                    <option value="">Semua status</option>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="done">Done</option>
+                  </select>
+                </div>
+                <div className="col-md-2">
+                  <button className="btn btn-light w-100" type="button" onClick={() => { setSearchTerm(""); setStatusFilter(""); }}>
+                    Reset
+                  </button>
+                </div>
+              </div>
               <div className="table-responsive">
                 <table className="table table-bordered table-responsive-sm">
                   <thead className="thead-primary">
@@ -153,7 +232,7 @@ export function RtlPage() {
                   <tbody>
                     {loading ? (
                       <tr><td colSpan={6} className="text-center">Memuat data...</td></tr>
-                    ) : actions.map((a) => {
+                    ) : paginatedActions.map((a) => {
                       const draft = drafts[a.id] || { status: a.status || "open", progress: Number(a.progress ?? 0), owner_notes: a.owner_notes || "" };
                       const badgeName =
                         draft.status === "done" ? "success" : draft.status === "overdue" ? "danger" : draft.status === "in_progress" ? "warning" : "info";
@@ -248,11 +327,23 @@ export function RtlPage() {
                         </tr>
                       );
                     })}
-                    {actions.length === 0 && !loading && (
+                    {filteredActions.length === 0 && !loading && (
                       <tr><td colSpan={6} className="text-center">Belum ada penugasan RTL aktif.</td></tr>
                     )}
                   </tbody>
                 </table>
+              </div>
+              <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <small className="text-muted">Menampilkan {paginatedActions.length} dari {filteredActions.length} RTL</small>
+                <div>
+                  <button className="btn btn-sm btn-light me-2" type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+                    Sebelumnya
+                  </button>
+                  <span className="text-muted small">Halaman {currentPage} / {totalPages}</span>
+                  <button className="btn btn-sm btn-light ms-2" type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>
+                    Berikutnya
+                  </button>
+                </div>
               </div>
             </div>
           </div>

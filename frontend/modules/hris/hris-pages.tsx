@@ -18,7 +18,7 @@ function HrisHeader({ title, subtitle }: { title: string; subtitle: string }) {
         <ol className="breadcrumb">
           <li className="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
           <li className="breadcrumb-item"><a href="/hris">HRIS</a></li>
-          <li className="breadcrumb-item active"><a href="#">{title}</a></li>
+          <li className="breadcrumb-item active" aria-current="page">{title}</li>
         </ol>
       </div>
     </div>

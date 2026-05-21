@@ -6,8 +6,6 @@ import { useCurrentRoles } from "@/lib/spmi-access-client";
 import { useToast } from "@/components/support/Toast";
 import { clientApiRequest, parseApiPayload } from "@/lib/spmi-session-client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4000";
-
 interface RtmMeeting {
   id: number;
   title: string;
@@ -24,6 +22,11 @@ export function RtmPage() {
   const [meetings, setMeetings] = useState<RtmMeeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState<RtmMeeting | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Form State
   const [formData, setFormData] = useState({
@@ -49,6 +52,10 @@ export function RtmPage() {
     fetchMeetings();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -67,6 +74,35 @@ export function RtmPage() {
     } catch {
       showToast("Gagal menyimpan data rapat.", "danger");
     }
+  };
+
+  const filteredMeetings = meetings.filter((meeting) => {
+    const haystack = [meeting.title, meeting.meeting_date, meeting.status, meeting.conclusion].join(" ").toLowerCase();
+    return haystack.includes(searchTerm.toLowerCase()) && (!statusFilter || meeting.status === statusFilter);
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredMeetings.length / pageSize));
+  const paginatedMeetings = filteredMeetings.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const exportCsv = () => {
+    const rows = [
+      ["Agenda", "Tanggal", "Status", "Kesimpulan", "Jumlah RTL"],
+      ...filteredMeetings.map((meeting) => [
+        meeting.title,
+        meeting.meeting_date,
+        meeting.status,
+        meeting.conclusion || "",
+        String(meeting.actions?.length || 0),
+      ]),
+    ];
+    const csv = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "riwayat-rtm.csv";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -88,6 +124,9 @@ export function RtmPage() {
             <p>Riwayat rapat tetap menjadi fokus utama. Jadwal baru dibuka saat pimpinan perlu membuat agenda.</p>
           </div>
           <div className="hris-toolbar-actions">
+            <button className="btn btn-outline-primary" type="button" onClick={exportCsv}>
+              <i className="la la-file-excel-o me-1"></i> Export CSV
+            </button>
             <button
               className={showAddForm ? "btn btn-light" : "btn btn-primary"}
               onClick={() => setShowAddForm(!showAddForm)}
@@ -151,6 +190,29 @@ export function RtmPage() {
               <h4 className="card-title">Riwayat & Status RTM</h4>
             </div>
             <div className="card-body">
+              <div className="row mb-3">
+                <div className="col-md-7 mb-2 mb-md-0">
+                  <input
+                    className="form-control"
+                    placeholder="Cari agenda, tanggal, status, atau keputusan..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                  />
+                </div>
+                <div className="col-md-3 mb-2 mb-md-0">
+                  <select className="form-control" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                    <option value="">Semua status</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="open">Open</option>
+                    <option value="done">Done</option>
+                  </select>
+                </div>
+                <div className="col-md-2">
+                  <button className="btn btn-light w-100" type="button" onClick={() => { setSearchTerm(""); setStatusFilter(""); }}>
+                    Reset
+                  </button>
+                </div>
+              </div>
               <div className="table-responsive">
                 <table className="table table-bordered table-responsive-sm">
                   <thead className="thead-primary">
@@ -165,7 +227,7 @@ export function RtmPage() {
                   <tbody>
                     {loading ? (
                       <tr><td colSpan={5} className="text-center">Memuat data...</td></tr>
-                    ) : meetings.map(m => (
+                    ) : paginatedMeetings.map(m => (
                       <tr key={m.id}>
                         <td><strong>{m.title}</strong></td>
                         <td>{m.meeting_date}</td>
@@ -176,20 +238,77 @@ export function RtmPage() {
                         </td>
                         <td>{m.conclusion || <span className="text-muted small">Belum ada kesimpulan</span>}</td>
                         <td>
-                          <button className="btn btn-xs btn-info"><i className="la la-eye"></i> Detail RTL</button>
+                          <button className="btn btn-xs btn-info" type="button" onClick={() => setSelectedMeeting(m)}>
+                            <i className="la la-eye"></i> Detail RTL
+                          </button>
                         </td>
                       </tr>
                     ))}
-                    {meetings.length === 0 && !loading && (
+                    {filteredMeetings.length === 0 && !loading && (
                       <tr><td colSpan={5} className="text-center">Belum ada agenda RTM yang tercatat.</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
+              <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <small className="text-muted">Menampilkan {paginatedMeetings.length} dari {filteredMeetings.length} RTM</small>
+                <div>
+                  <button className="btn btn-sm btn-light me-2" type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+                    Sebelumnya
+                  </button>
+                  <span className="text-muted small">Halaman {currentPage} / {totalPages}</span>
+                  <button className="btn btn-sm btn-light ms-2" type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>
+                    Berikutnya
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {selectedMeeting ? (
+        <div className="row">
+          <div className="col-lg-12">
+            <div className="card border-primary">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h4 className="card-title mb-0">Detail RTL: {selectedMeeting.title}</h4>
+                <button className="btn btn-light btn-sm" type="button" onClick={() => setSelectedMeeting(null)}>Tutup</button>
+              </div>
+              <div className="card-body">
+                <p className="text-muted">{selectedMeeting.conclusion || "Belum ada kesimpulan rapat."}</p>
+                <div className="table-responsive">
+                  <table className="table table-bordered table-responsive-sm">
+                    <thead>
+                      <tr>
+                        <th>Tindak Lanjut</th>
+                        <th>PIC</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                        <th>Progress</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(selectedMeeting.actions || []).map((action) => (
+                        <tr key={action.id}>
+                          <td>{action.action_item}</td>
+                          <td>{action.unit?.name || "Rektorat"}</td>
+                          <td>{action.due_date || "-"}</td>
+                          <td><span className="badge badge-primary">{action.status || "open"}</span></td>
+                          <td>{action.progress ?? 0}%</td>
+                        </tr>
+                      ))}
+                      {(!selectedMeeting.actions || selectedMeeting.actions.length === 0) ? (
+                        <tr><td colSpan={5} className="text-center text-muted">Belum ada RTL pada agenda ini.</td></tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

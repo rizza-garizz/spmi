@@ -1,7 +1,7 @@
 import { getCatalogSnapshot, getSurveys } from "@/lib/spmi-catalog-api";
 import { CreateSurveyForm } from "@/components/isian/surveys/create-survey-form";
-import { NilaiCardGrid } from "@/components/nilai/core";
 import { ProgressiveSection } from "@/components/support/progressive-section";
+import { ManagedCardGrid } from "@/components/support/managed-card-grid";
 
 export default async function SurveysPage() {
   let surveys: any[] = [];
@@ -31,8 +31,10 @@ export default async function SurveysPage() {
           </div>
           <div className="section-tag">Stakeholder view</div>
         </div>
-        <NilaiCardGrid
+        <ManagedCardGrid
           columns={3}
+          exportName="daftar-survei.csv"
+          searchPlaceholder="Cari survei atau target responden..."
           items={(surveys.length > 0 ? surveys : [{ title: "Survei kepuasan mahasiswa", target: "mahasiswa" }]).map((survey, index) => ({
             key: String(survey.id ?? index),
             title: survey.title,

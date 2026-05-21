@@ -106,7 +106,9 @@ export default async function AmiPage() {
                           <h4 className="mb-0">{audit.recap?.score ?? (audit.score ? audit.score.toFixed(1) : "-")}</h4>
                         </td>
                         <td>
-                          <button className="btn btn-sm btn-primary">Detail</button>
+                          <a className="btn btn-sm btn-primary" href="#workflow-ami">
+                            Detail Workflow
+                          </a>
                         </td>
                       </tr>
                     ))}
@@ -120,7 +122,7 @@ export default async function AmiPage() {
 
       <div className="row">
         <div className="col-xl-12 col-xxl-12 col-sm-12">
-          <div className="card">
+          <div className="card" id="workflow-ami">
             <div className="card-header">
               <h4 className="card-title">Workflow AMI Lengkap</h4>
             </div>

@@ -3,6 +3,7 @@ import { AoaMigrationForm } from "@/components/isian/imports/aoa-migration-form"
 import { getCatalogSnapshot, getDashboardSummary, getImports } from "@/lib/spmi-catalog-api";
 import { NilaiCardGrid } from "@/components/nilai/core";
 import { ProgressiveSection } from "@/components/support/progressive-section";
+import { ManagedCardGrid } from "@/components/support/managed-card-grid";
 
 export default async function ImportsPage() {
   let summary = { metrics: [] as Array<{ label: string; value: number }> };
@@ -83,8 +84,10 @@ export default async function ImportsPage() {
             <p>Riwayat ini menunjukkan bagaimana status import akan terlihat di UI.</p>
           </div>
         </div>
-        <NilaiCardGrid
+        <ManagedCardGrid
           columns={3}
+          exportName="riwayat-import.csv"
+          searchPlaceholder="Cari judul, tipe, atau status import..."
           items={(imports.data.length > 0
             ? imports.data
             : [
