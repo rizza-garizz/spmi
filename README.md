@@ -1,5 +1,10 @@
 # SPMI Command Center
 
+## Go-Live Documents
+
+- [UAT Go-Live Checklist](docs/uat-go-live-checklist.md)
+- [Production Operations Runbook](docs/production-operations-runbook.md)
+
 SPMI Command Center adalah dashboard Sistem Penjaminan Mutu Internal untuk perguruan tinggi. Repo ini memakai:
 
 - Frontend resmi: `frontend/` dengan Next.js 15
