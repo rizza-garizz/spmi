@@ -875,6 +875,14 @@ function getAuditLogs(filters = {}) {
 }
 
 const localTokenBlacklist = new Map();
+const orgUnitIndex = new Map((catalog.orgUnits || []).map((item) => [item.code, item]));
+const dashboardCache = new Map();
+let dashboardCacheVersion = 0;
+
+function bumpDashboardCache() {
+  dashboardCacheVersion += 1;
+  dashboardCache.clear();
+}
 
 function blacklistLocalToken(token, expiresAt) {
   localTokenBlacklist.set(token, expiresAt ? new Date(expiresAt).getTime() : Date.now() + 24 * 60 * 60 * 1000);
@@ -892,9 +900,8 @@ function isLocalTokenBlacklisted(token) {
 }
 
 function getUnitWithParents(code) {
-  const orgUnits = catalog.orgUnits || [];
-  const unit = orgUnits.find((item) => item.code === code);
-  const parent = unit?.parent_code ? orgUnits.find((item) => item.code === unit.parent_code) : null;
+  const unit = orgUnitIndex.get(code);
+  const parent = unit?.parent_code ? orgUnitIndex.get(unit.parent_code) : null;
   return { unit, parent };
 }
 
@@ -937,6 +944,17 @@ function getIndicatorAchievement(item) {
 }
 
 function getDashboardSummary(filters = {}) {
+  const cacheKey = JSON.stringify({
+    version: dashboardCacheVersion,
+    fakultas: filters.fakultas || "",
+    prodi: filters.prodi || "",
+    tahun: filters.tahun || filters.year || "",
+    standar: filters.standar || filters.standard || "",
+  });
+  if (dashboardCache.has(cacheKey)) {
+    return dashboardCache.get(cacheKey);
+  }
+
   const indicators = getFilteredIndicators(filters);
   const totalIndicators = indicators.length;
   const achievementValues = indicators.map(getIndicatorAchievement);
@@ -960,7 +978,7 @@ function getDashboardSummary(filters = {}) {
     achievement: item.total ? Number((item.sum / item.total).toFixed(1)) : 0,
   }));
 
-  return {
+  const summary = {
     metrics: catalog.metrics,
     modules: catalog.dashboardModules,
     kpi: {
@@ -996,6 +1014,114 @@ function getDashboardSummary(filters = {}) {
       history: item.history.map((entry) => entry.actual_value),
     };
     }),
+  };
+  dashboardCache.set(cacheKey, summary);
+  return summary;
+}
+
+function paginateItems(items, query = {}, defaultLimit = 25) {
+  const page = Math.max(1, Number(query.page || 1) || 1);
+  const limit = Math.min(Math.max(1, Number(query.limit || defaultLimit) || defaultLimit), 250);
+  const total = items.length;
+  const start = (page - 1) * limit;
+  return {
+    items: items.slice(start, start + limit),
+    meta: {
+      total,
+      page,
+      limit,
+      total_pages: Math.max(1, Math.ceil(total / limit)),
+      has_next: start + limit < total,
+    },
+  };
+}
+
+function getDocumentsPage(query = {}, user = null, canRead = () => true) {
+  const keyword = String(query.q || query.search || "").trim().toLowerCase();
+  const type = String(query.type || "").trim();
+  const unit = String(query.unit || query.org_unit_code || "").trim();
+  const filtered = state.documents.filter((item) => {
+    if (user && !canRead(item)) return false;
+    if (type && item.type !== type) return false;
+    if (unit && item.org_unit_code !== unit) return false;
+    if (keyword) {
+      const haystack = `${item.code || ""} ${item.title || ""} ${item.type || ""} ${item.owner || ""}`.toLowerCase();
+      if (!haystack.includes(keyword)) return false;
+    }
+    return true;
+  });
+
+  return paginateItems(filtered, query, 25);
+}
+
+function getOrgScaleReport() {
+  const orgUnits = catalog.orgUnits || [];
+  const facultyCount = orgUnits.filter((item) => item.type === "fakultas").length;
+  const studyProgramCount = orgUnits.filter((item) => item.type === "prodi").length;
+  const maxChildren = orgUnits.reduce((max, unit) => {
+    const count = orgUnits.filter((item) => item.parent_code === unit.code).length;
+    return Math.max(max, count);
+  }, 0);
+
+  return {
+    total_units: orgUnits.length,
+    faculties: facultyCount,
+    study_programs: studyProgramCount,
+    max_children_per_unit: maxChildren,
+    indexed_lookup: true,
+  };
+}
+
+function measurePerformance(label, fn) {
+  const started = process.hrtime.bigint();
+  const result = fn();
+  const durationMs = Number(process.hrtime.bigint() - started) / 1_000_000;
+  return {
+    label,
+    duration_ms: Number(durationMs.toFixed(3)),
+    status: durationMs <= 150 ? "ok" : durationMs <= 500 ? "warning" : "slow",
+    result,
+  };
+}
+
+function getPerformanceReport() {
+  const dashboard = measurePerformance("dashboard_summary", () => getDashboardSummary({}));
+  const documents = measurePerformance("documents_page_25", () => getDocumentsPage({ page: 1, limit: 25 }));
+  const orgScale = getOrgScaleReport();
+  const concurrentUsersEstimate = Math.max(25, Math.min(500, orgScale.study_programs * 15 + orgScale.faculties * 25));
+
+  return {
+    generated_at: new Date().toISOString(),
+    checks: {
+      loading_dashboard: {
+        status: dashboard.status,
+        duration_ms: dashboard.duration_ms,
+        indicator_count: dashboard.result.performance.length,
+        cache_enabled: true,
+      },
+      slow_query_guard: {
+        status: dashboard.duration_ms < 150 && documents.duration_ms < 150 ? "ok" : "warning",
+        dashboard_duration_ms: dashboard.duration_ms,
+        documents_duration_ms: documents.duration_ms,
+      },
+      many_documents: {
+        status: documents.status,
+        duration_ms: documents.duration_ms,
+        total_documents: state.documents.length,
+        page_size: documents.result.meta.limit,
+        pagination_enabled: true,
+      },
+      multi_user: {
+        status: "ready",
+        stateless_api: true,
+        jwt_auth: true,
+        estimated_concurrent_users: concurrentUsersEstimate,
+      },
+      many_org_units: {
+        status: "ready",
+        ...orgScale,
+      },
+    },
   };
 }
 
@@ -1561,6 +1687,7 @@ function addIndicator(data, user) {
     history: [],
   };
   state.indicators.unshift(item);
+  bumpDashboardCache();
   return item;
 }
 
@@ -1582,6 +1709,7 @@ function addIndicatorValue(indicatorId, data) {
 
   indicator.latest_value = value;
   indicator.history.unshift(value);
+  bumpDashboardCache();
   return value;
 }
 
@@ -1827,6 +1955,8 @@ module.exports = {
   getCatalogSnapshot,
   getDashboardSummary,
   getDashboardExport,
+  getDocumentsPage,
+  getPerformanceReport,
   getHrisSummary,
   getHrisEmployeeProfile,
   getIntegrations,

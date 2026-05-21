@@ -132,6 +132,17 @@ module.exports = {
         },
       },
     },
+    "/performance/report": {
+      get: {
+        tags: ["Performance"],
+        summary: "Inspect dashboard loading document pagination multi-user and organization scale readiness",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: "Performance readiness report" },
+          403: { description: "Admin role required" },
+        },
+      },
+    },
     "/catalog": {
       get: {
         tags: ["Catalog"],

@@ -121,6 +121,7 @@ npm run dev
 - `GET /security/audit-trail`
 - `GET /dashboard/summary`
 - `GET /dashboard/export`
+- `GET /performance/report`
 - `GET /catalog`
 - `GET/POST /standards`
 - `PUT/DELETE /standards/:id`

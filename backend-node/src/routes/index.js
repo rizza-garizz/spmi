@@ -54,6 +54,7 @@ router.get("/system/status", catchAsync(systemController.status));
 router.get("/catalog", optionalAuth, compatController.catalog);
 router.get("/dashboard/summary", optionalAuth, compatController.dashboardSummary);
 router.get("/dashboard/export", optionalAuth, compatController.dashboardExport);
+router.get("/performance/report", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.performanceReport);
 router.get("/standards", optionalAuth, compatController.standards);
 router.post("/standards", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.createStandard);
 router.get("/standards/:id/revisions", optionalAuth, compatController.standardRevisions);

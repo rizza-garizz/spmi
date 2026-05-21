@@ -3,6 +3,8 @@ const {
   getCatalogSnapshot,
   getDashboardSummary,
   getDashboardExport,
+  getDocumentsPage,
+  getPerformanceReport,
   getHrisSummary,
   getHrisEmployeeProfile,
   getIntegrations,
@@ -85,6 +87,10 @@ function dashboardExport(req, res) {
   return res.send(payload.content);
 }
 
+function performanceReport(_req, res) {
+  return success(res, getPerformanceReport(), "Laporan performa sistem");
+}
+
 function catalog(_req, res) {
   return success(res, getCatalogSnapshot(), "Snapshot katalog");
 }
@@ -127,6 +133,13 @@ function deleteStandardRecord(req, res) {
 }
 
 function documents(req, res) {
+  if (req.query?.page || req.query?.limit || req.query?.q || req.query?.search || req.query?.type || req.query?.unit) {
+    return success(
+      res,
+      getDocumentsPage(req.query || {}, req.user, (item) => canReadScopedItem(req, item)),
+      "Daftar dokumen terpaginasikan"
+    );
+  }
   return success(res, scopedItems(req, state.documents), "Daftar dokumen");
 }
 
@@ -646,6 +659,7 @@ function createImport(req, res) {
 module.exports = {
   dashboardSummary,
   dashboardExport,
+  performanceReport,
   catalog,
   standards,
   createStandard,

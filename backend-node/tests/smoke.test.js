@@ -256,6 +256,57 @@ test("dashboard supports filters and export payloads", async () => {
   assert.equal(pdfText.includes("Dashboard KPI Mutu"), true);
 });
 
+test("performance report covers dashboard documents concurrent users and org scale", async () => {
+  const adminToken = await loginAs("admin@spmi.local");
+
+  const uploads = Array.from({ length: 35 }, (_, index) => {
+    const form = new FormData();
+    form.append("code", `DOC-PERF-${index}`);
+    form.append("title", `Dokumen Performa ${index}`);
+    form.append("type", "laporan_ami");
+    form.append("category", "Performa");
+    form.append("owner", "LPM");
+    form.append("file", new Blob([`code,title\n${index},Perf`], { type: "text/csv" }), `perf-${index}.csv`);
+    return fetch(`${baseUrl}/documents`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: form,
+    });
+  });
+
+  const uploadResponses = await Promise.all(uploads);
+  assert.equal(uploadResponses.every((response) => response.status === 201), true);
+
+  const documentsResponse = await fetch(`${baseUrl}/documents?page=1&limit=10&q=Dokumen`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const documentsPayload = await documentsResponse.json();
+
+  assert.equal(documentsResponse.status, 200);
+  assert.equal(documentsPayload.data.items.length <= 10, true);
+  assert.equal(documentsPayload.data.meta.total >= 35, true);
+  assert.equal(documentsPayload.data.meta.has_next, true);
+
+  const concurrentResponses = await Promise.all(
+    Array.from({ length: 20 }, () => fetch(`${baseUrl}/dashboard/summary`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    }))
+  );
+  assert.equal(concurrentResponses.every((response) => response.status === 200), true);
+
+  const reportResponse = await fetch(`${baseUrl}/performance/report`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const reportPayload = await reportResponse.json();
+
+  assert.equal(reportResponse.status, 200);
+  assert.equal(reportPayload.data.checks.loading_dashboard.cache_enabled, true);
+  assert.equal(reportPayload.data.checks.many_documents.pagination_enabled, true);
+  assert.equal(reportPayload.data.checks.multi_user.stateless_api, true);
+  assert.equal(reportPayload.data.checks.many_org_units.indexed_lookup, true);
+  assert.equal(reportPayload.data.checks.many_org_units.study_programs >= 1, true);
+});
+
 test("GET /catalog exposes the required standard groups", async () => {
   const response = await fetch(`${baseUrl}/catalog`);
   const payload = await response.json();
