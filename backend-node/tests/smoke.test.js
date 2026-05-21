@@ -1241,3 +1241,55 @@ test("POST /imports allows admin role only", async () => {
   assert.equal(deniedResponse.status, 403);
   assert.equal(deniedPayload.success, false);
 });
+
+test("integration readiness covers SIAKAD SIMPEG finance repository PDDIKTI and SSO with logs", async () => {
+  const adminToken = await loginAs("admin@spmi.local");
+
+  const listResponse = await fetch(`${baseUrl}/integrations`);
+  const listPayload = await listResponse.json();
+
+  assert.equal(listResponse.status, 200);
+  assert.equal(listPayload.success, true);
+
+  const keys = listPayload.data.map((item) => item.key);
+  for (const key of ["siakad", "simpeg", "keuangan", "repository", "pddikti", "sso_iam"]) {
+    assert.equal(keys.includes(key), true);
+  }
+
+  const readinessResponse = await fetch(`${baseUrl}/integrations/readiness`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const readinessPayload = await readinessResponse.json();
+
+  assert.equal(readinessResponse.status, 200);
+  assert.equal(readinessPayload.data.systems.includes("SIAKAD"), true);
+  assert.equal(readinessPayload.data.systems.includes("SSO/IAM"), true);
+
+  const checkResponse = await fetch(`${baseUrl}/integrations/siakad/check`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const checkPayload = await checkResponse.json();
+
+  assert.equal(checkResponse.status, 200);
+  assert.equal(checkPayload.data.checks.synchronization.record_count > 0, true);
+  assert.equal(Boolean(checkPayload.data.log.id), true);
+
+  const syncResponse = await fetch(`${baseUrl}/integrations/repository/sync`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const syncPayload = await syncResponse.json();
+
+  assert.equal(syncResponse.status, 201);
+  assert.equal(Boolean(syncPayload.data.last_sync_at), true);
+  assert.equal(Boolean(syncPayload.data.log.metadata.record_count >= 0), true);
+
+  const logsResponse = await fetch(`${baseUrl}/integrations/logs`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const logsPayload = await logsResponse.json();
+
+  assert.equal(logsResponse.status, 200);
+  assert.equal(logsPayload.data.length >= 2, true);
+});

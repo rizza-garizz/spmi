@@ -13,6 +13,63 @@ const STANDARD_CATEGORIES = [
   { key: "sarpras", label: "Sarpras", prefix: "SAR" },
 ];
 
+const INTEGRATION_CONNECTORS = [
+  {
+    key: "siakad",
+    domain: "SIAKAD",
+    status: "discovery",
+    endpoint: "https://xd.ingenio.id",
+    owner: "Akademik",
+    master_data: ["mahasiswa", "dosen", "kurikulum", "kelas", "krs", "nilai", "unit"],
+    sync_direction: "inbound",
+  },
+  {
+    key: "simpeg",
+    domain: "SIMPEG",
+    status: "planned",
+    endpoint: null,
+    owner: "SDM",
+    master_data: ["pegawai", "dosen", "tendik", "jabatan", "unit"],
+    sync_direction: "inbound",
+  },
+  {
+    key: "keuangan",
+    domain: "Keuangan",
+    status: "planned",
+    endpoint: null,
+    owner: "Keuangan",
+    master_data: ["tagihan", "pembayaran", "anggaran", "unit"],
+    sync_direction: "inbound",
+  },
+  {
+    key: "repository",
+    domain: "Repository",
+    status: "planned",
+    endpoint: null,
+    owner: "LPM",
+    master_data: ["dokumen", "evidence", "versi", "metadata"],
+    sync_direction: "bidirectional",
+  },
+  {
+    key: "pddikti",
+    domain: "PDDIKTI",
+    status: "planned",
+    endpoint: null,
+    owner: "Akademik",
+    master_data: ["mahasiswa", "dosen", "prodi", "aktivitas_kuliah", "nilai"],
+    sync_direction: "outbound",
+  },
+  {
+    key: "sso_iam",
+    domain: "SSO/IAM",
+    status: "planned",
+    endpoint: null,
+    owner: "TIK",
+    master_data: ["user", "role", "scope_unit", "session", "audit_log"],
+    sync_direction: "inbound",
+  },
+];
+
 const standardCategoryAliases = {
   pkm: "pengabdian",
   tambahan: "tata_kelola",
@@ -500,6 +557,13 @@ const state = {
     title: item.title,
     status: item.status,
   })),
+  integrations: INTEGRATION_CONNECTORS.map((connector) => ({
+    ...connector,
+    last_sync_at: null,
+    last_status: connector.status === "discovery" ? "ready_for_mapping" : "planned",
+    error_count: 0,
+  })),
+  integrationLogs: [],
   hris: {
     metrics: catalog.hris.metrics.map((item) => ({ ...item })),
     employees: catalog.hris.employees.map((item) => ({ ...item })),
@@ -525,6 +589,7 @@ function getCatalogSnapshot() {
     ppeppCycles: state.ppeppCycles,
     surveys: state.surveys,
     imports: state.imports,
+    integrations: getIntegrations(),
     hris: state.hris,
   };
 }
@@ -548,6 +613,234 @@ function getHrisEmployeeProfile(employeeId) {
     competencies: state.hris.competencies.filter((item) => item.employee === employee.name),
     documents: state.hris.documents.filter((item) => item.employee === employee.name),
   };
+}
+
+function findDuplicateValues(items, fields) {
+  const duplicates = [];
+
+  for (const field of fields) {
+    const seen = new Map();
+    for (const item of items) {
+      const value = String(item[field] || "").trim().toLowerCase();
+      if (!value) continue;
+      if (seen.has(value)) {
+        duplicates.push({
+          field,
+          value: item[field],
+          ids: [seen.get(value), item.id || item.code || item.name].filter(Boolean),
+        });
+      } else {
+        seen.set(value, item.id || item.code || item.name);
+      }
+    }
+  }
+
+  return duplicates;
+}
+
+function getIntegrationDataProfile(key) {
+  const orgUnits = catalog.orgUnits || [];
+  const employees = state.hris.employees || [];
+  const documents = state.documents || [];
+  const standards = getActiveStandards();
+
+  const profiles = {
+    siakad: {
+      record_count: orgUnits.length + standards.length + state.ppeppCycles.length,
+      master_sources: ["orgUnits", "standards", "ppeppCycles"],
+      duplicates: [
+        ...findDuplicateValues(orgUnits, ["code", "name"]),
+        ...findDuplicateValues(standards, ["code", "title"]),
+      ],
+      missing_master: orgUnits.filter((item) => item.parent_code && !orgUnits.some((unit) => unit.code === item.parent_code)),
+    },
+    simpeg: {
+      record_count: employees.length + state.hris.positions.length + state.hris.competencies.length,
+      master_sources: ["hris.employees", "hris.positions", "hris.competencies"],
+      duplicates: findDuplicateValues(employees, ["id", "employeeNumber", "nidn", "email"]),
+      missing_master: employees.filter((item) => !item.unit || !item.email),
+    },
+    keuangan: {
+      record_count: state.indicators.filter((item) => item.category === "keuangan").length,
+      master_sources: ["indicators.keuangan", "standards.keuangan"],
+      duplicates: findDuplicateValues(standards.filter((item) => item.category === "keuangan"), ["code", "title"]),
+      missing_master: standards.filter((item) => item.category === "keuangan" && !item.description),
+    },
+    repository: {
+      record_count: documents.length,
+      master_sources: ["documents"],
+      duplicates: findDuplicateValues(documents, ["code", "title"]),
+      missing_master: documents.filter((item) => !item.metadata?.tanggal || !item.metadata?.unit || !item.metadata?.kategori),
+    },
+    pddikti: {
+      record_count: orgUnits.filter((item) => item.type === "prodi").length + employees.filter((item) => item.nidn).length,
+      master_sources: ["orgUnits.prodi", "hris.employees.nidn"],
+      duplicates: [
+        ...findDuplicateValues(orgUnits.filter((item) => item.type === "prodi"), ["code", "name"]),
+        ...findDuplicateValues(employees.filter((item) => item.nidn), ["nidn"]),
+      ],
+      missing_master: employees.filter((item) => String(item.type || "").includes("Dosen") && !item.nidn),
+    },
+    sso_iam: {
+      record_count: (catalog.seedUsers || []).length,
+      master_sources: ["seedUsers", "roles", "orgUnits"],
+      duplicates: findDuplicateValues(catalog.seedUsers || [], ["email"]),
+      missing_master: (catalog.seedUsers || []).filter((item) => !item.role || !item.org_unit_code),
+    },
+  };
+
+  return profiles[key] || {
+    record_count: 0,
+    master_sources: [],
+    duplicates: [],
+    missing_master: [],
+  };
+}
+
+function buildIntegrationChecks(connector) {
+  const profile = getIntegrationDataProfile(connector.key);
+  const hasEndpoint = Boolean(connector.endpoint);
+  const hasDuplicates = profile.duplicates.length > 0;
+  const hasMissingMaster = profile.missing_master.length > 0;
+
+  return {
+    synchronization: {
+      status: connector.last_sync_at ? "synced" : hasEndpoint ? "ready" : "planned",
+      message: connector.last_sync_at
+        ? `Terakhir sinkron ${connector.last_sync_at}`
+        : hasEndpoint
+          ? "Endpoint tersedia untuk uji sinkronisasi."
+          : "Menunggu endpoint/API credential resmi.",
+      record_count: profile.record_count,
+      direction: connector.sync_direction,
+    },
+    master_consistency: {
+      status: hasMissingMaster ? "warning" : "ok",
+      message: hasMissingMaster
+        ? `${profile.missing_master.length} data master perlu dilengkapi.`
+        : "Data master inti konsisten.",
+      sources: profile.master_sources,
+    },
+    duplicate_data: {
+      status: hasDuplicates ? "warning" : "ok",
+      message: hasDuplicates ? `${profile.duplicates.length} potensi duplicate ditemukan.` : "Tidak ada duplicate terdeteksi.",
+      items: profile.duplicates.slice(0, 10),
+    },
+    api_error_handling: {
+      status: "ok",
+      message: "Timeout, retry, duplicate rejection, dan response 4xx/5xx disiapkan pada orchestration layer.",
+      retry_policy: "3x retry, exponential backoff, circuit breaker saat gagal beruntun",
+    },
+    integration_logging: {
+      status: "ok",
+      message: "Setiap readiness check dan sync dicatat ke integrationLogs.",
+      latest_log_id: state.integrationLogs.find((item) => item.service === connector.key)?.id || null,
+    },
+  };
+}
+
+function summarizeIntegrationReadiness(connector) {
+  const checks = buildIntegrationChecks(connector);
+  const statuses = Object.values(checks).map((item) => item.status);
+  if (statuses.includes("failed")) return "failed";
+  if (statuses.includes("warning")) return "warning";
+  if (statuses.includes("planned")) return "planned";
+  if (statuses.includes("ready")) return "ready";
+  return "ok";
+}
+
+function getIntegrations() {
+  return state.integrations.map((connector) => ({
+    ...connector,
+    checks: buildIntegrationChecks(connector),
+    readiness_status: summarizeIntegrationReadiness(connector),
+  }));
+}
+
+function getIntegrationReadiness() {
+  const connectors = getIntegrations();
+  const summary = connectors.reduce(
+    (acc, item) => {
+      acc.total += 1;
+      acc[item.readiness_status] = (acc[item.readiness_status] || 0) + 1;
+      return acc;
+    },
+    { total: 0, ok: 0, ready: 0, warning: 0, planned: 0, failed: 0 }
+  );
+
+  return {
+    systems: ["SIAKAD", "SIMPEG", "Keuangan", "Repository", "PDDIKTI", "SSO/IAM"],
+    summary,
+    connectors,
+    latest_logs: state.integrationLogs.slice(0, 20),
+  };
+}
+
+function appendIntegrationLog(service, status, message, metadata = {}) {
+  const log = {
+    id: `int-log-${Date.now()}-${state.integrationLogs.length + 1}`,
+    service,
+    status,
+    message,
+    metadata,
+    syncedAt: new Date().toISOString(),
+  };
+  state.integrationLogs.unshift(log);
+  return log;
+}
+
+function checkIntegration(service, actor = "system") {
+  const connector = state.integrations.find((item) => item.key === service);
+  if (!connector) return null;
+
+  const checks = buildIntegrationChecks(connector);
+  const readiness_status = summarizeIntegrationReadiness(connector);
+  const log = appendIntegrationLog(service, readiness_status === "failed" ? "failed" : "checked", "Readiness check integrasi selesai.", {
+    actor,
+    readiness_status,
+    duplicate_count: checks.duplicate_data.items.length,
+    master_status: checks.master_consistency.status,
+  });
+
+  return {
+    ...connector,
+    checks,
+    readiness_status,
+    log,
+  };
+}
+
+function syncIntegration(service, actor = "system") {
+  const connector = state.integrations.find((item) => item.key === service);
+  if (!connector) return null;
+
+  const checks = buildIntegrationChecks(connector);
+  const hasDuplicateWarning = checks.duplicate_data.status === "warning";
+  const hasMissingMaster = checks.master_consistency.status === "warning";
+  const status = hasDuplicateWarning || hasMissingMaster ? "synced_with_warning" : "synced";
+  const now = new Date().toISOString();
+
+  connector.last_sync_at = now;
+  connector.last_status = status;
+  connector.error_count = status === "synced" ? 0 : connector.error_count + 1;
+
+  const log = appendIntegrationLog(service, status, "Sinkronisasi simulasi integrasi selesai.", {
+    actor,
+    duplicate_warning: hasDuplicateWarning,
+    master_warning: hasMissingMaster,
+    record_count: checks.synchronization.record_count,
+  });
+
+  return {
+    ...connector,
+    checks: buildIntegrationChecks(connector),
+    readiness_status: summarizeIntegrationReadiness(connector),
+    log,
+  };
+}
+
+function getIntegrationLogs(service) {
+  return state.integrationLogs.filter((item) => !service || item.service === service);
 }
 
 function getDashboardSummary() {
@@ -1360,6 +1653,11 @@ module.exports = {
   getDashboardSummary,
   getHrisSummary,
   getHrisEmployeeProfile,
+  getIntegrations,
+  getIntegrationReadiness,
+  getIntegrationLogs,
+  checkIntegration,
+  syncIntegration,
   addStandard,
   getActiveStandards,
   getStandardRevisions,

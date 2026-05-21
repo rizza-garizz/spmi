@@ -96,6 +96,10 @@ router.post("/indicators/:id/values", verifyToken, requireRole(...ROLE_INDICATOR
 router.patch("/governance/:entity/:id/approval", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.updateApproval);
 router.get("/org-units", optionalAuth, compatController.orgUnits);
 router.get("/integrations", optionalAuth, compatController.integrations);
+router.get("/integrations/readiness", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.integrationReadiness);
+router.get("/integrations/logs", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.integrationLogs);
+router.post("/integrations/:key/check", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.integrationCheck);
+router.post("/integrations/:key/sync", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.integrationSync);
 router.get("/hris", optionalAuth, compatController.hris);
 router.get("/hris/employees", optionalAuth, compatController.hrisEmployees);
 router.get("/hris/employees/:id", optionalAuth, compatController.hrisEmployeeProfile);

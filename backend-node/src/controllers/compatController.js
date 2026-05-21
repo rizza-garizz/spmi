@@ -4,6 +4,11 @@ const {
   getDashboardSummary,
   getHrisSummary,
   getHrisEmployeeProfile,
+  getIntegrations,
+  getIntegrationReadiness,
+  getIntegrationLogs,
+  checkIntegration,
+  syncIntegration,
   addStandard,
   getActiveStandards,
   getStandardRevisions,
@@ -451,7 +456,27 @@ function orgUnits(_req, res) {
 }
 
 function integrations(_req, res) {
-  return success(res, getCatalogSnapshot().integrations, "Daftar integrasi");
+  return success(res, getIntegrations(), "Daftar integrasi");
+}
+
+function integrationReadiness(_req, res) {
+  return success(res, getIntegrationReadiness(), "Readiness integrasi sistem");
+}
+
+function integrationLogs(req, res) {
+  return success(res, getIntegrationLogs(req.query?.service), "Log integrasi");
+}
+
+function integrationCheck(req, res) {
+  const result = checkIntegration(req.params.key, req.user?.email || req.user?.username || "system");
+  if (!result) return failure(res, "Connector integrasi tidak ditemukan.", 404);
+  return success(res, result, "Readiness check integrasi selesai.");
+}
+
+function integrationSync(req, res) {
+  const result = syncIntegration(req.params.key, req.user?.email || req.user?.username || "system");
+  if (!result) return failure(res, "Connector integrasi tidak ditemukan.", 404);
+  return success(res, result, "Sinkronisasi integrasi berhasil dijalankan.", 201);
 }
 
 function imports(_req, res) {
@@ -640,6 +665,10 @@ module.exports = {
   updateApproval,
   orgUnits,
   integrations,
+  integrationReadiness,
+  integrationLogs,
+  integrationCheck,
+  integrationSync,
   imports,
   hris,
   hrisEmployees,

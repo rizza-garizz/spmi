@@ -68,6 +68,33 @@ type HrisEmployeeProfile = {
   documents: HrisCatalog["documents"];
 };
 
+export type IntegrationConnector = {
+  key: string;
+  domain: string;
+  status: string;
+  endpoint?: string | null;
+  owner?: string;
+  master_data?: string[];
+  sync_direction?: string;
+  last_sync_at?: string | null;
+  last_status?: string;
+  error_count?: number;
+  readiness_status?: string;
+  checks?: Record<
+    string,
+    {
+      status: string;
+      message: string;
+      record_count?: number;
+      direction?: string;
+      sources?: string[];
+      items?: Array<unknown>;
+      latest_log_id?: string | null;
+      retry_policy?: string;
+    }
+  >;
+};
+
 async function fetchJson<T>(path: string, fallback: T): Promise<T> {
   if (!apiBaseUrl) {
     return fallback;
@@ -165,7 +192,7 @@ const emptyCatalog = {
   }>,
   rtmMeetings: [] as Array<{ id: number; title: string; status: string }>,
   surveys: [] as Array<{ id: number; title: string; target: string }>,
-  integrations: [] as Array<{ key: string; domain: string; status: string }>,
+  integrations: [] as IntegrationConnector[],
   siakadIntegrationMap: [] as SiakadIntegrationMapItem[],
   imports: [] as Array<{ id: number; type: string; title: string; status: string }>,
   dashboardModules: [] as DashboardModule[],

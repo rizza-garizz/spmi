@@ -128,6 +128,11 @@ npm run dev
 - `GET /documents/versions/:versionId`
 - `GET /documents/versions/:versionId/download`
 - `GET /documents/versions/:versionId/preview`
+- `GET /integrations`
+- `GET /integrations/readiness`
+- `GET /integrations/logs`
+- `POST /integrations/:key/check`
+- `POST /integrations/:key/sync`
 - `GET/POST /ppepp/cycles`
 - `PATCH /ppepp/cycles/:id/stages/:stage`
 - `POST /ppepp/cycles/:id/stages/:stage/evidence`

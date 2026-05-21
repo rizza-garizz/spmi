@@ -563,6 +563,55 @@ module.exports = {
         },
       },
     },
+    "/integrations/readiness": {
+      get: {
+        tags: ["Integration"],
+        summary: "Inspect readiness for SIAKAD SIMPEG finance repository PDDIKTI and SSO/IAM",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: "Integration readiness report" },
+          403: { description: "Admin role required" },
+        },
+      },
+    },
+    "/integrations/logs": {
+      get: {
+        tags: ["Integration"],
+        summary: "List integration logs",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "service", in: "query", required: false, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Integration logs" },
+          403: { description: "Admin role required" },
+        },
+      },
+    },
+    "/integrations/{key}/check": {
+      post: {
+        tags: ["Integration"],
+        summary: "Run duplicate master-data API error and logging readiness checks",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "key", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Connector readiness check" },
+          403: { description: "Admin role required" },
+          404: { description: "Connector not found" },
+        },
+      },
+    },
+    "/integrations/{key}/sync": {
+      post: {
+        tags: ["Integration"],
+        summary: "Run a guarded integration sync and write integration log",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "key", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          201: { description: "Integration sync finished" },
+          403: { description: "Admin role required" },
+          404: { description: "Connector not found" },
+        },
+      },
+    },
     "/imports": {
       get: {
         tags: ["Import"],
