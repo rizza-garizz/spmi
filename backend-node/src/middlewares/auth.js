@@ -3,11 +3,20 @@ const prisma = require("../lib/prisma");
 const env = require("../config/env");
 const { failure } = require("../utils/apiResponse");
 const { findLocalUserById } = require("../services/localAuth");
+const { isLocalTokenBlacklisted } = require("../services/catalogStore");
 
 async function hydrateUser(token) {
   const payload = jwt.verify(token, env.jwtSecret);
 
   if (env.appMode === "local_mock" || payload.mode === "local") {
+    if (isLocalTokenBlacklisted(token)) {
+      throw new Error("TOKEN_BLACKLISTED");
+    }
+
+    if (payload.iat && Date.now() / 1000 - payload.iat > env.sessionTimeoutSeconds) {
+      throw new Error("SESSION_TIMEOUT");
+    }
+
     const user = findLocalUserById(payload.sub);
     if (!user) {
       throw new Error("USER_NOT_FOUND");

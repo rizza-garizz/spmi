@@ -1,5 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const { findLocalUserByEmail } = require("../src/services/localAuth");
 
 process.env.APP_MODE = "local_mock";
 process.env.JWT_SECRET = "test-secret";
@@ -121,6 +122,68 @@ test("GET /auth/me returns current local profile", async () => {
   assert.equal(payload.data.mode, "local");
   assert.equal(payload.data.org_unit.code, "LPM");
   assert.equal(payload.data.role_assignments[0].scope_org_unit.code, "LPM");
+});
+
+test("security protects auth sessions direct URLs uploads and audit trail", async () => {
+  const localUser = findLocalUserByEmail("admin@spmi.local");
+  assert.equal(Boolean(localUser.passwordHash), true);
+  assert.equal(localUser.passwordHash.startsWith("$2"), true);
+  assert.equal("password" in localUser, false);
+
+  const loginResponse = await fetch(`${baseUrl}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "admin@spmi.local", password: "Password123!" }),
+  });
+  const loginPayload = await loginResponse.json();
+  const token = loginPayload.data.token;
+
+  assert.equal(loginResponse.status, 200);
+  assert.equal(Boolean(loginPayload.data.expires_at), true);
+  assert.equal(typeof loginPayload.data.session_timeout_seconds, "number");
+  assert.equal(Boolean(loginResponse.headers.get("x-content-type-options")), true);
+
+  const directDenied = await fetch(`${baseUrl}/documents/versions/1/download`);
+  const directDeniedPayload = await directDenied.json();
+  assert.equal(directDenied.status, 401);
+  assert.equal(directDeniedPayload.success, false);
+
+  const invalidUpload = await fetch(`${baseUrl}/documents`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: (() => {
+      const form = new FormData();
+      form.append("code", "DOC-INVALID-UPLOAD");
+      form.append("title", "Upload Tidak Valid");
+      form.append("type", "kebijakan");
+      form.append("file", new Blob(["fake"], { type: "application/pdf" }), "payload.exe");
+      return form;
+    })(),
+  });
+  const invalidUploadPayload = await invalidUpload.json();
+  assert.equal(invalidUpload.status, 400);
+  assert.equal(invalidUploadPayload.success, false);
+
+  const logoutResponse = await fetch(`${baseUrl}/auth/logout`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(logoutResponse.status, 200);
+
+  const afterLogout = await fetch(`${baseUrl}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(afterLogout.status, 401);
+
+  const adminToken = await loginAs("admin@spmi.local");
+  const auditResponse = await fetch(`${baseUrl}/security/audit-trail`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const auditPayload = await auditResponse.json();
+  assert.equal(auditResponse.status, 200);
+  assert.equal(auditPayload.success, true);
+  assert.equal(auditPayload.data.some((item) => item.action.includes("auth.login")), true);
+  assert.equal(auditPayload.data.some((item) => item.status_code === 401), true);
 });
 
 test("local seed users carry perguruan tinggi role scopes", async () => {

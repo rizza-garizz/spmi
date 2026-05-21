@@ -75,6 +75,21 @@ module.exports = {
         },
       },
     },
+    "/security/audit-trail": {
+      get: {
+        tags: ["Security"],
+        summary: "List user activity audit trail",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "actor", in: "query", required: false, schema: { type: "string" } },
+          { name: "action", in: "query", required: false, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Audit trail entries" },
+          403: { description: "Admin role required" },
+        },
+      },
+    },
     "/auth/me": {
       get: {
         tags: ["Auth"],

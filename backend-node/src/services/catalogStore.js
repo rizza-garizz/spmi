@@ -564,6 +564,7 @@ const state = {
     error_count: 0,
   })),
   integrationLogs: [],
+  auditLogs: [],
   hris: {
     metrics: catalog.hris.metrics.map((item) => ({ ...item })),
     employees: catalog.hris.employees.map((item) => ({ ...item })),
@@ -841,6 +842,53 @@ function syncIntegration(service, actor = "system") {
 
 function getIntegrationLogs(service) {
   return state.integrationLogs.filter((item) => !service || item.service === service);
+}
+
+function addAuditLog(data = {}) {
+  const entry = {
+    id: `audit-${Date.now()}-${state.auditLogs.length + 1}`,
+    actor_id: data.actor_id || null,
+    actor_email: data.actor_email || "anonymous",
+    role: data.role || null,
+    action: data.action || "request",
+    method: data.method || null,
+    path: data.path || null,
+    status_code: data.status_code || null,
+    ip_address: data.ip_address || null,
+    user_agent: data.user_agent || null,
+    metadata: data.metadata || {},
+    created_at: new Date().toISOString(),
+  };
+  state.auditLogs.unshift(entry);
+  state.auditLogs = state.auditLogs.slice(0, 500);
+  return entry;
+}
+
+function getAuditLogs(filters = {}) {
+  const actor = String(filters.actor || "").toLowerCase();
+  const action = String(filters.action || "").toLowerCase();
+  return state.auditLogs.filter((item) => {
+    if (actor && !String(item.actor_email || "").toLowerCase().includes(actor)) return false;
+    if (action && !String(item.action || "").toLowerCase().includes(action)) return false;
+    return true;
+  });
+}
+
+const localTokenBlacklist = new Map();
+
+function blacklistLocalToken(token, expiresAt) {
+  localTokenBlacklist.set(token, expiresAt ? new Date(expiresAt).getTime() : Date.now() + 24 * 60 * 60 * 1000);
+  return true;
+}
+
+function isLocalTokenBlacklisted(token) {
+  const expiresAt = localTokenBlacklist.get(token);
+  if (!expiresAt) return false;
+  if (expiresAt < Date.now()) {
+    localTokenBlacklist.delete(token);
+    return false;
+  }
+  return true;
 }
 
 function getUnitWithParents(code) {
@@ -1786,6 +1834,10 @@ module.exports = {
   getIntegrationLogs,
   checkIntegration,
   syncIntegration,
+  addAuditLog,
+  getAuditLogs,
+  blacklistLocalToken,
+  isLocalTokenBlacklisted,
   addStandard,
   getActiveStandards,
   getStandardRevisions,

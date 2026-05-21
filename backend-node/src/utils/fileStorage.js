@@ -23,9 +23,32 @@ const allowedDocumentTypes = new Set([
   "application/vnd.ms-excel",
 ]);
 
+const allowedExtensionsByMime = {
+  "application/pdf": [".pdf"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+  "application/msword": [".doc"],
+  "text/csv": [".csv"],
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+  "application/vnd.ms-excel": [".xls", ".csv"],
+};
+
+function isSafeOriginalName(name) {
+  return Boolean(name) && !name.includes("..") && !name.includes("/") && !name.includes("\\");
+}
+
 const fileFilter = (_, file, cb) => {
   if (!allowedDocumentTypes.has(file.mimetype)) {
     return cb(new AppError("Format file tidak didukung", 400));
+  }
+
+  if (!isSafeOriginalName(file.originalname)) {
+    return cb(new AppError("Nama file tidak aman", 400));
+  }
+
+  const extension = path.extname(file.originalname || "").toLowerCase();
+  const allowedExtensions = allowedExtensionsByMime[file.mimetype] || [];
+  if (!allowedExtensions.includes(extension)) {
+    return cb(new AppError("Ekstensi file tidak sesuai dengan tipe dokumen", 400));
   }
 
   cb(null, true);

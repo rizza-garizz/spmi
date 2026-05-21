@@ -1,11 +1,13 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const prisma = require("../lib/prisma");
 const env = require("../config/env");
 const { success } = require("../utils/apiResponse");
 const AppError = require("../utils/appError");
 const sanitizeUser = require("../utils/sanitizeUser");
 const { findLocalUserByEmail } = require("../services/localAuth");
+const { blacklistLocalToken } = require("../services/catalogStore");
 
 function signToken(user) {
   const assignedRoles = user.roleAssignments?.map((item) => item.role) || [];
@@ -16,6 +18,7 @@ function signToken(user) {
       roles,
       email: user.email,
       mode: user.isLocal ? "local" : "database",
+      jti: crypto.randomUUID(),
     },
     env.jwtSecret,
     {
@@ -54,13 +57,16 @@ async function login(req, res) {
 
   if (!user) {
     const localUser = findLocalUserByEmail(email);
-    if (localUser && localUser.password === password) {
+    if (localUser && await bcrypt.compare(password, localUser.passwordHash)) {
       const token = signToken(localUser);
+      const decoded = jwt.decode(token) || {};
 
       return success(
         res,
         {
           token,
+          expires_at: decoded.exp ? new Date(decoded.exp * 1000).toISOString() : null,
+          session_timeout_seconds: env.sessionTimeoutSeconds,
           user: sanitizeUser(localUser),
           roles: localUser.roles,
           mode: "local",
@@ -81,11 +87,14 @@ async function login(req, res) {
   }
 
   const token = signToken(user);
+  const decoded = jwt.decode(token) || {};
 
   return success(
     res,
     {
       token,
+      expires_at: decoded.exp ? new Date(decoded.exp * 1000).toISOString() : null,
+      session_timeout_seconds: env.sessionTimeoutSeconds,
       user: sanitizeUser(user),
       roles: sanitizeUser(user).roles,
       mode: "database",
@@ -96,6 +105,7 @@ async function login(req, res) {
 
 async function logout(req, res) {
   if (req.user?.isLocal) {
+    blacklistLocalToken(req.token, new Date((req.tokenPayload.exp || 0) * 1000));
     return success(res, null, "Logout lokal berhasil");
   }
 

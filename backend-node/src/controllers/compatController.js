@@ -10,6 +10,7 @@ const {
   getIntegrationLogs,
   checkIntegration,
   syncIntegration,
+  getAuditLogs,
   addStandard,
   getActiveStandards,
   getStandardRevisions,
@@ -487,6 +488,10 @@ function integrationSync(req, res) {
   return success(res, result, "Sinkronisasi integrasi berhasil dijalankan.", 201);
 }
 
+function auditTrail(req, res) {
+  return success(res, getAuditLogs(req.query || {}), "Audit trail aktivitas user");
+}
+
 function imports(_req, res) {
   return success(res, getCatalogSnapshot().imports, "Riwayat import");
 }
@@ -678,6 +683,7 @@ module.exports = {
   integrationLogs,
   integrationCheck,
   integrationSync,
+  auditTrail,
   imports,
   hris,
   hrisEmployees,

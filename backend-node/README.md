@@ -118,6 +118,7 @@ npm run dev
 - `GET /system/status`
 - `POST /auth/login`
 - `GET /auth/me`
+- `GET /security/audit-trail`
 - `GET /dashboard/summary`
 - `GET /dashboard/export`
 - `GET /catalog`

@@ -101,6 +101,7 @@ router.get("/integrations/readiness", verifyToken, requireRole(...ROLE_ADMIN_ONL
 router.get("/integrations/logs", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.integrationLogs);
 router.post("/integrations/:key/check", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.integrationCheck);
 router.post("/integrations/:key/sync", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.integrationSync);
+router.get("/security/audit-trail", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.auditTrail);
 router.get("/hris", optionalAuth, compatController.hris);
 router.get("/hris/employees", optionalAuth, compatController.hrisEmployees);
 router.get("/hris/employees/:id", optionalAuth, compatController.hrisEmployeeProfile);

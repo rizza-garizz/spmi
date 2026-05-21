@@ -1,6 +1,16 @@
 const path = require("path");
+const bcrypt = require("bcryptjs");
 
 const catalog = require(path.resolve(__dirname, "../../data/spmi-catalog.json"));
+
+const localPasswordHashes = new Map();
+
+function getLocalPasswordHash(email, password) {
+  if (!localPasswordHashes.has(email)) {
+    localPasswordHashes.set(email, bcrypt.hashSync(password, 10));
+  }
+  return localPasswordHashes.get(email);
+}
 
 const roleMap = {
   admin: "admin_lpm",
@@ -36,7 +46,7 @@ function normalizeSeedUser(user) {
     id: `local-${user.email}`,
     name: user.name,
     email: user.email,
-    password: user.password,
+    passwordHash: getLocalPasswordHash(user.email, user.password),
     role: normalizedRole,
     roles: [normalizedRole],
     isActive: true,
