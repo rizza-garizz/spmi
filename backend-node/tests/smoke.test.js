@@ -707,6 +707,152 @@ test("AMI workflow supports assignment, instruments, findings, follow-up, verifi
   assert.equal(summaryPayload.data.categories.mayor, 1);
 });
 
+test("end-to-end campus workflow simulation identifies no blocking process bottleneck", async () => {
+  const kaprodiToken = await loginAs("kaprodi@spmi.local");
+  const auditorToken = await loginAs("auditor@spmi.local");
+  const dekanToken = await loginAs("dekan@spmi.local");
+  const unitToken = await loginAs("unit@spmi.local");
+  const adminToken = await loginAs("admin@spmi.local");
+
+  const uploadForm = new FormData();
+  uploadForm.append("code", "DOC-E2E-PRODI");
+  uploadForm.append("title", "Bukti Evaluasi Pembelajaran Prodi");
+  uploadForm.append("type", "laporan_ami");
+  uploadForm.append("category", "AMI");
+  uploadForm.append("document_date", "2026-05-21");
+  uploadForm.append("owner", "Kaprodi Sistem Informasi");
+  uploadForm.append("file", new Blob(["bukti,evaluasi"], { type: "text/csv" }), "bukti-evaluasi-prodi.csv");
+
+  const uploadResponse = await fetch(`${baseUrl}/documents`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${kaprodiToken}` },
+    body: uploadForm,
+  });
+  const uploadPayload = await uploadResponse.json();
+  assert.equal(uploadResponse.status, 201);
+  assert.equal(uploadPayload.data.org_unit_code, "SI");
+
+  const auditResponse = await fetch(`${baseUrl}/ami/audits`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${auditorToken}`,
+    },
+    body: JSON.stringify({
+      org_unit_code: "SI",
+      org_unit_name: "Program Studi Sistem Informasi",
+      audit_date: "2026-05-21",
+      auditor_name: "Auditor Simulasi",
+      status: "berjalan",
+    }),
+  });
+  const auditPayload = await auditResponse.json();
+  const auditId = auditPayload.data.id;
+  const instrumentId = auditPayload.data.instruments[0].id;
+  assert.equal(auditResponse.status, 201);
+
+  const instrumentResponse = await fetch(`${baseUrl}/ami/audits/${auditId}/instruments/${instrumentId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${auditorToken}`,
+    },
+    body: JSON.stringify({
+      status: "checked",
+      score: 78,
+      notes: "Dokumen tersedia, namun perlu bukti tindak lanjut.",
+    }),
+  });
+  assert.equal(instrumentResponse.status, 200);
+
+  const findingResponse = await fetch(`${baseUrl}/ami/audits/${auditId}/findings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${auditorToken}`,
+    },
+    body: JSON.stringify({
+      title: "Tindak lanjut evaluasi belum lengkap",
+      description: "Dokumen evaluasi sudah ada, bukti tindak lanjut belum lengkap.",
+      category: "Minor",
+      recommendation: "Lengkapi tindak lanjut dan validasi bukti.",
+      follow_up_plan: "Upload eviden tindak lanjut.",
+    }),
+  });
+  const findingPayload = await findingResponse.json();
+  const findingId = findingPayload.data.id;
+  assert.equal(findingResponse.status, 201);
+
+  const dashboardResponse = await fetch(`${baseUrl}/dashboard/summary?fakultas=FIKOM&tahun=2026`, {
+    headers: { Authorization: `Bearer ${dekanToken}` },
+  });
+  const dashboardPayload = await dashboardResponse.json();
+  assert.equal(dashboardResponse.status, 200);
+  assert.equal(typeof dashboardPayload.data.kpi.average_achievement, "number");
+
+  const followUpResponse = await fetch(`${baseUrl}/ami/audits/${auditId}/findings/${findingId}/follow-up`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${unitToken}`,
+    },
+    body: JSON.stringify({
+      status: "done",
+      progress: 100,
+      evidence_title: "Eviden tindak lanjut evaluasi",
+    }),
+  });
+  const followUpPayload = await followUpResponse.json();
+  assert.equal(followUpResponse.status, 200);
+  assert.equal(followUpPayload.data.recap.follow_up_done >= 1, true);
+
+  const standardResponse = await fetch(`${baseUrl}/standards`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${adminToken}`,
+    },
+    body: JSON.stringify({
+      title: "Standar Simulasi Proses Pembelajaran",
+      category: "pendidikan",
+      description: "Standar awal untuk simulasi revisi.",
+    }),
+  });
+  const standardPayload = await standardResponse.json();
+  assert.equal(standardResponse.status, 201);
+
+  const revisionResponse = await fetch(`${baseUrl}/standards/${standardPayload.data.id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${adminToken}`,
+    },
+    body: JSON.stringify({
+      title: "Standar Simulasi Proses Pembelajaran Revisi",
+      description: "Revisi berdasarkan hasil AMI.",
+      revision_note: "Menambahkan kewajiban tindak lanjut evaluasi.",
+    }),
+  });
+  const revisionPayload = await revisionResponse.json();
+  assert.equal(revisionResponse.status, 200);
+  assert.equal(revisionPayload.data.revisions[0].action, "updated");
+
+  const reportResponse = await fetch(`${baseUrl}/ami/audits/${auditId}/report`, {
+    headers: { Authorization: `Bearer ${auditorToken}` },
+  });
+  const reportHtml = await reportResponse.text();
+  assert.equal(reportResponse.status, 200);
+  assert.equal(reportResponse.headers.get("content-type").includes("text/html"), true);
+  assert.equal(reportHtml.includes("Laporan Audit Mutu Internal"), true);
+
+  const performanceResponse = await fetch(`${baseUrl}/performance/report`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const performancePayload = await performanceResponse.json();
+  assert.equal(performanceResponse.status, 200);
+  assert.notEqual(performancePayload.data.checks.slow_query_guard.status, "slow");
+});
+
 test("POST /rtm/meetings creates a local meeting", async () => {
   const token = await loginAs("admin@spmi.local");
   const response = await fetch(`${baseUrl}/rtm/meetings`, {

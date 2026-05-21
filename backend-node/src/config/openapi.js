@@ -593,6 +593,19 @@ module.exports = {
         },
       },
     },
+    "/ami/audits/{id}/report": {
+      get: {
+        tags: ["AMI"],
+        summary: "Generate printable AMI report",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "AMI report HTML" },
+          403: { description: "Forbidden by audit scope" },
+          404: { description: "Audit not found" },
+        },
+      },
+    },
     "/org-units": {
       get: {
         tags: ["Organization"],

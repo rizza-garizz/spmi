@@ -76,6 +76,15 @@ function prepareScopedPayload(req) {
   return payload;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function dashboardSummary(req, res) {
   return success(res, getDashboardSummary(req.query || {}), "Ringkasan dashboard");
 }
@@ -361,6 +370,59 @@ function amiAuditSummary(req, res) {
   if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat membaca audit di luar scope.", 403);
 
   return success(res, audit.recap, "Rekap hasil audit");
+}
+
+function amiAuditReport(req, res) {
+  const audit = state.audits.find((item) => String(item.id) === String(req.params.id));
+  if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat membaca audit di luar scope.", 403);
+
+  const findings = audit.findings || [];
+  const rows = findings.map((finding) => `
+    <tr>
+      <td>${escapeHtml(finding.title || "-")}</td>
+      <td>${escapeHtml(finding.category || "-")}</td>
+      <td>${escapeHtml(finding.follow_up?.status || "open")}</td>
+      <td>${escapeHtml(finding.verification?.status || "unverified")}</td>
+    </tr>
+  `).join("");
+  const html = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Laporan AMI - ${escapeHtml(audit.title || audit.org_unit?.name || "Audit")}</title>
+  <style>
+    body{font-family:Arial,sans-serif;color:#0f172a;padding:32px;line-height:1.5}
+    h1{margin:0 0 4px}
+    .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}
+    .meta div{border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#f8fafc}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{border:1px solid #e2e8f0;padding:8px;text-align:left}
+    th{background:#f8fafc}
+  </style>
+</head>
+<body>
+  <h1>Laporan Audit Mutu Internal</h1>
+  <p>Universitas Junrejo Indah</p>
+  <section class="meta">
+    <div><strong>Unit</strong><br>${escapeHtml(audit.org_unit?.name || "-")}</div>
+    <div><strong>Auditor</strong><br>${escapeHtml(audit.auditor?.name || "-")}</div>
+    <div><strong>Jadwal</strong><br>${escapeHtml(audit.scheduled_date || audit.audit_date || "-")}</div>
+    <div><strong>Skor</strong><br>${escapeHtml(audit.recap?.score ?? audit.score ?? 0)}</div>
+  </section>
+  <h2>Rekap Temuan</h2>
+  <p>Minor: ${audit.recap?.categories?.minor || 0}, Mayor: ${audit.recap?.categories?.mayor || 0}, Observasi: ${audit.recap?.categories?.observasi || 0}, Terverifikasi: ${audit.recap?.verified || 0}</p>
+  <table>
+    <thead><tr><th>Temuan</th><th>Kategori</th><th>Tindak Lanjut</th><th>Verifikasi</th></tr></thead>
+    <tbody>${rows || "<tr><td colspan=\"4\">Tidak ada temuan.</td></tr>"}</tbody>
+  </table>
+  <script>window.print()</script>
+</body>
+</html>`;
+
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="laporan-ami-${audit.id}.html"`);
+  return res.send(html);
 }
 
 function rtmMeetings(req, res) {
@@ -684,6 +746,7 @@ module.exports = {
   updateAmiFindingFollowUpRecord,
   verifyAmiFindingRecord,
   amiAuditSummary,
+  amiAuditReport,
   rtmMeetings,
   createMeeting,
   updateMeetingActionProgress,

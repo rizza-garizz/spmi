@@ -146,6 +146,7 @@ npm run dev
 - `PATCH /ami/audits/:id/findings/:findingId/follow-up`
 - `PATCH /ami/audits/:id/findings/:findingId/verification`
 - `GET /ami/audits/:id/summary`
+- `GET /ami/audits/:id/report`
 - `GET/POST /rtm/meetings`
 - `GET/POST /indicators`
 - `POST /indicators/:id/values`

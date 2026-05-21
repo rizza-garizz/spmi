@@ -79,6 +79,7 @@ router.post(
 router.get("/ami/audits", optionalAuth, compatController.amiAudits);
 router.post("/ami/audits", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.createAmiAudit);
 router.get("/ami/audits/:id/summary", verifyToken, requireRole(...ROLE_AMI_READ), compatController.amiAuditSummary);
+router.get("/ami/audits/:id/report", verifyToken, requireRole(...ROLE_AMI_READ), compatController.amiAuditReport);
 router.patch("/ami/audits/:id/assignment", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.updateAmiAuditAssignment);
 router.patch("/ami/audits/:id/instruments/:instrumentId", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.updateAmiAuditInstrument);
 router.post("/ami/audits/:id/findings", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.createFinding);
