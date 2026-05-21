@@ -843,19 +843,146 @@ function getIntegrationLogs(service) {
   return state.integrationLogs.filter((item) => !service || item.service === service);
 }
 
-function getDashboardSummary() {
+function getUnitWithParents(code) {
+  const orgUnits = catalog.orgUnits || [];
+  const unit = orgUnits.find((item) => item.code === code);
+  const parent = unit?.parent_code ? orgUnits.find((item) => item.code === unit.parent_code) : null;
+  return { unit, parent };
+}
+
+function getStandardGroup(title = "") {
+  const normalized = String(title).toLowerCase();
+  if (normalized.includes("pendidikan") || normalized.includes("pembelajaran")) return "Pendidikan";
+  if (normalized.includes("penelitian")) return "Penelitian";
+  if (normalized.includes("pengabdian") || normalized.includes("pkm")) return "Pengabdian";
+  if (normalized.includes("sdm") || normalized.includes("dosen")) return "SDM";
+  if (normalized.includes("keuangan")) return "Keuangan";
+  if (normalized.includes("sarana") || normalized.includes("sarpras")) return "Sarpras";
+  return "Tata Kelola";
+}
+
+function getFilteredIndicators(filters = {}) {
+  const normalizedYear = String(filters.tahun || filters.year || "").trim();
+  const fakultas = String(filters.fakultas || "").trim();
+  const prodi = String(filters.prodi || "").trim();
+  const standar = String(filters.standar || filters.standard || "").trim().toLowerCase();
+
+  return state.indicators.filter((item) => {
+    const { unit, parent } = getUnitWithParents(item.org_unit_code);
+    const latestPeriod = item.latest_value?.period || "";
+    const standardCode = String(item.standard?.code || "").toLowerCase();
+    const standardTitle = String(item.standard?.title || "").toLowerCase();
+
+    if (normalizedYear && !latestPeriod.includes(normalizedYear)) return false;
+    if (fakultas && item.org_unit_code !== fakultas && parent?.code !== fakultas) return false;
+    if (prodi && item.org_unit_code !== prodi) return false;
+    if (standar && standardCode !== standar && !standardTitle.includes(standar)) return false;
+
+    return Boolean(unit || !fakultas || !prodi);
+  });
+}
+
+function getIndicatorAchievement(item) {
+  const actual = Number(item.latest_value?.actual_value ?? 0);
+  const target = Number(item.target_value ?? 0);
+  return target > 0 ? Math.min((actual / target) * 100, 100) : 0;
+}
+
+function getDashboardSummary(filters = {}) {
+  const indicators = getFilteredIndicators(filters);
+  const totalIndicators = indicators.length;
+  const achievementValues = indicators.map(getIndicatorAchievement);
+  const averageAchievement = totalIndicators
+    ? achievementValues.reduce((sum, value) => sum + value, 0) / totalIndicators
+    : 0;
+  const achieved = achievementValues.filter((value) => value >= 100).length;
+  const warning = achievementValues.filter((value) => value >= 50 && value < 100).length;
+  const risk = achievementValues.filter((value) => value < 50).length;
+  const standardAchievement = Object.values(
+    indicators.reduce((acc, item) => {
+      const group = getStandardGroup(item.standard?.title);
+      if (!acc[group]) acc[group] = { group, total: 0, sum: 0 };
+      acc[group].total += 1;
+      acc[group].sum += getIndicatorAchievement(item);
+      return acc;
+    }, {})
+  ).map((item) => ({
+    group: item.group,
+    total: item.total,
+    achievement: item.total ? Number((item.sum / item.total).toFixed(1)) : 0,
+  }));
+
   return {
     metrics: catalog.metrics,
     modules: catalog.dashboardModules,
-    performance: state.indicators.map((item) => ({
+    kpi: {
+      total_indicators: totalIndicators,
+      average_achievement: Number(averageAchievement.toFixed(1)),
+      achieved,
+      warning,
+      risk,
+      executive_score: Math.round(averageAchievement * 4),
+    },
+    filters: {
+      fakultas: filters.fakultas || "",
+      prodi: filters.prodi || "",
+      tahun: filters.tahun || filters.year || "",
+      standar: filters.standar || filters.standard || "",
+    },
+    standardAchievement,
+    performance: indicators.map((item) => {
+      const { unit, parent } = getUnitWithParents(item.org_unit_code);
+      return {
       code: item.code,
       name: item.name,
       actual: item.latest_value?.actual_value ?? 0,
       target: item.target_value,
       unit: item.unit,
       status: item.latest_value?.status ?? "No Data",
+      period: item.latest_value?.period ?? "-",
+      standard: item.standard,
+      org_unit_code: item.org_unit_code,
+      prodi: unit?.type === "prodi" ? unit.name : "",
+      fakultas: parent?.name || (unit?.type === "fakultas" ? unit.name : ""),
+      achievement: Number(getIndicatorAchievement(item).toFixed(1)),
       history: item.history.map((entry) => entry.actual_value),
-    })),
+    };
+    }),
+  };
+}
+
+function getDashboardExport(format = "excel", filters = {}) {
+  const summary = getDashboardSummary(filters);
+  const rows = [
+    ["Kode", "Indikator", "Standar", "Fakultas", "Prodi", "Periode", "Target", "Capaian", "Satuan", "Ketercapaian", "Status"],
+    ...summary.performance.map((item) => [
+      item.code,
+      item.name,
+      item.standard?.title || "",
+      item.fakultas,
+      item.prodi,
+      item.period,
+      item.target,
+      item.actual,
+      item.unit,
+      `${item.achievement}%`,
+      item.status,
+    ]),
+  ];
+
+  const csv = rows.map((row) => row.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  if (format === "pdf") {
+    return {
+      file_name: "dashboard-kpi-mutu.pdf.html",
+      mime_type: "text/html",
+      content: `<!doctype html><html><head><meta charset="utf-8"><title>Dashboard KPI Mutu</title><style>body{font-family:Arial,sans-serif;color:#0f172a;padding:32px}table{border-collapse:collapse;width:100%;font-size:12px}td,th{border:1px solid #e2e8f0;padding:8px;text-align:left}th{background:#f8fafc}h1{margin-bottom:4px}.kpi{display:flex;gap:12px;margin:20px 0}.kpi div{border:1px solid #e2e8f0;padding:12px;border-radius:12px}</style></head><body><h1>Dashboard KPI Mutu</h1><p>Universitas Junrejo Indah</p><section class="kpi"><div>Total: ${summary.kpi.total_indicators}</div><div>Rata-rata: ${summary.kpi.average_achievement}%</div><div>Tercapai: ${summary.kpi.achieved}</div><div>Risiko: ${summary.kpi.risk}</div></section><table>${rows.map((row, index) => `<tr>${row.map((value) => index === 0 ? `<th>${value}</th>` : `<td>${value}</td>`).join("")}</tr>`).join("")}</table><script>window.print()</script></body></html>`,
+    };
+  }
+
+  return {
+    file_name: "dashboard-kpi-mutu.csv",
+    mime_type: "text/csv",
+    content: csv,
   };
 }
 
@@ -1651,6 +1778,7 @@ module.exports = {
   state,
   getCatalogSnapshot,
   getDashboardSummary,
+  getDashboardExport,
   getHrisSummary,
   getHrisEmployeeProfile,
   getIntegrations,

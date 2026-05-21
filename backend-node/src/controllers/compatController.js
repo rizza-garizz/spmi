@@ -2,6 +2,7 @@ const {
   state,
   getCatalogSnapshot,
   getDashboardSummary,
+  getDashboardExport,
   getHrisSummary,
   getHrisEmployeeProfile,
   getIntegrations,
@@ -72,8 +73,15 @@ function prepareScopedPayload(req) {
   return payload;
 }
 
-function dashboardSummary(_req, res) {
-  return success(res, getDashboardSummary(), "Ringkasan dashboard");
+function dashboardSummary(req, res) {
+  return success(res, getDashboardSummary(req.query || {}), "Ringkasan dashboard");
+}
+
+function dashboardExport(req, res) {
+  const payload = getDashboardExport(req.query?.format || "excel", req.query || {});
+  res.setHeader("Content-Type", payload.mime_type);
+  res.setHeader("Content-Disposition", `attachment; filename="${payload.file_name}"`);
+  return res.send(payload.content);
 }
 
 function catalog(_req, res) {
@@ -632,6 +640,7 @@ function createImport(req, res) {
 
 module.exports = {
   dashboardSummary,
+  dashboardExport,
   catalog,
   standards,
   createStandard,

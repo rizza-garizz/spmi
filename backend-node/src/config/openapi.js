@@ -89,9 +89,31 @@ module.exports = {
     "/dashboard/summary": {
       get: {
         tags: ["Dashboard"],
-        summary: "Get dashboard summary and KPI trend snapshot",
+        summary: "Get dashboard KPI trend snapshot with faculty study-program year and standard filters",
+        parameters: [
+          { name: "fakultas", in: "query", required: false, schema: { type: "string" } },
+          { name: "prodi", in: "query", required: false, schema: { type: "string" } },
+          { name: "tahun", in: "query", required: false, schema: { type: "string" } },
+          { name: "standar", in: "query", required: false, schema: { type: "string" } },
+        ],
         responses: {
           200: { description: "Dashboard summary" },
+        },
+      },
+    },
+    "/dashboard/export": {
+      get: {
+        tags: ["Dashboard"],
+        summary: "Export dashboard KPI data as CSV or PDF-ready HTML",
+        parameters: [
+          { name: "format", in: "query", required: false, schema: { type: "string", enum: ["excel", "pdf"] } },
+          { name: "fakultas", in: "query", required: false, schema: { type: "string" } },
+          { name: "prodi", in: "query", required: false, schema: { type: "string" } },
+          { name: "tahun", in: "query", required: false, schema: { type: "string" } },
+          { name: "standar", in: "query", required: false, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Dashboard export file" },
         },
       },
     },

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { RoleGate } from "@/components/auth/RoleGate";
-import { getDashboardSummary } from "@/lib/spmi-catalog-api";
+import { getCatalogSnapshot, getDashboardSummary } from "@/lib/spmi-catalog-api";
 import { SimpleTrendChart } from "@/components/charts/SimpleTrendChart";
 import { RadarCriteriaChart } from "@/components/charts/RadarCriteriaChart";
 
@@ -11,10 +11,59 @@ const controlLinks = [
   { href: "/settings", label: "Akses", scope: "Cek role dan seed user.", icon: "la-cog", roles: ["admin_lpm"] as const },
 ] as const;
 
-export async function DashboardPage() {
-  const summary = await getDashboardSummary();
+function encodeExportContent(content: string, mimeType: string) {
+  return `data:${mimeType};charset=utf-8,${encodeURIComponent(content)}`;
+}
+
+type DashboardPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const params = (await searchParams) || {};
+  const selectedFilters = {
+    fakultas: String(params.fakultas || ""),
+    prodi: String(params.prodi || ""),
+    tahun: String(params.tahun || ""),
+    standar: String(params.standar || ""),
+  };
+  const [summary, catalog] = await Promise.all([
+    getDashboardSummary(selectedFilters),
+    getCatalogSnapshot(),
+  ]);
   const quickStats = summary.metrics ?? [];
   const performanceItems = Array.isArray(summary.performance) ? summary.performance : [];
+  const standardAchievement = summary.standardAchievement ?? [];
+  const kpi = summary.kpi ?? {
+    total_indicators: performanceItems.length,
+    average_achievement: 0,
+    achieved: 0,
+    warning: 0,
+    risk: 0,
+    executive_score: 0,
+  };
+  const orgUnits = catalog.orgUnits || [];
+  const faculties = orgUnits.filter((unit) => unit.type === "fakultas");
+  const studyPrograms = orgUnits.filter((unit) => unit.type === "prodi");
+  const standards = catalog.standards || [];
+  const exportRows = [
+    ["Kode", "Indikator", "Standar", "Fakultas", "Prodi", "Periode", "Target", "Capaian", "Satuan", "Ketercapaian", "Status"],
+    ...performanceItems.map((item: any) => [
+      item.code,
+      item.name,
+      item.standard?.title || "",
+      item.fakultas || "",
+      item.prodi || "",
+      item.period || "",
+      item.target,
+      item.actual,
+      item.unit,
+      `${item.achievement ?? 0}%`,
+      item.status,
+    ]),
+  ];
+  const csvExport = exportRows.map((row) => row.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const pdfExport = `<!doctype html><html><head><meta charset="utf-8"><title>Dashboard KPI Mutu</title><style>body{font-family:Inter,Arial,sans-serif;color:#0f172a;padding:32px}h1{margin-bottom:4px}.kpi{display:flex;gap:12px;margin:20px 0}.kpi div{border:1px solid #e2e8f0;border-radius:12px;padding:12px}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #e2e8f0;padding:8px;text-align:left}th{background:#f8fafc}</style></head><body><h1>Dashboard KPI Mutu</h1><p>Universitas Junrejo Indah</p><section class="kpi"><div>Total indikator: ${kpi.total_indicators}</div><div>Rata-rata: ${kpi.average_achievement}%</div><div>Tercapai: ${kpi.achieved}</div><div>Risiko: ${kpi.risk}</div></section><table>${exportRows.map((row, index) => `<tr>${row.map((value) => index === 0 ? `<th>${value}</th>` : `<td>${value}</td>`).join("")}</tr>`).join("")}</table><script>window.print()</script></body></html>`;
 
   return (
     <>
@@ -35,8 +84,8 @@ export async function DashboardPage() {
               <div className="media">
                 <span className="me-3"><i className="la la-graduation-cap fs-30 text-white"></i></span>
                 <div className="media-body text-white text-end">
-                  <p className="mb-1">Accreditation Risk</p>
-                  <h3 className="text-white">2 Prodi</h3>
+                  <p className="mb-1">Indikator Risiko</p>
+                  <h3 className="text-white">{kpi.risk}</h3>
                 </div>
               </div>
             </div>
@@ -48,8 +97,8 @@ export async function DashboardPage() {
               <div className="media">
                 <span className="me-3"><i className="la la-exclamation-circle fs-30 text-white"></i></span>
                 <div className="media-body text-white text-end">
-                  <p className="mb-1">Active AMI Findings</p>
-                  <h3 className="text-white">14 Cases</h3>
+                  <p className="mb-1">Perlu Monitoring</p>
+                  <h3 className="text-white">{kpi.warning}</h3>
                 </div>
               </div>
             </div>
@@ -61,8 +110,8 @@ export async function DashboardPage() {
               <div className="media">
                 <span className="me-3"><i className="la la-chart-line fs-30 text-white"></i></span>
                 <div className="media-body text-white text-end">
-                  <p className="mb-1">IKU Completion</p>
-                  <h3 className="text-white">82.4%</h3>
+                  <p className="mb-1">Rata-rata Capaian</p>
+                  <h3 className="text-white">{kpi.average_achievement}%</h3>
                 </div>
               </div>
             </div>
@@ -74,14 +123,56 @@ export async function DashboardPage() {
               <div className="media">
                 <span className="me-3"><i className="la la-users fs-30 text-white"></i></span>
                 <div className="media-body text-white text-end">
-                  <p className="mb-1">Stakeholder Satisfaction</p>
-                  <h3 className="text-white">3.82 / 4.0</h3>
+                  <p className="mb-1">Indikator Tercapai</p>
+                  <h3 className="text-white">{kpi.achieved}/{kpi.total_indicators}</h3>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <form className="card mb-4" action="/dashboard">
+        <div className="card-body">
+          <div className="row align-items-end">
+            <div className="col-xl-2 col-md-4">
+              <label className="form-label">Fakultas</label>
+              <select className="form-control" name="fakultas" defaultValue={selectedFilters.fakultas}>
+                <option value="">Semua Fakultas</option>
+                {faculties.map((unit) => <option key={unit.code} value={unit.code}>{unit.name}</option>)}
+              </select>
+            </div>
+            <div className="col-xl-2 col-md-4">
+              <label className="form-label">Prodi</label>
+              <select className="form-control" name="prodi" defaultValue={selectedFilters.prodi}>
+                <option value="">Semua Prodi</option>
+                {studyPrograms.map((unit) => <option key={unit.code} value={unit.code}>{unit.name}</option>)}
+              </select>
+            </div>
+            <div className="col-xl-2 col-md-4">
+              <label className="form-label">Tahun</label>
+              <select className="form-control" name="tahun" defaultValue={selectedFilters.tahun}>
+                <option value="">Semua Tahun</option>
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+              </select>
+            </div>
+            <div className="col-xl-3 col-md-6">
+              <label className="form-label">Standar</label>
+              <select className="form-control" name="standar" defaultValue={selectedFilters.standar}>
+                <option value="">Semua Standar</option>
+                {standards.map((standard: any) => <option key={standard.code} value={standard.code}>{standard.code} - {standard.title}</option>)}
+              </select>
+            </div>
+            <div className="col-xl-3 col-md-6 d-flex gap-2 mt-3 mt-xl-0">
+              <button className="btn btn-primary" type="submit"><i className="la la-filter me-1"></i> Terapkan</button>
+              <Link href="/dashboard" className="btn btn-light">Reset</Link>
+              <a className="btn btn-outline-primary" download="dashboard-kpi-mutu.csv" href={encodeExportContent(csvExport, "text/csv")}>Excel</a>
+              <a className="btn btn-outline-primary" download="dashboard-kpi-mutu.pdf.html" href={encodeExportContent(pdfExport, "text/html")}>PDF</a>
+            </div>
+          </div>
+        </div>
+      </form>
 
       <div className="row">
         {/* Main Banner / Welcome */}
@@ -150,6 +241,37 @@ export async function DashboardPage() {
 
       <div className="row">
         <div className="col-xl-12">
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title">Grafik Ketercapaian Standar</h4>
+            </div>
+            <div className="card-body">
+              <div className="row">
+                {standardAchievement.map((item) => (
+                  <div className="col-xl-3 col-md-6 mb-3" key={item.group}>
+                    <div className="p-3 border rounded">
+                      <div className="d-flex justify-content-between mb-2">
+                        <strong>{item.group}</strong>
+                        <span>{item.achievement}%</span>
+                      </div>
+                      <div className="progress" style={{ height: "10px" }}>
+                        <div className={`progress-bar bg-${item.achievement >= 100 ? "success" : item.achievement >= 70 ? "warning" : "danger"}`} style={{ width: `${Math.min(item.achievement, 100)}%` }}></div>
+                      </div>
+                      <small className="text-muted">{item.total} indikator dipantau</small>
+                    </div>
+                  </div>
+                ))}
+                {standardAchievement.length === 0 && (
+                  <div className="col-12 text-center text-muted">Belum ada data ketercapaian standar untuk filter ini.</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-xl-12">
           <h4 className="mb-4">Akses Cepat (Fast Lane)</h4>
         </div>
         {controlLinks.map((item) => (
@@ -183,6 +305,8 @@ export async function DashboardPage() {
                     <tr>
                       <th scope="col">Kode IKU</th>
                       <th scope="col">Indikator Mutu</th>
+                      <th scope="col">Unit</th>
+                      <th scope="col">Standar</th>
                       <th scope="col">Progress (Actual)</th>
                       <th scope="col">Tren (5 Periode)</th>
                       <th scope="col">Status</th>
@@ -199,6 +323,11 @@ export async function DashboardPage() {
                         <tr key={item.code ?? item.name}>
                           <td><strong>{item.code ?? "-"}</strong></td>
                           <td>{item.name ?? "Indikator"}</td>
+                          <td>
+                            <strong>{item.prodi || item.fakultas || item.org_unit_code || "-"}</strong>
+                            <br /><small className="text-muted">{item.period || "-"}</small>
+                          </td>
+                          <td><small>{item.standard?.code || "-"}<br />{item.standard?.title || ""}</small></td>
                           <td>
                             <div className="d-flex align-items-center">
                               <div className="progress flex-grow-1" style={{ height: "10px" }}>
@@ -218,7 +347,7 @@ export async function DashboardPage() {
                     })}
                     {performanceItems.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="text-center">Belum ada data indikator yang dipantau.</td>
+                        <td colSpan={7} className="text-center">Belum ada data indikator yang dipantau.</td>
                       </tr>
                     )}
                   </tbody>

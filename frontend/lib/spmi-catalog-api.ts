@@ -21,7 +21,29 @@ type DashboardPerformanceItem = {
   target: number;
   unit: string;
   status: string;
+  period?: string;
+  standard?: { id?: number | string; code: string; title: string } | null;
+  org_unit_code?: string;
+  fakultas?: string;
+  prodi?: string;
+  achievement?: number;
   history: number[];
+};
+
+type DashboardSummary = {
+  metrics: DashboardMetric[];
+  modules: DashboardModule[];
+  performance: DashboardPerformanceItem[];
+  kpi?: {
+    total_indicators: number;
+    average_achievement: number;
+    achieved: number;
+    warning: number;
+    risk: number;
+    executive_score: number;
+  };
+  standardAchievement?: Array<{ group: string; total: number; achievement: number }>;
+  filters?: Record<string, string>;
 };
 
 type SiakadIntegrationMapItem = {
@@ -214,11 +236,15 @@ const emptyCatalog = {
   } as HrisCatalog,
 };
 
-export async function getDashboardSummary() {
-  return fetchJson("/dashboard/summary", {
+export async function getDashboardSummary(filters: Record<string, string> = {}) {
+  const query = new URLSearchParams(
+    Object.entries(filters).filter(([, value]) => Boolean(value))
+  ).toString();
+  return fetchJson<DashboardSummary>(`/dashboard/summary${query ? `?${query}` : ""}`, {
     metrics: [] as DashboardMetric[],
     modules: [] as DashboardModule[],
     performance: [] as DashboardPerformanceItem[],
+    standardAchievement: [],
   });
 }
 

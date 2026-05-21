@@ -119,6 +119,7 @@ npm run dev
 - `POST /auth/login`
 - `GET /auth/me`
 - `GET /dashboard/summary`
+- `GET /dashboard/export`
 - `GET /catalog`
 - `GET/POST /standards`
 - `PUT/DELETE /standards/:id`

@@ -160,6 +160,37 @@ test("GET /dashboard/summary returns KPI snapshot", async () => {
   assert.equal(payload.success, true);
   assert.ok(Array.isArray(payload.data.metrics));
   assert.ok(Array.isArray(payload.data.performance));
+  assert.equal(typeof payload.data.kpi.average_achievement, "number");
+  assert.ok(Array.isArray(payload.data.standardAchievement));
+});
+
+test("dashboard supports filters and export payloads", async () => {
+  const filteredResponse = await fetch(`${baseUrl}/dashboard/summary?fakultas=FIKOM&tahun=2026`);
+  const filteredPayload = await filteredResponse.json();
+
+  assert.equal(filteredResponse.status, 200);
+  assert.equal(filteredPayload.success, true);
+  assert.equal(filteredPayload.data.filters.fakultas, "FIKOM");
+  assert.equal(
+    filteredPayload.data.performance.every(
+      (item) => item.fakultas === "Fakultas Ilmu Komputer" || item.org_unit_code === "FIKOM"
+    ),
+    true
+  );
+
+  const excelResponse = await fetch(`${baseUrl}/dashboard/export?format=excel&fakultas=FIKOM`);
+  const excelText = await excelResponse.text();
+
+  assert.equal(excelResponse.status, 200);
+  assert.equal(excelResponse.headers.get("content-type").includes("text/csv"), true);
+  assert.equal(excelText.includes("Kode"), true);
+
+  const pdfResponse = await fetch(`${baseUrl}/dashboard/export?format=pdf`);
+  const pdfText = await pdfResponse.text();
+
+  assert.equal(pdfResponse.status, 200);
+  assert.equal(pdfResponse.headers.get("content-type").includes("text/html"), true);
+  assert.equal(pdfText.includes("Dashboard KPI Mutu"), true);
 });
 
 test("GET /catalog exposes the required standard groups", async () => {
