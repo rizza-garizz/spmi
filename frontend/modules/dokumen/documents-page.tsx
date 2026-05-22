@@ -5,6 +5,7 @@ import { hasRoleAccess } from "@/lib/spmi-access";
 import { useCurrentRoles } from "@/lib/spmi-access-client";
 import { useToast } from "@/components/support/Toast";
 import { clientApiRequest, parseApiPayload } from "@/lib/spmi-session-client";
+import { makeNextCode } from "@/lib/use-spmi-catalog-options";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4000";
 
@@ -36,12 +37,18 @@ interface Document {
   }>;
 }
 
+type CatalogOrgUnit = { code: string; name: string; type: string };
+type CatalogStandard = { id?: number | string; code: string; title: string };
+
 export function DocumentsPage() {
   const { showToast } = useToast();
   const roles = useCurrentRoles();
   const canUpload = hasRoleAccess(["admin_lpm", "kaprodi", "sekprodi", "unit_kerja"], roles);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentTypes, setDocumentTypes] = useState<Array<{ value: string; label: string }>>([]);
+  const [orgUnits, setOrgUnits] = useState<CatalogOrgUnit[]>([]);
+  const [standards, setStandards] = useState<CatalogStandard[]>([]);
+  const [documentGroups, setDocumentGroups] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -59,6 +66,7 @@ export function DocumentsPage() {
     category: "",
     owner: "",
     mutu_standard_id: "",
+    org_unit_code: "",
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -78,8 +86,21 @@ export function DocumentsPage() {
     try {
       const res = await clientApiRequest("/catalog");
       const json = await res.json();
-      const catalog = parseApiPayload(json, { documentTypes: [] as Array<{ value: string; label: string }> });
+      const catalog = parseApiPayload(json, {
+        documentTypes: [] as Array<{ value: string; label: string }>,
+        orgUnits: [] as CatalogOrgUnit[],
+        standards: [] as CatalogStandard[],
+        documentGroups: [] as string[],
+      });
       setDocumentTypes(catalog.documentTypes ?? []);
+      setOrgUnits(Array.isArray(catalog.orgUnits) ? catalog.orgUnits : []);
+      setStandards(Array.isArray(catalog.standards) ? catalog.standards : []);
+      setDocumentGroups(Array.isArray(catalog.documentGroups) ? catalog.documentGroups : []);
+      setFormData((current) => ({
+        ...current,
+        code: current.code || makeNextCode("DOC-SPMI", documents.map((doc) => doc.code)),
+        mutu_standard_id: current.mutu_standard_id || String(catalog.standards?.[0]?.id ?? catalog.standards?.[0]?.code ?? ""),
+      }));
     } catch (err) {
       console.error("Gagal memuat katalog dokumen", err);
     }
@@ -100,6 +121,26 @@ export function DocumentsPage() {
       showToast("Silakan pilih file terlebih dahulu.", "danger");
       return;
     }
+    if (!formData.code.trim() || !formData.title.trim() || !formData.document_date || !formData.owner || !formData.org_unit_code) {
+      showToast("Kode, judul, tanggal, unit, dan penanggung jawab wajib diisi.", "danger");
+      return;
+    }
+    if (documents.some((doc) => doc.code.toLowerCase() === formData.code.trim().toLowerCase())) {
+      showToast("Kode dokumen sudah ada. Gunakan versi dokumen atau kode lain.", "warning");
+      return;
+    }
+    if (documents.some((doc) => doc.title.trim().toLowerCase() === formData.title.trim().toLowerCase() && doc.type === formData.type && (doc.org_unit_code || "") === formData.org_unit_code)) {
+      showToast("Dokumen dengan judul, tipe, dan unit yang sama sudah ada.", "warning");
+      return;
+    }
+    if (!["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(selectedFile.type)) {
+      showToast("Format file harus PDF atau gambar PNG/JPG/WebP.", "danger");
+      return;
+    }
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      showToast("Ukuran file maksimal 10 MB.", "danger");
+      return;
+    }
 
     setUploading(true);
     const data = new FormData();
@@ -109,6 +150,7 @@ export function DocumentsPage() {
     data.append("document_date", formData.document_date);
     data.append("category", formData.category || formData.type);
     data.append("owner", formData.owner);
+    data.append("org_unit_code", formData.org_unit_code);
     data.append("file", selectedFile);
     if (formData.mutu_standard_id) data.append("mutu_standard_id", formData.mutu_standard_id);
 
@@ -120,7 +162,16 @@ export function DocumentsPage() {
 
       if (res.ok) {
         showToast("Dokumen berhasil diunggah!");
-        setFormData({ code: "", title: "", type: "kebijakan", document_date: "", category: "", owner: "", mutu_standard_id: "" });
+        setFormData({
+          code: makeNextCode("DOC-SPMI", documents.map((doc) => doc.code)),
+          title: "",
+          type: "kebijakan",
+          document_date: "",
+          category: "",
+          owner: "",
+          mutu_standard_id: String(standards[0]?.id ?? standards[0]?.code ?? ""),
+          org_unit_code: "",
+        });
         setSelectedFile(null);
         setShowUploadForm(false);
         fetchDocuments();
@@ -255,8 +306,8 @@ export function DocumentsPage() {
                   <div className="form-group mb-3">
                     <label className="form-label">Kode Dokumen</label>
                     <input 
-                      type="text" className="form-control" placeholder="DOC-001" 
-                      value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value})} required 
+                      type="text" className="form-control" placeholder="Auto: DOC-SPMI-001" 
+                      value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})} required 
                     />
                   </div>
                   <div className="form-group mb-3">
@@ -291,29 +342,48 @@ export function DocumentsPage() {
                   </div>
                   <div className="form-group mb-3">
                     <label className="form-label">Kategori</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="AMI / PPEPP / Standar"
-                      value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    />
+                    <select className="form-control" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})}>
+                      <option value="">Ikuti tipe dokumen</option>
+                      {documentGroups.map((group) => <option key={group} value={group}>{group}</option>)}
+                      <option value="AMI">AMI</option>
+                      <option value="PPEPP">PPEPP</option>
+                      <option value="Standar">Standar</option>
+                    </select>
+                  </div>
+                  <div className="form-group mb-3">
+                    <label className="form-label">Unit Pemilik</label>
+                    <select className="form-control" value={formData.org_unit_code} onChange={(e) => setFormData({...formData, org_unit_code: e.target.value})} required>
+                      <option value="">Pilih unit</option>
+                      {orgUnits.map((unit) => (
+                        <option key={unit.code} value={unit.code}>{unit.name} · {unit.type}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group mb-3">
+                    <label className="form-label">Standar Mutu Terkait</label>
+                    <select className="form-control" value={formData.mutu_standard_id} onChange={(e) => setFormData({...formData, mutu_standard_id: e.target.value})}>
+                      <option value="">Tidak terkait standar tertentu</option>
+                      {standards.map((standard) => (
+                        <option key={standard.id ?? standard.code} value={standard.id ?? standard.code}>
+                          {standard.code} · {standard.title}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-group mb-3">
                     <label className="form-label">Penanggung Jawab</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="LPM / Prodi / Unit"
-                      value={formData.owner}
-                      onChange={(e) => setFormData({...formData, owner: e.target.value})}
-                      required
-                    />
+                    <select className="form-control" value={formData.owner} onChange={(e) => setFormData({...formData, owner: e.target.value})} required>
+                      <option value="">Pilih penanggung jawab</option>
+                      <option value="LPM">LPM</option>
+                      <option value="Fakultas">Fakultas</option>
+                      <option value="Program Studi">Program Studi</option>
+                      <option value="Unit Pendukung">Unit Pendukung</option>
+                    </select>
                   </div>
                   <div className="form-group mb-3">
                     <label className="form-label">File (PDF/Gambar)</label>
                     <input 
-                      type="file" className="form-control" 
+                      type="file" className="form-control" accept=".pdf,image/png,image/jpeg,image/webp"
                       onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} required 
                     />
                   </div>

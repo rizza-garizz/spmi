@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { hasRoleAccess } from "@/lib/spmi-access";
 import { useCurrentRoles } from "@/lib/spmi-access-client";
 import { clientApiRequest, parseApiPayload } from "@/lib/spmi-session-client";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4000";
+import { makeNextCode } from "@/lib/use-spmi-catalog-options";
 
 interface Indicator {
   id: number;
@@ -30,6 +29,9 @@ interface Indicator {
   }>;
 }
 
+type CatalogStandard = { id?: number | string; code: string; title: string; category?: string };
+type CatalogOrgUnit = { code: string; name: string; type: string };
+
 export function IndicatorsPage() {
   const roles = useCurrentRoles();
   const canEditIndicators = hasRoleAccess(["admin_lpm", "kaprodi", "sekprodi", "unit_kerja"], roles);
@@ -40,6 +42,8 @@ export function IndicatorsPage() {
   const [message, setMessage] = useState<{ type: string; text: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [standards, setStandards] = useState<CatalogStandard[]>([]);
+  const [orgUnits, setOrgUnits] = useState<CatalogOrgUnit[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -52,6 +56,8 @@ export function IndicatorsPage() {
     target_value: "",
     unit: "%",
     source_type: "manual",
+    accreditation_criteria: "k1",
+    org_unit_code: "",
   });
 
   // Form state - Input Capaian
@@ -73,8 +79,31 @@ export function IndicatorsPage() {
     }
   };
 
+  const fetchCatalog = async () => {
+    try {
+      const res = await clientApiRequest("/catalog");
+      const json = await res.json();
+      const catalog = parseApiPayload<{ standards: CatalogStandard[]; orgUnits: CatalogOrgUnit[] }>(json, {
+        standards: [],
+        orgUnits: [],
+      });
+      const nextStandards = Array.isArray(catalog.standards) ? catalog.standards : [];
+      setStandards(nextStandards);
+      setOrgUnits(Array.isArray(catalog.orgUnits) ? catalog.orgUnits : []);
+      setNewIndicator((current) => ({
+        ...current,
+        code: current.code || makeNextCode("IKU", indicators.map((item) => item.code)),
+        mutu_standard_id: current.mutu_standard_id || String(nextStandards[0]?.id ?? nextStandards[0]?.code ?? ""),
+      }));
+    } catch {
+      setStandards([]);
+      setOrgUnits([]);
+    }
+  };
+
   useEffect(() => {
     fetchIndicators();
+    fetchCatalog();
   }, []);
 
   useEffect(() => {
@@ -83,6 +112,19 @@ export function IndicatorsPage() {
 
   const handleAddIndicator = async (e: React.FormEvent) => {
     e.preventDefault();
+    const targetValue = parseFloat(newIndicator.target_value);
+    if (!newIndicator.code.trim() || !newIndicator.name.trim() || !Number.isFinite(targetValue) || targetValue <= 0) {
+      setMessage({ type: "danger", text: "Kode, nama indikator, dan target wajib valid." });
+      return;
+    }
+    if (!newIndicator.mutu_standard_id || !newIndicator.org_unit_code) {
+      setMessage({ type: "danger", text: "Standar dan unit pemilik wajib dipilih dari master data." });
+      return;
+    }
+    if (indicators.some((item) => item.code.toLowerCase() === newIndicator.code.trim().toLowerCase())) {
+      setMessage({ type: "danger", text: "Kode indikator sudah digunakan." });
+      return;
+    }
     try {
       const res = await clientApiRequest("/indicators", {
         method: "POST",
@@ -91,14 +133,24 @@ export function IndicatorsPage() {
         },
         body: JSON.stringify({
           ...newIndicator,
-          target_value: parseFloat(newIndicator.target_value),
+          target_value: targetValue,
         }),
       });
       const json = await res.json();
       if (json.success) {
         setMessage({ type: "success", text: "Indikator berhasil ditambahkan!" });
         setShowAddForm(false);
-        setNewIndicator({ mutu_standard_id: "", code: "", name: "", description: "", target_value: "", unit: "%", source_type: "manual" });
+        setNewIndicator({
+          mutu_standard_id: String(standards[0]?.id ?? standards[0]?.code ?? ""),
+          code: makeNextCode("IKU", indicators.map((item) => item.code)),
+          name: "",
+          description: "",
+          target_value: "",
+          unit: "%",
+          source_type: "manual",
+          accreditation_criteria: "k1",
+          org_unit_code: "",
+        });
         fetchIndicators();
       } else {
         setMessage({ type: "danger", text: json.message || "Gagal menambahkan indikator" });
@@ -110,6 +162,16 @@ export function IndicatorsPage() {
 
   const handleAddValue = async (e: React.FormEvent, indicatorId: number) => {
     e.preventDefault();
+    const indicator = indicators.find((item) => item.id === indicatorId);
+    const actualValue = parseFloat(newValue.actual_value);
+    if (!newValue.period || !Number.isFinite(actualValue) || actualValue < 0) {
+      setMessage({ type: "danger", text: "Periode dan nilai capaian wajib valid." });
+      return;
+    }
+    if (indicator && actualValue < indicator.target_value && !newValue.notes.trim()) {
+      setMessage({ type: "danger", text: "Analisis akar masalah wajib diisi jika capaian belum memenuhi target." });
+      return;
+    }
     try {
       const res = await clientApiRequest(`/indicators/${indicatorId}/values`, {
         method: "POST",
@@ -118,7 +180,7 @@ export function IndicatorsPage() {
         },
         body: JSON.stringify({
           ...newValue,
-          actual_value: parseFloat(newValue.actual_value),
+          actual_value: actualValue,
         }),
       });
       const json = await res.json();
@@ -174,6 +236,8 @@ export function IndicatorsPage() {
     link.click();
     URL.revokeObjectURL(url);
   };
+
+  const periodOptions = ["2026-1", "2026-2", "2025-1", "2025-2", "2024-1", "2024-2"];
 
   return (
     <>
@@ -252,7 +316,7 @@ export function IndicatorsPage() {
                     <div className="col-md-3">
                       <div className="form-group">
                         <label>Kode IKU</label>
-                        <input type="text" className="form-control" placeholder="Misal: IKU-2.1" value={newIndicator.code} onChange={(e) => setNewIndicator({ ...newIndicator, code: e.target.value })} required />
+                        <input type="text" className="form-control" placeholder="Auto: IKU-001" value={newIndicator.code} onChange={(e) => setNewIndicator({ ...newIndicator, code: e.target.value.toUpperCase() })} required />
                       </div>
                     </div>
                     <div className="col-md-5">
@@ -282,8 +346,32 @@ export function IndicatorsPage() {
                   <div className="row">
                     <div className="col-md-3">
                       <div className="form-group">
+                        <label>Standar Mutu</label>
+                        <select className="form-control" value={newIndicator.mutu_standard_id} onChange={(e) => setNewIndicator({ ...newIndicator, mutu_standard_id: e.target.value })} required>
+                          <option value="">Pilih standar</option>
+                          {standards.map((standard) => (
+                            <option key={standard.id ?? standard.code} value={standard.id ?? standard.code}>
+                              {standard.code} · {standard.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="form-group">
+                        <label>Unit Pemilik</label>
+                        <select className="form-control" value={newIndicator.org_unit_code} onChange={(e) => setNewIndicator({ ...newIndicator, org_unit_code: e.target.value })} required>
+                          <option value="">Pilih unit</option>
+                          {orgUnits.map((unit) => (
+                            <option key={unit.code} value={unit.code}>{unit.name} · {unit.type}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="form-group">
                         <label>Kriteria Akreditasi</label>
-                        <select className="form-control">
+                        <select className="form-control" value={newIndicator.accreditation_criteria} onChange={(e) => setNewIndicator({ ...newIndicator, accreditation_criteria: e.target.value })}>
                           <option value="k1">K1: Visi Misi</option>
                           <option value="k2">K2: Tata Pamong</option>
                           <option value="k3">K3: Mahasiswa</option>
@@ -468,7 +556,10 @@ export function IndicatorsPage() {
                     <div className="col-md-3">
                       <div className="form-group">
                         <label>Periode</label>
-                        <input type="text" className="form-control" placeholder="Misal: 2024-1" value={newValue.period} onChange={(e) => setNewValue({ ...newValue, period: e.target.value })} required />
+                        <select className="form-control" value={newValue.period} onChange={(e) => setNewValue({ ...newValue, period: e.target.value })} required>
+                          <option value="">Pilih periode</option>
+                          {periodOptions.map((period) => <option key={period} value={period}>{period}</option>)}
+                        </select>
                       </div>
                     </div>
                     <div className="col-md-3">

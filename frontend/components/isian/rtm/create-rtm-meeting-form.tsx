@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
+import { useSpmiCatalogOptions } from "@/lib/use-spmi-catalog-options";
 
 type RtmPreviewItem = {
   id: number | string;
@@ -11,17 +12,24 @@ type RtmPreviewItem = {
 
 export function CreateRtmMeetingForm({ initialItems }: { initialItems: RtmPreviewItem[] }) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState<RtmPreviewItem[]>(initialItems);
+  const [items, setItems] = useState<RtmPreviewItem[]>(Array.isArray(initialItems) ? initialItems : []);
+  const catalog = useSpmiCatalogOptions();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
-    const ppeppCycleId = Number(formData.get("ppepp_cycle_id") ?? 0);
+    const ppeppCycleId = String(formData.get("ppepp_cycle_id") ?? "");
     const meetingDate = String(formData.get("meeting_date") ?? "");
     const title = String(formData.get("title") ?? "");
     const conclusion = String(formData.get("conclusion") ?? "");
     const status = String(formData.get("status") ?? "draft");
+    const orgUnitCode = String(formData.get("org_unit_code") ?? "");
+
+    if (!ppeppCycleId || !orgUnitCode || !meetingDate || !title.trim()) {
+      setMessage("Siklus, unit, tanggal, dan judul RTM wajib dipilih.");
+      return;
+    }
 
     if (hasApiBaseUrl()) {
       try {
@@ -36,6 +44,7 @@ export function CreateRtmMeetingForm({ initialItems }: { initialItems: RtmPrevie
             title,
             conclusion,
             status,
+            org_unit_code: orgUnitCode,
           }),
         });
 
@@ -75,7 +84,21 @@ export function CreateRtmMeetingForm({ initialItems }: { initialItems: RtmPrevie
       <h3>Buat RTM Meeting</h3>
       <div className="field">
         <label htmlFor="ppepp_cycle_id">PPEPP Cycle ID</label>
-        <input id="ppepp_cycle_id" name="ppepp_cycle_id" type="number" required />
+        <select id="ppepp_cycle_id" name="ppepp_cycle_id" className="form-select" required defaultValue="">
+          <option value="" disabled>Pilih siklus PPEPP</option>
+          {catalog.ppeppCycles.map((cycle) => (
+            <option key={cycle.id} value={cycle.id}>{cycle.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="org_unit_code">Unit</label>
+        <select id="org_unit_code" name="org_unit_code" className="form-select" required defaultValue="">
+          <option value="" disabled>Pilih unit kerja</option>
+          {catalog.orgUnits.map((unit) => (
+            <option key={unit.code} value={unit.code}>{unit.name} · {unit.type}</option>
+          ))}
+        </select>
       </div>
       <div className="field">
         <label htmlFor="meeting_date">Tanggal</label>

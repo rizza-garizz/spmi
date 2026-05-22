@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
+import { useSpmiCatalogOptions } from "@/lib/use-spmi-catalog-options";
 
 type ImportItem = { id: number | string; type: string; title: string; status: string };
 
@@ -13,7 +14,9 @@ export function CreateImportForm({
   importTypes: Array<{ value: string; label: string }>;
 }) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState(initialItems);
+  const [items, setItems] = useState(Array.isArray(initialItems) ? initialItems : []);
+  const catalog = useSpmiCatalogOptions();
+  const typeOptions = catalog.importTypes.length ? catalog.importTypes : importTypes;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,6 +24,23 @@ export function CreateImportForm({
     const type = String(formData.get("type") ?? "");
     const title = String(formData.get("title") ?? "");
     const file = formData.get("file");
+
+    if (!type || !title.trim()) {
+      setMessage("Tipe dan judul import wajib diisi.");
+      return;
+    }
+    if (items.some((item) => item.title.toLowerCase() === title.trim().toLowerCase() && item.type === type)) {
+      setMessage("Import dengan tipe dan judul yang sama sudah pernah dikirim.");
+      return;
+    }
+    if (!(file instanceof File) || file.size === 0) {
+      setMessage("File import wajib dipilih.");
+      return;
+    }
+    if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
+      setMessage("File import harus berformat XLSX, XLS, atau CSV.");
+      return;
+    }
 
     if (hasApiBaseUrl()) {
       try {
@@ -72,7 +92,7 @@ export function CreateImportForm({
       <div className="field">
         <label htmlFor="type">Tipe</label>
         <select id="type" name="type" className="form-select">
-          {importTypes.map((item) => (
+          {typeOptions.map((item) => (
             <option key={item.value} value={item.value}>
               {item.label}
             </option>

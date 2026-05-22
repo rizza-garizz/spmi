@@ -12,8 +12,12 @@ interface RtmMeeting {
   meeting_date: string;
   status: string;
   conclusion: string | null;
+  org_unit_code?: string | null;
   actions?: any[];
 }
+
+type CatalogCycle = { id: number | string; name: string; status?: string };
+type CatalogOrgUnit = { code: string; name: string; type: string };
 
 export function RtmPage() {
   const { showToast } = useToast();
@@ -25,12 +29,15 @@ export function RtmPage() {
   const [selectedMeeting, setSelectedMeeting] = useState<RtmMeeting | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [cycles, setCycles] = useState<CatalogCycle[]>([]);
+  const [orgUnits, setOrgUnits] = useState<CatalogOrgUnit[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
   // Form State
   const [formData, setFormData] = useState({
-    ppepp_cycle_id: "3", // Default ke siklus yang baru kita buat
+    ppepp_cycle_id: "",
+    org_unit_code: "",
     title: "",
     meeting_date: "",
     conclusion: "",
@@ -48,8 +55,22 @@ export function RtmPage() {
     }
   };
 
+  const fetchCatalog = async () => {
+    try {
+      const res = await clientApiRequest("/catalog");
+      const json = await res.json();
+      const catalog = parseApiPayload(json, { ppeppCycles: [], orgUnits: [] });
+      setCycles(Array.isArray(catalog.ppeppCycles) ? catalog.ppeppCycles : []);
+      setOrgUnits(Array.isArray(catalog.orgUnits) ? catalog.orgUnits : []);
+    } catch {
+      setCycles([]);
+      setOrgUnits([]);
+    }
+  };
+
   useEffect(() => {
     fetchMeetings();
+    fetchCatalog();
   }, []);
 
   useEffect(() => {
@@ -58,6 +79,22 @@ export function RtmPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.title.trim() || !formData.meeting_date || !formData.ppepp_cycle_id || !formData.org_unit_code) {
+      showToast("Agenda, tanggal, siklus PPEPP, dan unit wajib dipilih.", "danger");
+      return;
+    }
+
+    const duplicate = meetings.some(
+      (meeting) =>
+        meeting.title.trim().toLowerCase() === formData.title.trim().toLowerCase() &&
+        meeting.meeting_date === formData.meeting_date &&
+        (meeting.org_unit_code || "") === formData.org_unit_code
+    );
+    if (duplicate) {
+      showToast("Agenda RTM dengan tanggal dan unit yang sama sudah ada.", "warning");
+      return;
+    }
+
     try {
       const res = await clientApiRequest("/rtm/meetings", {
         method: "POST",
@@ -67,7 +104,7 @@ export function RtmPage() {
 
       if (res.ok) {
         showToast("Rapat RTM berhasil dijadwalkan!");
-        setFormData({ ...formData, title: "", meeting_date: "", conclusion: "" });
+        setFormData({ ppepp_cycle_id: "", org_unit_code: "", title: "", meeting_date: "", conclusion: "" });
         setShowAddForm(false);
         fetchMeetings();
       }
@@ -169,9 +206,33 @@ export function RtmPage() {
                     <div className="col-md-3">
                       <div className="form-group">
                         <label>Siklus PPEPP</label>
-                        <select className="form-control" value={formData.ppepp_cycle_id} onChange={e => setFormData({...formData, ppepp_cycle_id: e.target.value})}>
-                          <option value="3">Siklus 2024 (Aktif)</option>
+                        <select className="form-control" value={formData.ppepp_cycle_id} onChange={e => setFormData({...formData, ppepp_cycle_id: e.target.value})} required>
+                          <option value="">Pilih siklus</option>
+                          {cycles.map((cycle) => (
+                            <option key={cycle.id} value={cycle.id}>
+                              {cycle.name} {cycle.status ? `(${cycle.status})` : ""}
+                            </option>
+                          ))}
                         </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label>Unit Pembahas</label>
+                        <select className="form-control" value={formData.org_unit_code} onChange={e => setFormData({...formData, org_unit_code: e.target.value})} required>
+                          <option value="">Pilih unit</option>
+                          {orgUnits.map((unit) => (
+                            <option key={unit.code} value={unit.code}>{unit.name} · {unit.type}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-8">
+                      <div className="form-group">
+                        <label>Kesimpulan Awal / Fokus Keputusan</label>
+                        <input type="text" className="form-control" placeholder="Arah keputusan atau fokus tindak lanjut" value={formData.conclusion} onChange={e => setFormData({...formData, conclusion: e.target.value})} />
                       </div>
                     </div>
                   </div>

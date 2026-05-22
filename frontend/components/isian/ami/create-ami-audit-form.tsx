@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
+import { useSpmiCatalogOptions } from "@/lib/use-spmi-catalog-options";
 
 type AuditPreviewItem = {
   id: number | string;
@@ -13,20 +14,31 @@ type AuditPreviewItem = {
 
 export function CreateAmiAuditForm({ initialItems }: { initialItems: AuditPreviewItem[] }) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState<AuditPreviewItem[]>(initialItems);
+  const [items, setItems] = useState<AuditPreviewItem[]>(Array.isArray(initialItems) ? initialItems : []);
+  const catalog = useSpmiCatalogOptions();
+  const unitOptions = catalog.orgUnits.filter((unit) => ["prodi", "fakultas", "unit", "lpm"].includes(unit.type));
+  const auditorOptions = (catalog.hris?.employees || []).filter((employee) =>
+    ["Dosen", "Dosen dengan Tugas Tambahan", "Tendik"].includes(employee.type || "")
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
-    const ppeppCycleId = Number(formData.get("ppepp_cycle_id") ?? 0);
-    const orgUnitId = Number(formData.get("org_unit_id") ?? 0);
+    const ppeppCycleId = String(formData.get("ppepp_cycle_id") ?? "");
+    const orgUnitCode = String(formData.get("org_unit_code") ?? "");
+    const orgUnitName = unitOptions.find((unit) => unit.code === orgUnitCode)?.name || "";
     const auditDate = String(formData.get("audit_date") ?? "");
     const auditorName = String(formData.get("auditor_name") ?? "");
     const status = String(formData.get("status") ?? "terjadwal");
     const score = Number(formData.get("score") ?? 0);
     const findingSummary = String(formData.get("finding_summary") ?? "");
     const findingCategory = String(formData.get("finding_category") ?? "Observasi");
+
+    if (!ppeppCycleId || !orgUnitCode || !auditDate) {
+      setMessage("Siklus, unit, dan tanggal audit wajib dipilih dari master data.");
+      return;
+    }
 
     if (hasApiBaseUrl()) {
       try {
@@ -37,7 +49,8 @@ export function CreateAmiAuditForm({ initialItems }: { initialItems: AuditPrevie
           },
           body: JSON.stringify({
             ppepp_cycle_id: ppeppCycleId,
-            org_unit_id: orgUnitId,
+            org_unit_code: orgUnitCode,
+            org_unit_name: orgUnitName,
             audit_date: auditDate || null,
             scheduled_date: auditDate || null,
             auditor_name: auditorName || "Internal Auditor",
@@ -90,11 +103,25 @@ export function CreateAmiAuditForm({ initialItems }: { initialItems: AuditPrevie
       <h3>Buat AMI Audit</h3>
       <div className="field">
         <label htmlFor="ppepp_cycle_id">PPEPP Cycle ID</label>
-        <input id="ppepp_cycle_id" name="ppepp_cycle_id" type="number" required />
+        <select id="ppepp_cycle_id" name="ppepp_cycle_id" className="form-select" required defaultValue="">
+          <option value="" disabled>Pilih siklus PPEPP</option>
+          {catalog.ppeppCycles.map((cycle) => (
+            <option key={cycle.id} value={cycle.id}>
+              {cycle.name} {cycle.status ? `(${cycle.status})` : ""}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="field">
-        <label htmlFor="org_unit_id">Org Unit ID</label>
-        <input id="org_unit_id" name="org_unit_id" type="number" required />
+        <label htmlFor="org_unit_code">Unit Audit</label>
+        <select id="org_unit_code" name="org_unit_code" className="form-select" required defaultValue="">
+          <option value="" disabled>Pilih fakultas/prodi/unit</option>
+          {unitOptions.map((unit) => (
+            <option key={unit.code} value={unit.code}>
+              {unit.name} · {unit.type}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="field">
         <label htmlFor="audit_date">Tanggal Audit</label>
@@ -102,7 +129,14 @@ export function CreateAmiAuditForm({ initialItems }: { initialItems: AuditPrevie
       </div>
       <div className="field">
         <label htmlFor="auditor_name">Auditor</label>
-        <input id="auditor_name" name="auditor_name" placeholder="Internal Auditor" />
+        <select id="auditor_name" name="auditor_name" className="form-select" defaultValue="">
+          <option value="">Internal Auditor</option>
+          {auditorOptions.map((employee) => (
+            <option key={employee.id} value={employee.name}>
+              {employee.name} {employee.unit ? `· ${employee.unit}` : ""}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="field">
         <label htmlFor="status">Status</label>

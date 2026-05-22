@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
+import { useSpmiCatalogOptions } from "@/lib/use-spmi-catalog-options";
 
 type PpeppPreviewItem = {
   id: number | string;
@@ -12,7 +13,9 @@ type PpeppPreviewItem = {
 
 export function CreatePpeppCycleForm({ initialItems }: { initialItems: PpeppPreviewItem[] }) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState<PpeppPreviewItem[]>(initialItems);
+  const [items, setItems] = useState<PpeppPreviewItem[]>(Array.isArray(initialItems) ? initialItems : []);
+  const catalog = useSpmiCatalogOptions();
+  const unitOptions = catalog.orgUnits.filter((unit) => ["lpm", "fakultas", "prodi", "unit"].includes(unit.type));
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,6 +26,20 @@ export function CreatePpeppCycleForm({ initialItems }: { initialItems: PpeppPrev
     const status = String(formData.get("status") ?? "planned");
     const academicYearStart = Number(formData.get("academic_year_start") ?? 0);
     const academicYearEnd = Number(formData.get("academic_year_end") ?? 0);
+    const orgUnitCode = String(formData.get("org_unit_code") ?? "");
+
+    if (!name.trim() || !orgUnitCode || academicYearEnd < academicYearStart) {
+      setMessage("Nama, unit, dan rentang tahun akademik wajib valid.");
+      return;
+    }
+
+    const duplicate = items.some(
+      (item) => item.name.toLowerCase() === name.toLowerCase() || item.period === `${academicYearStart}/${academicYearEnd}`
+    );
+    if (duplicate) {
+      setMessage("Siklus dengan nama atau tahun akademik yang sama sudah ada.");
+      return;
+    }
 
     if (hasApiBaseUrl()) {
       try {
@@ -37,6 +54,7 @@ export function CreatePpeppCycleForm({ initialItems }: { initialItems: PpeppPrev
             academic_year_end: academicYearEnd,
             period,
             status,
+            org_unit_code: orgUnitCode,
           }),
         });
 
@@ -90,9 +108,19 @@ export function CreatePpeppCycleForm({ initialItems }: { initialItems: PpeppPrev
         <input id="academic_year_end" name="academic_year_end" type="number" placeholder="2026" required />
       </div>
       <div className="field">
+        <label htmlFor="org_unit_code">Unit Pemilik</label>
+        <select id="org_unit_code" name="org_unit_code" className="form-select" required defaultValue="">
+          <option value="" disabled>Pilih unit kerja</option>
+          {unitOptions.map((unit) => (
+            <option key={unit.code} value={unit.code}>
+              {unit.name} · {unit.type}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="field">
         <label htmlFor="period">Periode</label>
         <select id="period" name="period" className="form-select">
-          <option value="yearly">Yearly</option>
           <option value="annual">Annual</option>
           <option value="semester">Semester</option>
           <option value="semester_ganjil">Semester Ganjil</option>

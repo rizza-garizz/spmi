@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
+import { useSpmiCatalogOptions } from "@/lib/use-spmi-catalog-options";
 
 type HrisEmployee = {
   id: string;
@@ -19,7 +20,8 @@ type HrisEmployee = {
 };
 
 export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: HrisEmployee[] }) {
-  const [employees, setEmployees] = useState(initialEmployees);
+  const [employees, setEmployees] = useState(Array.isArray(initialEmployees) ? initialEmployees : []);
+  const catalog = useSpmiCatalogOptions();
   const [editingEmployee, setEditingEmployee] = useState<HrisEmployee | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
@@ -99,6 +101,20 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
       education: String(formData.get("education") || ""),
       email: String(formData.get("email") || ""),
     };
+
+    if (!payload.name.trim() || !payload.employeeNumber.trim() || !payload.email.trim() || !payload.unit || !payload.position.trim()) {
+      setMessage("Nama, NIP, email, unit/homebase, dan jabatan wajib lengkap.");
+      return;
+    }
+    const duplicateEmployee = employees.some((employee) =>
+      employee.id !== editingEmployee?.id &&
+      (employee.employeeNumber.toLowerCase() === payload.employeeNumber.toLowerCase() ||
+        employee.email.toLowerCase() === payload.email.toLowerCase())
+    );
+    if (duplicateEmployee) {
+      setMessage("NIP atau email sudah digunakan pegawai lain.");
+      return;
+    }
 
     if (!hasApiBaseUrl()) {
       setMessage("API belum dikonfigurasi. Data tidak ditulis agar tetap sinkron.");
@@ -237,7 +253,12 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
               </div>
               <div className="form-group mb-3">
                 <label className="form-label" htmlFor="hris-unit">Unit/Homebase</label>
-                <input id="hris-unit" name="unit" className="form-control" placeholder="Program Studi Sistem Informasi" defaultValue={editingEmployee?.unit || ""} required />
+                <select id="hris-unit" name="unit" className="form-control" defaultValue={editingEmployee?.unit || ""} required>
+                  <option value="">Pilih unit/homebase</option>
+                  {catalog.orgUnits.map((unit) => (
+                    <option key={unit.code} value={unit.name}>{unit.name} · {unit.type}</option>
+                  ))}
+                </select>
               </div>
               <div className="form-group mb-3">
                 <label className="form-label" htmlFor="hris-position">Jabatan</label>

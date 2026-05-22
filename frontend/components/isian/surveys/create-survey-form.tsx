@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
+import { useSpmiCatalogOptions } from "@/lib/use-spmi-catalog-options";
 
 type SurveyItem = { id: number | string; title: string; target: string };
 
@@ -13,7 +14,9 @@ export function CreateSurveyForm({
   surveyTargets: Array<{ value: string; label: string }>;
 }) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState(initialItems);
+  const [items, setItems] = useState(Array.isArray(initialItems) ? initialItems : []);
+  const catalog = useSpmiCatalogOptions();
+  const targetOptions = catalog.surveyTargets.length ? catalog.surveyTargets : surveyTargets;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,8 +24,13 @@ export function CreateSurveyForm({
 
     const title = String(formData.get("title") ?? "");
     const target = String(formData.get("target") ?? "");
-    const ppeppCycleId = Number(formData.get("ppepp_cycle_id") ?? 0);
+    const ppeppCycleId = String(formData.get("ppepp_cycle_id") ?? "");
     const status = String(formData.get("status") ?? "draft");
+
+    if (!title.trim() || !target || !ppeppCycleId) {
+      setMessage("Judul, target responden, dan siklus PPEPP wajib dipilih.");
+      return;
+    }
 
     if (hasApiBaseUrl()) {
       try {
@@ -80,7 +88,7 @@ export function CreateSurveyForm({
       <div className="field">
         <label htmlFor="target">Target</label>
         <select id="target" name="target" className="form-select">
-          {surveyTargets.map((item) => (
+          {targetOptions.map((item) => (
             <option key={item.value} value={item.value}>
               {item.label}
             </option>
@@ -89,7 +97,14 @@ export function CreateSurveyForm({
       </div>
       <div className="field">
         <label htmlFor="ppepp_cycle_id">PPEPP Cycle ID</label>
-        <input id="ppepp_cycle_id" name="ppepp_cycle_id" type="number" />
+        <select id="ppepp_cycle_id" name="ppepp_cycle_id" className="form-select" required defaultValue="">
+          <option value="" disabled>Pilih siklus PPEPP</option>
+          {catalog.ppeppCycles.map((cycle) => (
+            <option key={cycle.id} value={cycle.id}>
+              {cycle.name} {cycle.status ? `(${cycle.status})` : ""}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="field">
         <label htmlFor="status">Status</label>
