@@ -879,6 +879,71 @@ const orgUnitIndex = new Map((catalog.orgUnits || []).map((item) => [item.code, 
 const dashboardCache = new Map();
 let dashboardCacheVersion = 0;
 
+function buildSequenceCode(prefix, collection, field = "code", width = 3) {
+  const escapedPrefix = String(prefix).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const nextNumber =
+    collection
+      .map((item) => Number(String(item[field] || item.id || "").match(new RegExp(`^${escapedPrefix}-(\\d+)$`))?.[1] || 0))
+      .reduce((max, value) => Math.max(max, value), 0) + 1;
+  return `${prefix}-${String(nextNumber).padStart(width, "0")}`;
+}
+
+function createConflict(message, metadata = {}) {
+  const error = new Error(message);
+  error.statusCode = 409;
+  error.metadata = metadata;
+  return error;
+}
+
+function normalizeComparable(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function findDuplicateBy(collection, data, rules, ignoreId = null) {
+  return collection.find((item) => {
+    if (ignoreId && String(item.id) === String(ignoreId)) return false;
+    return rules.some((rule) => {
+      if (Array.isArray(rule)) {
+        return rule.every((field) => normalizeComparable(item[field]) === normalizeComparable(data[field]));
+      }
+      return normalizeComparable(item[rule]) && normalizeComparable(item[rule]) === normalizeComparable(data[rule]);
+    });
+  }) || null;
+}
+
+function changedFields(previous, next, fields) {
+  return fields.reduce((acc, field) => {
+    if (JSON.stringify(previous?.[field] ?? null) !== JSON.stringify(next?.[field] ?? null)) {
+      acc[field] = {
+        from: previous?.[field] ?? null,
+        to: next?.[field] ?? null,
+      };
+    }
+    return acc;
+  }, {});
+}
+
+function recordMutationAudit(entity, action, item, previous, user, metadata = {}) {
+  const changes = previous ? changedFields(previous, item, Object.keys({ ...previous, ...item })) : {};
+  return addAuditLog({
+    actor_id: user?.id || null,
+    actor_email: user?.email || user?.username || metadata.actor || "system",
+    role: Array.isArray(user?.roles) ? user.roles.join(",") : user?.role || null,
+    action: `${entity}.${action}`,
+    method: metadata.method || null,
+    path: metadata.path || null,
+    status_code: metadata.status_code || 200,
+    metadata: {
+      entity,
+      entity_id: item?.id || item?.code || null,
+      code: item?.code || null,
+      changed_fields: changes,
+      approval: item?.approval || null,
+      ...metadata,
+    },
+  });
+}
+
 function bumpDashboardCache() {
   dashboardCacheVersion += 1;
   dashboardCache.clear();
@@ -1160,9 +1225,13 @@ function getDashboardExport(format = "excel", filters = {}) {
   };
 }
 
-function addStandard(data) {
+function addStandard(data, user) {
   const category = normalizeStandardCategory(data.category);
   const code = getNextStandardCode(category);
+  const duplicate = findDuplicateBy(state.standards.filter((item) => !item.deleted_at), { ...data, category }, [["title", "category"]]);
+  if (duplicate) {
+    throw createConflict("Standar dengan judul dan kategori yang sama sudah ada.", { duplicate_id: duplicate.id, duplicate_code: duplicate.code });
+  }
   const item = {
     id: `std-${Date.now()}`,
     code,
@@ -1183,6 +1252,7 @@ function addStandard(data) {
     ],
   };
   state.standards.unshift(item);
+  recordMutationAudit("standard", "created", item, null, user, { status_code: 201 });
   return item;
 }
 
@@ -1211,6 +1281,15 @@ function updateStandard(standardId, data) {
   };
 
   const nextCategory = data.category ? normalizeStandardCategory(data.category) : standard.category;
+  const duplicate = findDuplicateBy(
+    state.standards.filter((item) => !item.deleted_at),
+    { title: data.title || standard.title, category: nextCategory },
+    [["title", "category"]],
+    standard.id
+  );
+  if (duplicate) {
+    throw createConflict("Standar dengan judul dan kategori yang sama sudah ada.", { duplicate_id: duplicate.id, duplicate_code: duplicate.code });
+  }
   const categoryChanged = nextCategory !== standard.category;
   const nextVersion = data.version || bumpMinorVersion(standard.version);
 
@@ -1235,6 +1314,7 @@ function updateStandard(standardId, data) {
     ...(standard.revisions || []),
   ];
 
+  recordMutationAudit("standard", "updated", standard, previous, { email: data.changed_by || "system" });
   return standard;
 }
 
@@ -1257,6 +1337,7 @@ function deleteStandard(standardId, data = {}) {
     },
     ...(standard.revisions || []),
   ];
+  recordMutationAudit("standard", "deleted", standard, null, { email: data.changed_by || "system" });
   return standard;
 }
 
@@ -1267,9 +1348,10 @@ function getStandardRevisions(standardId) {
 
 function addDocument(data, user) {
   const id = Date.now();
+  const code = data.code || buildSequenceCode("DOC-SPMI", state.documents, "code", 3);
   const item = {
     id,
-    code: data.code || `DOC-${id}`,
+    code,
     title: data.title,
     type: data.type || "kebijakan",
     status: "draft",
@@ -1299,6 +1381,7 @@ function addDocument(data, user) {
     ],
   };
   state.documents.unshift(item);
+  recordMutationAudit("document", "created", item, null, user, { status_code: 201 });
   return item;
 }
 
@@ -1357,6 +1440,11 @@ function addDocumentVersion(documentId, data, user) {
   document.versions.unshift(version);
   document.current_version = `${versionNumber}.0`;
   document.status = data.status || document.status;
+  recordMutationAudit("document", "version_created", document, null, user, {
+    version_id: version.id,
+    file_name: version.file_name,
+    status_code: 201,
+  });
   return { document, version };
 }
 
@@ -1395,6 +1483,7 @@ function addFinding(auditId, data) {
 function addMeeting(data, user) {
   const item = {
     id: Date.now(),
+    code: buildSequenceCode("RTM", state.meetings, "code", 3),
     title: data.title,
     meeting_date: data.meeting_date,
     status: "scheduled",
@@ -1404,6 +1493,7 @@ function addMeeting(data, user) {
     actions: [],
   };
   state.meetings.unshift(item);
+  recordMutationAudit("rtm", "created", item, null, user, { status_code: 201 });
   return item;
 }
 
@@ -1419,6 +1509,7 @@ function updateMeetingAction(meetingId, actionId, data) {
   }
 
   const nextStatus = data.status || action.status;
+  const previous = { ...action };
   const rawProgress = Number.isFinite(Number(data.progress)) ? Number(data.progress) : action.progress ?? 0;
   const nextProgress = Math.min(100, Math.max(0, rawProgress));
 
@@ -1426,6 +1517,7 @@ function updateMeetingAction(meetingId, actionId, data) {
   action.progress = nextStatus === "done" ? 100 : nextProgress;
   action.owner_notes = data.owner_notes ?? action.owner_notes ?? null;
   action.updated_at = new Date().toISOString();
+  recordMutationAudit("rtl", "updated", action, previous, null, { meeting_id: meeting.id });
 
   return {
     meeting_id: meeting.id,
@@ -1435,6 +1527,20 @@ function updateMeetingAction(meetingId, actionId, data) {
 }
 
 function addPpeppCycle(data, user) {
+  const duplicate = state.ppeppCycles.find((item) => {
+    const sameScope = normalizeComparable(item.org_unit_code) === normalizeComparable(data.org_unit_code);
+    const sameName = sameScope && normalizeComparable(item.name) === normalizeComparable(data.name);
+    const hasAcademicYear = Boolean(item.academic_year_start && item.academic_year_end && data.academic_year_start && data.academic_year_end);
+    const sameYear =
+      hasAcademicYear &&
+      sameScope &&
+      String(item.academic_year_start || "") === String(data.academic_year_start || "") &&
+      String(item.academic_year_end || "") === String(data.academic_year_end || "");
+    return sameName || sameYear;
+  });
+  if (duplicate) {
+    throw createConflict("Siklus PPEPP dengan nama/periode/unit yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
   const item = normalizePpeppCycle({
     id: Date.now(),
     name: data.name || `Siklus ${new Date().getFullYear()}`,
@@ -1447,6 +1553,7 @@ function addPpeppCycle(data, user) {
     created_at: new Date().toISOString(),
   });
   state.ppeppCycles.unshift(item);
+  recordMutationAudit("ppepp", "created", item, null, user, { status_code: 201 });
   return item;
 }
 
@@ -1484,6 +1591,7 @@ function updatePpeppStage(cycleId, stageKey, data, user) {
     progress: stage.progress,
     note: data.notes || `${stage.label} diperbarui.`,
   });
+  recordMutationAudit("ppepp", "stage_updated", cycle, null, user, { stage: stage.key });
 
   return cycle;
 }
@@ -1521,13 +1629,23 @@ function addPpeppEvidence(cycleId, stageKey, data, user) {
     stage: stage.key,
     note: evidence.title,
   });
+  recordMutationAudit("ppepp", "evidence_uploaded", cycle, null, user, { stage: stage.key, evidence_id: evidence.id, status_code: 201 });
 
   return { cycle, stage, evidence };
 }
 
 function addAmiAudit(data, user) {
+  const duplicate = state.audits.find((item) =>
+    normalizeComparable(item.org_unit_code) === normalizeComparable(data.org_unit_code) &&
+    String(item.scheduled_date || item.audit_date || "") === String(data.scheduled_date || data.audit_date || "") &&
+    item.status !== "cancelled"
+  );
+  if (duplicate) {
+    throw createConflict("Audit untuk unit dan tanggal yang sama sudah terjadwal.", { duplicate_id: duplicate.id });
+  }
   const item = normalizeAmiAudit({
     id: Date.now(),
+    code: buildSequenceCode("AMI", state.audits, "code", 3),
     title: data.title || data.name || "Audit Mutu Internal",
     audit_date: data.audit_date || null,
     scheduled_date: data.scheduled_date || data.audit_date || null,
@@ -1558,6 +1676,7 @@ function addAmiAudit(data, user) {
     created_at: new Date().toISOString(),
   });
   state.audits.unshift(item);
+  recordMutationAudit("ami", "created", item, null, user, { status_code: 201 });
   return item;
 }
 
@@ -1582,6 +1701,7 @@ function updateAmiAssignment(auditId, data, user) {
     note: `Auditor ${audit.auditor.name}, jadwal ${audit.scheduled_date || "-"}.`,
   });
   audit.recap = calculateAmiRecap(audit);
+  recordMutationAudit("ami", "assignment_updated", audit, null, user);
   return audit;
 }
 
@@ -1605,6 +1725,7 @@ function updateAmiInstrument(auditId, instrumentId, data, user) {
   });
   audit.recap = calculateAmiRecap(audit);
   audit.score = audit.recap.score;
+  recordMutationAudit("ami", "instrument_updated", audit, null, user, { instrument_id: instrumentId });
   return audit;
 }
 
@@ -1670,9 +1791,18 @@ function verifyAmiFinding(auditId, findingId, data, user) {
 }
 
 function addIndicator(data, user) {
+  const code = data.code || buildSequenceCode("IKU", state.indicators, "code", 3);
+  const duplicate = findDuplicateBy(
+    state.indicators,
+    { ...data, code },
+    ["code", ["name", "org_unit_code"]],
+  );
+  if (duplicate) {
+    throw createConflict("Indikator dengan kode atau nama/unit yang sama sudah ada.", { duplicate_id: duplicate.id, duplicate_code: duplicate.code });
+  }
   const item = {
     id: Date.now(),
-    code: data.code,
+    code,
     name: data.name,
     description: data.description || "",
     target_value: Number(data.target_value || 0),
@@ -1688,6 +1818,7 @@ function addIndicator(data, user) {
   };
   state.indicators.unshift(item);
   bumpDashboardCache();
+  recordMutationAudit("indicator", "created", item, null, user, { status_code: 201 });
   return item;
 }
 
@@ -1710,12 +1841,27 @@ function addIndicatorValue(indicatorId, data) {
   indicator.latest_value = value;
   indicator.history.unshift(value);
   bumpDashboardCache();
+  recordMutationAudit("indicator", "value_created", indicator, null, null, {
+    period: value.period,
+    actual_value: value.actual_value,
+    status: value.status,
+    status_code: 201,
+  });
   return value;
 }
 
 function addSurvey(data) {
+  const duplicate = state.surveys.find((item) =>
+    normalizeComparable(item.title) === normalizeComparable(data.title) &&
+    normalizeComparable(item.target) === normalizeComparable(data.target) &&
+    String(item.ppepp_cycle_id || "") === String(data.ppepp_cycle_id || "")
+  );
+  if (duplicate) {
+    throw createConflict("Survei dengan judul, target, dan siklus yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
   const item = {
     id: Date.now(),
+    code: buildSequenceCode("SRV", state.surveys, "code", 3),
     title: data.title || "Survei Baru",
     target: data.target || "mahasiswa",
     status: data.status || "draft",
@@ -1723,12 +1869,21 @@ function addSurvey(data) {
   };
 
   state.surveys.unshift(item);
+  recordMutationAudit("survey", "created", item, null, null, { status_code: 201 });
   return item;
 }
 
 function addImport(data) {
+  const duplicate = state.imports.find((item) =>
+    normalizeComparable(item.type) === normalizeComparable(data.type) &&
+    normalizeComparable(item.title) === normalizeComparable(data.title)
+  );
+  if (duplicate) {
+    throw createConflict("Import dengan tipe dan judul yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
   const item = {
     id: Date.now(),
+    code: buildSequenceCode("IMP", state.imports, "code", 3),
     type: data.type || "lkpt",
     title: data.title || "Import Baru",
     status: data.status || "queued",
@@ -1736,6 +1891,7 @@ function addImport(data) {
   };
 
   state.imports.unshift(item);
+  recordMutationAudit("import", "created", item, null, null, { file_name: item.file_name, status_code: 201 });
   return item;
 }
 
@@ -1754,10 +1910,21 @@ function refreshHrisMetrics() {
 }
 
 function addHrisEmployee(data) {
+  const employeeNumber = data.employeeNumber || data.employee_number || buildSequenceCode("HR", state.hris.employees, "employeeNumber", 5);
+  const incomingNidn = normalizeComparable(data.nidn);
+  const duplicate = state.hris.employees.find((item) => {
+    const sameEmployeeNumber = normalizeComparable(item.employeeNumber) === normalizeComparable(employeeNumber);
+    const sameEmail = normalizeComparable(item.email) === normalizeComparable(data.email);
+    const sameNidn = incomingNidn && incomingNidn !== "-" && normalizeComparable(item.nidn) === incomingNidn;
+    return sameEmployeeNumber || sameEmail || sameNidn;
+  });
+  if (duplicate) {
+    throw createConflict("Pegawai HRIS dengan NIP/NIDN/email yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
   const item = {
-    id: `EMP-${Date.now()}`,
+    id: buildSequenceCode("EMP", state.hris.employees, "id", 3),
     name: data.name || "Pegawai Baru",
-    employeeNumber: data.employeeNumber || data.employee_number || `HR-${Date.now()}`,
+    employeeNumber,
     nidn: data.nidn || "-",
     type: data.type || "Dosen",
     status: data.status || "Aktif",
@@ -1770,6 +1937,7 @@ function addHrisEmployee(data) {
 
   state.hris.employees.unshift(item);
   refreshHrisMetrics();
+  recordMutationAudit("hris.employee", "created", item, null, null, { status_code: 201 });
   return item;
 }
 
@@ -1779,7 +1947,20 @@ function updateHrisEmployee(employeeId, data) {
     return null;
   }
 
+  const previous = { ...employee };
   const previousName = employee.name;
+  const nextEmployeeNumber = data.employeeNumber || data.employee_number || employee.employeeNumber;
+  const nextNidn = normalizeComparable(data.nidn || employee.nidn);
+  const duplicate = state.hris.employees.find((item) => {
+    if (String(item.id) === String(employee.id)) return false;
+    const sameEmployeeNumber = normalizeComparable(item.employeeNumber) === normalizeComparable(nextEmployeeNumber);
+    const sameEmail = normalizeComparable(item.email) === normalizeComparable(data.email || employee.email);
+    const sameNidn = nextNidn && nextNidn !== "-" && normalizeComparable(item.nidn) === nextNidn;
+    return sameEmployeeNumber || sameEmail || sameNidn;
+  });
+  if (duplicate) {
+    throw createConflict("Pegawai HRIS dengan NIP/NIDN/email yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
   Object.assign(employee, {
     name: data.name || employee.name,
     employeeNumber: data.employeeNumber || data.employee_number || employee.employeeNumber,
@@ -1806,6 +1987,7 @@ function updateHrisEmployee(employeeId, data) {
   }
 
   refreshHrisMetrics();
+  recordMutationAudit("hris.employee", "updated", employee, previous, null);
   return employee;
 }
 
@@ -1820,12 +2002,17 @@ function deleteHrisEmployee(employeeId) {
   state.hris.competencies = state.hris.competencies.filter((item) => item.employee !== employee.name);
   state.hris.documents = state.hris.documents.filter((item) => item.employee !== employee.name);
   refreshHrisMetrics();
+  recordMutationAudit("hris.employee", "deleted", employee, null, null);
   return employee;
 }
 
 function addHrisPosition(data) {
+  const duplicate = findDuplicateBy(state.hris.positions, data, [["title", "unit", "holder", "period"]]);
+  if (duplicate) {
+    throw createConflict("Jabatan HRIS dengan title/unit/pejabat/periode yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
   const item = {
-    id: `POS-${Date.now()}`,
+    id: buildSequenceCode("POS", state.hris.positions, "id", 3),
     title: data.title || "Jabatan Baru",
     unit: data.unit || "Unit Kerja",
     holder: data.holder || "Belum ditetapkan",
@@ -1834,6 +2021,7 @@ function addHrisPosition(data) {
   };
 
   state.hris.positions.unshift(item);
+  recordMutationAudit("hris.position", "created", item, null, null, { status_code: 201 });
   return item;
 }
 
@@ -1843,6 +2031,7 @@ function updateHrisPosition(positionId, data) {
     return null;
   }
 
+  const previous = { ...position };
   Object.assign(position, {
     title: data.title || position.title,
     unit: data.unit || position.unit,
@@ -1850,6 +2039,7 @@ function updateHrisPosition(positionId, data) {
     period: data.period || position.period,
     status: data.status || position.status,
   });
+  recordMutationAudit("hris.position", "updated", position, previous, null);
   return position;
 }
 
@@ -1860,12 +2050,17 @@ function deleteHrisPosition(positionId) {
   }
 
   const [position] = state.hris.positions.splice(index, 1);
+  recordMutationAudit("hris.position", "deleted", position, null, null);
   return position;
 }
 
 function addHrisCompetency(data) {
+  const duplicate = findDuplicateBy(state.hris.competencies, data, [["employee", "category", "name", "year"]]);
+  if (duplicate) {
+    throw createConflict("Kompetensi HRIS untuk pegawai/kategori/nama/tahun yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
   const item = {
-    id: `CMP-${Date.now()}`,
+    id: buildSequenceCode("CMP", state.hris.competencies, "id", 3),
     employee: data.employee || "Pegawai",
     category: data.category || "Kompetensi",
     name: data.name || "Kompetensi Baru",
@@ -1875,6 +2070,7 @@ function addHrisCompetency(data) {
 
   state.hris.competencies.unshift(item);
   refreshHrisMetrics();
+  recordMutationAudit("hris.competency", "created", item, null, null, { status_code: 201 });
   return item;
 }
 
@@ -1884,6 +2080,7 @@ function updateHrisCompetency(competencyId, data) {
     return null;
   }
 
+  const previous = { ...competency };
   Object.assign(competency, {
     employee: data.employee || competency.employee,
     category: data.category || competency.category,
@@ -1892,6 +2089,7 @@ function updateHrisCompetency(competencyId, data) {
     status: data.status || competency.status,
   });
   refreshHrisMetrics();
+  recordMutationAudit("hris.competency", "updated", competency, previous, null);
   return competency;
 }
 
@@ -1903,12 +2101,26 @@ function deleteHrisCompetency(competencyId) {
 
   const [competency] = state.hris.competencies.splice(index, 1);
   refreshHrisMetrics();
+  recordMutationAudit("hris.competency", "deleted", competency, null, null);
   return competency;
 }
 
 function addHrisDocument(data) {
+  const duplicate = state.hris.documents.find((item) => {
+    const sameIdentity =
+      normalizeComparable(item.employee) === normalizeComparable(data.employee) &&
+      normalizeComparable(item.type) === normalizeComparable(data.type) &&
+      normalizeComparable(item.title) === normalizeComparable(data.title);
+    if (!sameIdentity) return false;
+    const incomingFile = normalizeComparable(data.fileName || data.file_name);
+    const existingFile = normalizeComparable(item.fileName || item.file_name);
+    return incomingFile && existingFile && incomingFile === existingFile;
+  });
+  if (duplicate) {
+    throw createConflict("Dokumen HRIS dengan pegawai/jenis/judul yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
   const item = {
-    id: `DOC-HR-${Date.now()}`,
+    id: buildSequenceCode("DOC-HR", state.hris.documents, "id", 3),
     employee: data.employee || "Pegawai",
     type: data.type || "Dokumen SDM",
     title: data.title || "Dokumen Baru",
@@ -1919,6 +2131,7 @@ function addHrisDocument(data) {
   };
 
   state.hris.documents.unshift(item);
+  recordMutationAudit("hris.document", "created", item, null, null, { status_code: 201 });
   return item;
 }
 
@@ -1928,6 +2141,7 @@ function updateHrisDocument(documentId, data) {
     return null;
   }
 
+  const previous = { ...document };
   Object.assign(document, {
     employee: data.employee || document.employee,
     type: data.type || document.type,
@@ -1937,6 +2151,7 @@ function updateHrisDocument(documentId, data) {
     filePath: data.filePath || data.file_path || document.filePath || null,
     fileSize: Number(data.fileSize || data.file_size || document.fileSize || 0),
   });
+  recordMutationAudit("hris.document", "updated", document, previous, null);
   return document;
 }
 
@@ -1947,6 +2162,7 @@ function deleteHrisDocument(documentId) {
   }
 
   const [document] = state.hris.documents.splice(index, 1);
+  recordMutationAudit("hris.document", "deleted", document, null, null);
   return document;
 }
 

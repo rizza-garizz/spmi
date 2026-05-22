@@ -104,17 +104,25 @@ function catalog(_req, res) {
   return success(res, getCatalogSnapshot(), "Snapshot katalog");
 }
 
+function mutationFailure(res, error, fallback = "Operasi gagal diproses.") {
+  return failure(res, error?.message || fallback, error?.statusCode || 500, error?.metadata || {});
+}
+
 function standards(_req, res) {
   return success(res, getActiveStandards(), "Daftar standar mutu");
 }
 
 function createStandard(req, res) {
-  return success(
-    res,
-    addStandard({ ...(req.body || {}), changed_by: req.user?.email || req.user?.username || "system" }),
-    "Standar berhasil dibuat di mode lokal.",
-    201
-  );
+  try {
+    return success(
+      res,
+      addStandard({ ...(req.body || {}), changed_by: req.user?.email || req.user?.username || "system" }, req.user),
+      "Standar berhasil dibuat di mode lokal.",
+      201
+    );
+  } catch (error) {
+    return mutationFailure(res, error, "Standar gagal dibuat.");
+  }
 }
 
 function standardRevisions(req, res) {
@@ -124,21 +132,29 @@ function standardRevisions(req, res) {
 }
 
 function updateStandardRecord(req, res) {
-  const standard = updateStandard(req.params.id, {
-    ...(req.body || {}),
-    changed_by: req.user?.email || req.user?.username || "system",
-  });
-  if (!standard) return failure(res, "Standar tidak ditemukan.", 404);
-  return success(res, standard, "Standar berhasil diperbarui.");
+  try {
+    const standard = updateStandard(req.params.id, {
+      ...(req.body || {}),
+      changed_by: req.user?.email || req.user?.username || "system",
+    });
+    if (!standard) return failure(res, "Standar tidak ditemukan.", 404);
+    return success(res, standard, "Standar berhasil diperbarui.");
+  } catch (error) {
+    return mutationFailure(res, error, "Standar gagal diperbarui.");
+  }
 }
 
 function deleteStandardRecord(req, res) {
-  const standard = deleteStandard(req.params.id, {
-    ...(req.body || {}),
-    changed_by: req.user?.email || req.user?.username || "system",
-  });
-  if (!standard) return failure(res, "Standar tidak ditemukan.", 404);
-  return success(res, standard, "Standar berhasil dinonaktifkan.");
+  try {
+    const standard = deleteStandard(req.params.id, {
+      ...(req.body || {}),
+      changed_by: req.user?.email || req.user?.username || "system",
+    });
+    if (!standard) return failure(res, "Standar tidak ditemukan.", 404);
+    return success(res, standard, "Standar berhasil dinonaktifkan.");
+  } catch (error) {
+    return mutationFailure(res, error, "Standar gagal dinonaktifkan.");
+  }
 }
 
 function documents(req, res) {
@@ -173,15 +189,23 @@ function createDocument(req, res) {
       return failure(res, "File duplikat terdeteksi. Upload dibatalkan agar repository tetap bersih.", 409);
     }
 
-    const versioned = addDocumentVersion(duplicate.id, documentPayload, req.user);
-    return success(res, versioned.document, "Dokumen sudah ada. File disimpan sebagai versi baru.", 201);
+    try {
+      const versioned = addDocumentVersion(duplicate.id, documentPayload, req.user);
+      return success(res, versioned.document, "Dokumen sudah ada. File disimpan sebagai versi baru.", 201);
+    } catch (error) {
+      return mutationFailure(res, error, "Versi dokumen gagal dibuat.");
+    }
   }
 
-  return res.status(201).json({
-    success: true,
-    data: addDocument(documentPayload, req.user),
-    message: "Dokumen berhasil disimpan di mode lokal.",
-  });
+  try {
+    return res.status(201).json({
+      success: true,
+      data: addDocument(documentPayload, req.user),
+      message: "Dokumen berhasil disimpan di mode lokal.",
+    });
+  } catch (error) {
+    return mutationFailure(res, error, "Dokumen gagal disimpan.");
+  }
 }
 
 function documentVersion(req, res) {
@@ -236,19 +260,23 @@ function createDocumentVersion(req, res) {
   if (!document) return failure(res, "Dokumen tidak ditemukan.", 404);
   if (!canReadScopedItem(req, document)) return failure(res, "Anda tidak dapat mengubah dokumen ini.", 403);
 
-  const result = addDocumentVersion(
-    req.params.id,
-    {
-      ...(req.body || {}),
-      file_name: req.file?.originalname || req.body?.file_name || null,
-      file_path: req.file?.path || null,
-      file_size: req.file?.size || 0,
-      mime_type: req.file?.mimetype || null,
-    },
-    req.user
-  );
-  if (result?.duplicate) return failure(res, "File duplikat terdeteksi. Versi baru tidak dibuat.", 409);
-  return success(res, result.document, "Versi dokumen berhasil ditambahkan.", 201);
+  try {
+    const result = addDocumentVersion(
+      req.params.id,
+      {
+        ...(req.body || {}),
+        file_name: req.file?.originalname || req.body?.file_name || null,
+        file_path: req.file?.path || null,
+        file_size: req.file?.size || 0,
+        mime_type: req.file?.mimetype || null,
+      },
+      req.user
+    );
+    if (result?.duplicate) return failure(res, "File duplikat terdeteksi. Versi baru tidak dibuat.", 409);
+    return success(res, result.document, "Versi dokumen berhasil ditambahkan.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Versi dokumen gagal ditambahkan.");
+  }
 }
 
 function ppeppCycles(req, res) {
@@ -259,11 +287,15 @@ function createPpeppCycle(req, res) {
   const payload = prepareScopedPayload(req);
   if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
 
-  return res.status(201).json({
-    success: true,
-    data: addPpeppCycle(payload, req.user),
-    message: "Siklus PPEPP berhasil dibuat di mode lokal.",
-  });
+  try {
+    return res.status(201).json({
+      success: true,
+      data: addPpeppCycle(payload, req.user),
+      message: "Siklus PPEPP berhasil dibuat di mode lokal.",
+    });
+  } catch (error) {
+    return mutationFailure(res, error, "Siklus PPEPP gagal dibuat.");
+  }
 }
 
 function updatePpeppCycleStage(req, res) {
@@ -271,9 +303,13 @@ function updatePpeppCycleStage(req, res) {
   if (!cycle) return failure(res, "Siklus PPEPP tidak ditemukan.", 404);
   if (!canReadScopedItem(req, cycle)) return failure(res, "Anda tidak dapat mengubah data di luar scope unit kerja.", 403);
 
-  const updated = updatePpeppStage(req.params.id, req.params.stage, req.body || {}, req.user);
-  if (!updated) return failure(res, "Tahap PPEPP tidak ditemukan.", 404);
-  return success(res, updated, "Tahap PPEPP berhasil diperbarui.");
+  try {
+    const updated = updatePpeppStage(req.params.id, req.params.stage, req.body || {}, req.user);
+    if (!updated) return failure(res, "Tahap PPEPP tidak ditemukan.", 404);
+    return success(res, updated, "Tahap PPEPP berhasil diperbarui.");
+  } catch (error) {
+    return mutationFailure(res, error, "Tahap PPEPP gagal diperbarui.");
+  }
 }
 
 function uploadPpeppEvidence(req, res) {
@@ -281,19 +317,23 @@ function uploadPpeppEvidence(req, res) {
   if (!cycle) return failure(res, "Siklus PPEPP tidak ditemukan.", 404);
   if (!canReadScopedItem(req, cycle)) return failure(res, "Anda tidak dapat mengunggah bukti di luar scope unit kerja.", 403);
 
-  const result = addPpeppEvidence(
-    req.params.id,
-    req.params.stage,
-    {
-      ...(req.body || {}),
-      file_name: req.file?.originalname || req.body?.file_name || null,
-      file_path: req.file?.path || null,
-      file_size: req.file?.size || 0,
-    },
-    req.user
-  );
-  if (!result) return failure(res, "Tahap PPEPP tidak ditemukan.", 404);
-  return success(res, result, "Bukti PPEPP berhasil diunggah.", 201);
+  try {
+    const result = addPpeppEvidence(
+      req.params.id,
+      req.params.stage,
+      {
+        ...(req.body || {}),
+        file_name: req.file?.originalname || req.body?.file_name || null,
+        file_path: req.file?.path || null,
+        file_size: req.file?.size || 0,
+      },
+      req.user
+    );
+    if (!result) return failure(res, "Tahap PPEPP tidak ditemukan.", 404);
+    return success(res, result, "Bukti PPEPP berhasil diunggah.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Bukti PPEPP gagal diunggah.");
+  }
 }
 
 function amiAudits(req, res) {
@@ -306,11 +346,15 @@ function createAmiAudit(req, res) {
     return failure(res, "Anda tidak dapat membuat audit di luar scope unit kerja.", 403);
   }
 
-  return res.status(201).json({
-    success: true,
-    data: addAmiAudit(payload, req.user),
-    message: "AMI audit berhasil dibuat di mode lokal.",
-  });
+  try {
+    return res.status(201).json({
+      success: true,
+      data: addAmiAudit(payload, req.user),
+      message: "AMI audit berhasil dibuat di mode lokal.",
+    });
+  } catch (error) {
+    return mutationFailure(res, error, "AMI audit gagal dibuat.");
+  }
 }
 
 function createFinding(req, res) {
@@ -318,12 +362,16 @@ function createFinding(req, res) {
   if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
   if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat mengubah audit di luar scope.", 403);
 
-  return success(
-    res,
-    addFinding(req.params.id, { ...(req.body || {}), changed_by: req.user?.email || "system" }),
-    "Temuan audit berhasil ditambahkan.",
-    201
-  );
+  try {
+    return success(
+      res,
+      addFinding(req.params.id, { ...(req.body || {}), changed_by: req.user?.email || "system" }),
+      "Temuan audit berhasil ditambahkan.",
+      201
+    );
+  } catch (error) {
+    return mutationFailure(res, error, "Temuan audit gagal ditambahkan.");
+  }
 }
 
 function updateAmiAuditAssignment(req, res) {
@@ -331,7 +379,11 @@ function updateAmiAuditAssignment(req, res) {
   if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
   if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat mengubah audit di luar scope.", 403);
 
-  return success(res, updateAmiAssignment(req.params.id, req.body || {}, req.user), "Penugasan audit berhasil diperbarui.");
+  try {
+    return success(res, updateAmiAssignment(req.params.id, req.body || {}, req.user), "Penugasan audit berhasil diperbarui.");
+  } catch (error) {
+    return mutationFailure(res, error, "Penugasan audit gagal diperbarui.");
+  }
 }
 
 function updateAmiAuditInstrument(req, res) {
@@ -339,9 +391,13 @@ function updateAmiAuditInstrument(req, res) {
   if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
   if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat mengubah audit di luar scope.", 403);
 
-  const updated = updateAmiInstrument(req.params.id, req.params.instrumentId, req.body || {}, req.user);
-  if (!updated) return failure(res, "Instrumen audit tidak ditemukan.", 404);
-  return success(res, updated, "Instrumen audit berhasil diperbarui.");
+  try {
+    const updated = updateAmiInstrument(req.params.id, req.params.instrumentId, req.body || {}, req.user);
+    if (!updated) return failure(res, "Instrumen audit tidak ditemukan.", 404);
+    return success(res, updated, "Instrumen audit berhasil diperbarui.");
+  } catch (error) {
+    return mutationFailure(res, error, "Instrumen audit gagal diperbarui.");
+  }
 }
 
 function updateAmiFindingFollowUpRecord(req, res) {
@@ -349,9 +405,13 @@ function updateAmiFindingFollowUpRecord(req, res) {
   if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
   if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat mengubah audit di luar scope.", 403);
 
-  const updated = updateAmiFindingFollowUp(req.params.id, req.params.findingId, req.body || {}, req.user);
-  if (!updated) return failure(res, "Temuan audit tidak ditemukan.", 404);
-  return success(res, updated, "Tindak lanjut temuan berhasil diperbarui.");
+  try {
+    const updated = updateAmiFindingFollowUp(req.params.id, req.params.findingId, req.body || {}, req.user);
+    if (!updated) return failure(res, "Temuan audit tidak ditemukan.", 404);
+    return success(res, updated, "Tindak lanjut temuan berhasil diperbarui.");
+  } catch (error) {
+    return mutationFailure(res, error, "Tindak lanjut temuan gagal diperbarui.");
+  }
 }
 
 function verifyAmiFindingRecord(req, res) {
@@ -359,9 +419,13 @@ function verifyAmiFindingRecord(req, res) {
   if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
   if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat memverifikasi audit di luar scope.", 403);
 
-  const updated = verifyAmiFinding(req.params.id, req.params.findingId, req.body || {}, req.user);
-  if (!updated) return failure(res, "Temuan audit tidak ditemukan.", 404);
-  return success(res, updated, "Perbaikan temuan berhasil diverifikasi.");
+  try {
+    const updated = verifyAmiFinding(req.params.id, req.params.findingId, req.body || {}, req.user);
+    if (!updated) return failure(res, "Temuan audit tidak ditemukan.", 404);
+    return success(res, updated, "Perbaikan temuan berhasil diverifikasi.");
+  } catch (error) {
+    return mutationFailure(res, error, "Perbaikan temuan gagal diverifikasi.");
+  }
 }
 
 function amiAuditSummary(req, res) {
@@ -440,11 +504,15 @@ function createMeeting(req, res) {
   const payload = prepareScopedPayload(req);
   if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
 
-  return res.status(201).json({
-    success: true,
-    data: addMeeting(payload, req.user),
-    message: "Rapat RTM berhasil dibuat di mode lokal.",
-  });
+  try {
+    return res.status(201).json({
+      success: true,
+      data: addMeeting(payload, req.user),
+      message: "Rapat RTM berhasil dibuat di mode lokal.",
+    });
+  } catch (error) {
+    return mutationFailure(res, error, "Rapat RTM gagal dibuat.");
+  }
 }
 
 function updateMeetingActionProgress(req, res) {
@@ -455,12 +523,16 @@ function updateMeetingActionProgress(req, res) {
     return failure(res, "Anda tidak dapat memperbarui RTL di luar scope unit kerja.", 403);
   }
 
-  const updatedAction = updateMeetingAction(req.params.meetingId, req.params.actionId, req.body || {});
-  if (!updatedAction) {
-    return failure(res, "Action RTL tidak ditemukan.", 404);
-  }
+  try {
+    const updatedAction = updateMeetingAction(req.params.meetingId, req.params.actionId, req.body || {});
+    if (!updatedAction) {
+      return failure(res, "Action RTL tidak ditemukan.", 404);
+    }
 
-  return success(res, updatedAction, "Progres RTL berhasil diperbarui di mode lokal.");
+    return success(res, updatedAction, "Progres RTL berhasil diperbarui di mode lokal.");
+  } catch (error) {
+    return mutationFailure(res, error, "Progres RTL gagal diperbarui.");
+  }
 }
 
 function indicators(req, res) {
@@ -471,11 +543,15 @@ function createIndicator(req, res) {
   const payload = prepareScopedPayload(req);
   if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
 
-  return res.status(201).json({
-    success: true,
-    data: addIndicator(payload, req.user),
-    message: "Indikator berhasil dibuat di mode lokal.",
-  });
+  try {
+    return res.status(201).json({
+      success: true,
+      data: addIndicator(payload, req.user),
+      message: "Indikator berhasil dibuat di mode lokal.",
+    });
+  } catch (error) {
+    return mutationFailure(res, error, "Indikator gagal dibuat.");
+  }
 }
 
 function createIndicatorValue(req, res) {
@@ -485,12 +561,16 @@ function createIndicatorValue(req, res) {
     return failure(res, "Anda tidak dapat mengisi capaian di luar scope unit kerja.", 403);
   }
 
-  const value = addIndicatorValue(req.params.id, req.body || {});
-  if (!value) {
-    return failure(res, "Indikator tidak ditemukan.", 404);
-  }
+  try {
+    const value = addIndicatorValue(req.params.id, req.body || {});
+    if (!value) {
+      return failure(res, "Indikator tidak ditemukan.", 404);
+    }
 
-  return success(res, value, "Capaian indikator berhasil disimpan di mode lokal.", 201);
+    return success(res, value, "Capaian indikator berhasil disimpan di mode lokal.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Capaian indikator gagal disimpan.");
+  }
 }
 
 function resolveGovernanceCollection(entity) {
@@ -589,16 +669,24 @@ function hrisEmployeeProfile(req, res) {
 }
 
 function createHrisEmployee(req, res) {
-  return success(res, addHrisEmployee(req.body || {}), "Pegawai HRIS berhasil dibuat di mode lokal.", 201);
+  try {
+    return success(res, addHrisEmployee(req.body || {}), "Pegawai HRIS berhasil dibuat di mode lokal.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Pegawai HRIS gagal dibuat.");
+  }
 }
 
 function updateHrisEmployeeRecord(req, res) {
-  const employee = updateHrisEmployee(req.params.id, req.body || {});
-  if (!employee) {
-    return failure(res, "Pegawai HRIS tidak ditemukan.", 404);
-  }
+  try {
+    const employee = updateHrisEmployee(req.params.id, req.body || {});
+    if (!employee) {
+      return failure(res, "Pegawai HRIS tidak ditemukan.", 404);
+    }
 
-  return success(res, employee, "Pegawai HRIS berhasil diperbarui di mode lokal.");
+    return success(res, employee, "Pegawai HRIS berhasil diperbarui di mode lokal.");
+  } catch (error) {
+    return mutationFailure(res, error, "Pegawai HRIS gagal diperbarui.");
+  }
 }
 
 function deleteHrisEmployeeRecord(req, res) {
@@ -615,16 +703,24 @@ function hrisPositions(_req, res) {
 }
 
 function createHrisPosition(req, res) {
-  return success(res, addHrisPosition(req.body || {}), "Jabatan HRIS berhasil dibuat di mode lokal.", 201);
+  try {
+    return success(res, addHrisPosition(req.body || {}), "Jabatan HRIS berhasil dibuat di mode lokal.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Jabatan HRIS gagal dibuat.");
+  }
 }
 
 function updateHrisPositionRecord(req, res) {
-  const position = updateHrisPosition(req.params.id, req.body || {});
-  if (!position) {
-    return failure(res, "Jabatan HRIS tidak ditemukan.", 404);
-  }
+  try {
+    const position = updateHrisPosition(req.params.id, req.body || {});
+    if (!position) {
+      return failure(res, "Jabatan HRIS tidak ditemukan.", 404);
+    }
 
-  return success(res, position, "Jabatan HRIS berhasil diperbarui di mode lokal.");
+    return success(res, position, "Jabatan HRIS berhasil diperbarui di mode lokal.");
+  } catch (error) {
+    return mutationFailure(res, error, "Jabatan HRIS gagal diperbarui.");
+  }
 }
 
 function deleteHrisPositionRecord(req, res) {
@@ -641,16 +737,24 @@ function hrisCompetencies(_req, res) {
 }
 
 function createHrisCompetency(req, res) {
-  return success(res, addHrisCompetency(req.body || {}), "Kompetensi HRIS berhasil dibuat di mode lokal.", 201);
+  try {
+    return success(res, addHrisCompetency(req.body || {}), "Kompetensi HRIS berhasil dibuat di mode lokal.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Kompetensi HRIS gagal dibuat.");
+  }
 }
 
 function updateHrisCompetencyRecord(req, res) {
-  const competency = updateHrisCompetency(req.params.id, req.body || {});
-  if (!competency) {
-    return failure(res, "Kompetensi HRIS tidak ditemukan.", 404);
-  }
+  try {
+    const competency = updateHrisCompetency(req.params.id, req.body || {});
+    if (!competency) {
+      return failure(res, "Kompetensi HRIS tidak ditemukan.", 404);
+    }
 
-  return success(res, competency, "Kompetensi HRIS berhasil diperbarui di mode lokal.");
+    return success(res, competency, "Kompetensi HRIS berhasil diperbarui di mode lokal.");
+  } catch (error) {
+    return mutationFailure(res, error, "Kompetensi HRIS gagal diperbarui.");
+  }
 }
 
 function deleteHrisCompetencyRecord(req, res) {
@@ -676,16 +780,24 @@ function buildHrisDocumentPayload(req) {
 }
 
 function createHrisDocument(req, res) {
-  return success(res, addHrisDocument(buildHrisDocumentPayload(req)), "Dokumen HRIS berhasil dibuat di mode lokal.", 201);
+  try {
+    return success(res, addHrisDocument(buildHrisDocumentPayload(req)), "Dokumen HRIS berhasil dibuat di mode lokal.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Dokumen HRIS gagal dibuat.");
+  }
 }
 
 function updateHrisDocumentRecord(req, res) {
-  const document = updateHrisDocument(req.params.id, buildHrisDocumentPayload(req));
-  if (!document) {
-    return failure(res, "Dokumen HRIS tidak ditemukan.", 404);
-  }
+  try {
+    const document = updateHrisDocument(req.params.id, buildHrisDocumentPayload(req));
+    if (!document) {
+      return failure(res, "Dokumen HRIS tidak ditemukan.", 404);
+    }
 
-  return success(res, document, "Dokumen HRIS berhasil diperbarui di mode lokal.");
+    return success(res, document, "Dokumen HRIS berhasil diperbarui di mode lokal.");
+  } catch (error) {
+    return mutationFailure(res, error, "Dokumen HRIS gagal diperbarui.");
+  }
 }
 
 function deleteHrisDocumentRecord(req, res) {
@@ -702,20 +814,28 @@ function surveys(_req, res) {
 }
 
 function createSurvey(req, res) {
-  return res.status(201).json({
-    success: true,
-    data: addSurvey(req.body || {}),
-    message: "Survei berhasil dibuat di mode lokal.",
-  });
+  try {
+    return res.status(201).json({
+      success: true,
+      data: addSurvey(req.body || {}),
+      message: "Survei berhasil dibuat di mode lokal.",
+    });
+  } catch (error) {
+    return mutationFailure(res, error, "Survei gagal dibuat.");
+  }
 }
 
 function createImport(req, res) {
   const fileName = req.file?.originalname || req.body?.file_name || "mock-import.xlsx";
-  return res.status(201).json({
-    success: true,
-    data: addImport({ ...(req.body || {}), file_name: fileName }),
-    message: "Import berhasil dibuat di mode lokal.",
-  });
+  try {
+    return res.status(201).json({
+      success: true,
+      data: addImport({ ...(req.body || {}), file_name: fileName }),
+      message: "Import berhasil dibuat di mode lokal.",
+    });
+  } catch (error) {
+    return mutationFailure(res, error, "Import gagal dibuat.");
+  }
 }
 
 module.exports = {
