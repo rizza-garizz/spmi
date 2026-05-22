@@ -26,7 +26,10 @@ export function CreateStandardForm({
   categories: StandardCategory[];
 }) {
   const [message, setMessage] = useState("");
-  const [items, setItems] = useState<StandardPreviewItem[]>(initialItems);
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const [items, setItems] = useState<StandardPreviewItem[]>(
+    Array.isArray(initialItems) ? initialItems : []
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -103,7 +106,7 @@ export function CreateStandardForm({
       <div className="field">
         <label htmlFor="category">Kategori</label>
         <select id="category" name="category" className="form-select">
-          {categories.map((category) => (
+          {safeCategories.map((category) => (
             <option key={category.key} value={category.key}>
               {category.label}
             </option>

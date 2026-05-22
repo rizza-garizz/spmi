@@ -28,7 +28,8 @@ type StandardsManagerProps = {
 
 export function StandardsManager({ initialItems, categories }: StandardsManagerProps) {
   const { showToast } = useToast();
-  const [items, setItems] = useState(initialItems);
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const [items, setItems] = useState<Standard[]>(Array.isArray(initialItems) ? initialItems : []);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,7 +37,7 @@ export function StandardsManager({ initialItems, categories }: StandardsManagerP
   const pageSize = 10;
 
   useEffect(() => {
-    setItems(initialItems);
+    setItems(Array.isArray(initialItems) ? initialItems : []);
   }, [initialItems]);
 
   useEffect(() => {
@@ -133,7 +134,7 @@ export function StandardsManager({ initialItems, categories }: StandardsManagerP
             <div className="col-md-3 mb-2 mb-md-0">
               <select className="form-control" value={category} onChange={(event) => setCategory(event.target.value)}>
                 <option value="">Semua kategori</option>
-                {categories.map((item) => (
+                {safeCategories.map((item) => (
                   <option key={item.key} value={item.key}>{item.label}</option>
                 ))}
               </select>
@@ -218,7 +219,7 @@ export function StandardsManager({ initialItems, categories }: StandardsManagerP
                   <div className="form-group mb-3">
                     <label className="form-label">Kategori</label>
                     <select className="form-control" name="category" defaultValue={editing.category} required>
-                      {categories.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
+                      {safeCategories.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
                     </select>
                   </div>
                 </div>

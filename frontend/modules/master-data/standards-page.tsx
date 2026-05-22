@@ -13,7 +13,16 @@ export async function StandardsPage() {
     standards = catalog.standards;
   }
 
-  const standardsData = standards;
+  const standardsData = Array.isArray(standards)
+    ? standards
+    : Array.isArray((standards as any)?.data)
+      ? (standards as any).data
+      : Array.isArray(catalog.standards)
+        ? catalog.standards
+        : [];
+  const standardCategories = Array.isArray(catalog.standardCategories)
+    ? catalog.standardCategories
+    : [];
 
   return (
     <>
@@ -34,7 +43,7 @@ export async function StandardsPage() {
 
       <div className="row">
         {/* Kategori Standar */}
-        {catalog.standardCategories.map((category) => (
+        {standardCategories.map((category) => (
           <div className="col-xl-3 col-xxl-3 col-md-6 col-sm-6" key={category.key}>
             <div className="card text-center">
               <div className="card-body">
@@ -51,7 +60,7 @@ export async function StandardsPage() {
 
       <div className="row">
         <div className="col-lg-12">
-          <StandardsManager initialItems={standardsData} categories={catalog.standardCategories} />
+          <StandardsManager initialItems={standardsData} categories={standardCategories} />
         </div>
       </div>
 
@@ -68,7 +77,7 @@ export async function StandardsPage() {
                 <div className="card-body">
                   <CreateStandardForm
                     initialItems={standardsData}
-                    categories={catalog.standardCategories}
+                    categories={standardCategories}
                   />
                 </div>
               </div>
