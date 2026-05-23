@@ -11,6 +11,7 @@ import { DataRefreshBridge } from "@/components/layout/data-refresh-bridge";
 import { TopbarSession } from "@/components/layout/topbar-session";
 import { ErrorBoundary } from "@/components/support/ErrorBoundary";
 import { DynamicBreadcrumb } from "@/components/layout/dynamic-breadcrumb";
+import { ModuleChildrenPanel } from "@/components/modules/module-children-panel";
 
 function getHrefPath(href: string) {
   return href.split("#")[0];
@@ -137,6 +138,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
           <div className="container-fluid">
             <DataRefreshBridge />
             <DynamicBreadcrumb />
+            <ModuleChildrenPanel />
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
