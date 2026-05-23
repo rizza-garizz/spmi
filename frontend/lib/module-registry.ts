@@ -24,7 +24,52 @@ const qualityRoles: AppRole[] = ["admin_lpm", "auditor", "dekan", "wakil_dekan",
 const operatorRoles: AppRole[] = ["admin_lpm", "auditor", "kaprodi", "sekprodi", "unit_kerja"];
 const adminOnly: AppRole[] = ["admin_lpm"];
 
-export const moduleRegistry: ModuleSection[] = [
+function createLeafChildren(node: ModuleNode): ModuleNode[] {
+  const separator = node.href.includes("#") ? "-" : "#";
+
+  return [
+    {
+      id: `${node.id}-overview`,
+      label: "Ringkasan",
+      href: `${node.href}${separator}ringkasan`,
+      icon: "la-info-circle",
+      description: `Ringkasan konteks, status, dan prioritas untuk ${node.label}.`,
+      roles: node.roles,
+      status: node.status ?? "active",
+    },
+    {
+      id: `${node.id}-data`,
+      label: "Data & Input",
+      href: `${node.href}${separator}data-input`,
+      icon: "la-edit",
+      description: `Area input, pembaruan data, dan aktivitas utama ${node.label}.`,
+      roles: node.roles,
+      status: node.status ?? "active",
+    },
+    {
+      id: `${node.id}-review`,
+      label: "Validasi & Riwayat",
+      href: `${node.href}${separator}validasi-riwayat`,
+      icon: "la-history",
+      description: `Validasi, approval, audit trail, dan riwayat perubahan ${node.label}.`,
+      roles: node.roles,
+      status: node.status ?? "active",
+    },
+  ];
+}
+
+function normalizeModuleNode(node: ModuleNode): ModuleNode {
+  const children = node.children?.length
+    ? node.children.map((child) => normalizeModuleNode(child))
+    : createLeafChildren(node);
+
+  return {
+    ...node,
+    children,
+  };
+}
+
+const rawModuleRegistry: ModuleSection[] = [
   {
     id: "strategic-dashboard",
     label: "Strategic Dashboard",
@@ -862,6 +907,11 @@ export const moduleRegistry: ModuleSection[] = [
     ],
   },
 ];
+
+export const moduleRegistry: ModuleSection[] = rawModuleRegistry.map((section) => ({
+  ...section,
+  children: section.children.map((node) => normalizeModuleNode(node)),
+}));
 
 export function flattenModuleNodes(nodes: ModuleNode[]): ModuleNode[] {
   return nodes.flatMap((node) => [node, ...flattenModuleNodes(node.children ?? [])]);

@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { hasRoleAccess } from "@/lib/spmi-access";
 import { useCurrentRoles } from "@/lib/spmi-access-client";
 import { findModuleTrail, type ModuleNode } from "@/lib/module-registry";
@@ -21,10 +22,22 @@ function getChildMeta(node: ModuleNode) {
 
 export function ModuleChildrenPanel() {
   const pathname = usePathname();
+  const [hash, setHash] = useState("");
   const roles = useCurrentRoles();
-  const trail = findModuleTrail(pathname);
+  const trail = findModuleTrail(`${pathname}${hash}`);
   const current = trail[trail.length - 1];
   const children = filterChildren(current?.children ?? [], roles);
+
+  useEffect(() => {
+    function syncHash() {
+      setHash(window.location.hash);
+    }
+
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, [pathname]);
 
   if (!current || children.length === 0) {
     return null;
