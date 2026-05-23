@@ -24,7 +24,58 @@ const qualityRoles: AppRole[] = ["admin_lpm", "auditor", "dekan", "wakil_dekan",
 const operatorRoles: AppRole[] = ["admin_lpm", "auditor", "kaprodi", "sekprodi", "unit_kerja"];
 const adminOnly: AppRole[] = ["admin_lpm"];
 
-function createLeafChildren(node: ModuleNode): ModuleNode[] {
+const workflowChildKeywords = [
+  "Dashboard",
+  "Daftar",
+  "Detail",
+  "Monitoring",
+  "Instrumen",
+  "Temuan",
+  "Repository",
+  "Versi",
+  "Input Capaian",
+  "Master",
+  "Pegawai",
+  "Dosen",
+  "Tendik",
+  "Struktural",
+  "Sertifikasi",
+  "Pelatihan",
+  "SK Jabatan",
+  "Standar SDM",
+  "AMI",
+  "Struktur Unit",
+  "Status Akreditasi",
+  "System Map",
+  "Readiness Check",
+  "Integration Logs",
+  "Role Access",
+  "Session Info",
+  "Pembaruan",
+];
+
+const terminalActionKeywords = [
+  "Export",
+  "Upload",
+  "Tambah",
+  "Buat",
+  "Jadwalkan",
+  "Update",
+  "Seed",
+  "Commit",
+  "Preview",
+  "Bantuan",
+];
+
+function shouldCreateWorkflowChildren(node: ModuleNode) {
+  const isGeneratedLeaf = node.id.endsWith("-overview") || node.id.endsWith("-data") || node.id.endsWith("-review");
+  const isTerminalAction = terminalActionKeywords.some((keyword) => node.label.includes(keyword));
+  const isWorkflowArea = workflowChildKeywords.some((keyword) => node.label.includes(keyword));
+
+  return !isGeneratedLeaf && !isTerminalAction && isWorkflowArea;
+}
+
+function createWorkflowChildren(node: ModuleNode): ModuleNode[] {
   const separator = node.href.includes("#") ? "-" : "#";
 
   return [
@@ -59,13 +110,12 @@ function createLeafChildren(node: ModuleNode): ModuleNode[] {
 }
 
 function normalizeModuleNode(node: ModuleNode): ModuleNode {
-  const children = node.children?.length
-    ? node.children.map((child) => normalizeModuleNode(child))
-    : createLeafChildren(node);
+  const generatedChildren = shouldCreateWorkflowChildren(node) ? createWorkflowChildren(node) : undefined;
+  const children = node.children?.length ? node.children.map((child) => normalizeModuleNode(child)) : generatedChildren;
 
   return {
     ...node,
-    children,
+    ...(children ? { children } : {}),
   };
 }
 
