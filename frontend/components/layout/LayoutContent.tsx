@@ -18,12 +18,7 @@ function getHrefPath(href: string) {
 }
 
 function filterAllowedNodes(nodes: ModuleNode[], roles: AppRole[]): ModuleNode[] {
-  return nodes
-    .filter((node) => hasRoleAccess(node.roles, roles))
-    .map((node) => ({
-      ...node,
-      children: node.children ? filterAllowedNodes(node.children, roles) : undefined,
-    }));
+  return nodes.filter((node) => hasRoleAccess(node.roles, roles));
 }
 
 export function LayoutContent({ children }: { children: React.ReactNode }) {
@@ -31,46 +26,23 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
   const isLoginPage = pathname === "/login";
   const isPublicReferencePage = pathname === "/access-info";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const roles = useCurrentRoles();
 
   if (isLoginPage || isPublicReferencePage) {
     return <AuthGuard>{children}</AuthGuard>;
   }
 
-  function renderNavItem(item: ModuleNode, level = 0): React.ReactNode {
-    const hasChildren = Boolean(item.children?.length);
+  function renderNavItem(item: ModuleNode): React.ReactNode {
     const itemPath = getHrefPath(item.href);
     const isExactActive = itemPath === pathname;
     const isActive = isExactActive || (itemPath !== "/" && pathname.startsWith(`${itemPath}/`));
-    const isOpen = openMenus[item.id] ?? isActive;
 
     return (
-      <li key={item.id} className={hasChildren ? "spmi-nav-has-children" : ""}>
-        {hasChildren ? (
-          <>
-            <button
-              type="button"
-              className={`spmi-nav-parent ${isActive ? "is-active" : ""}`}
-              aria-expanded={isOpen}
-              onClick={() => setOpenMenus((current) => ({ ...current, [item.id]: !isOpen }))}
-            >
-              <i className={`la ${item.icon}`}></i>
-              <span className="nav-text">{item.label}</span>
-              <i className={`la la-angle-${isOpen ? "up" : "down"} spmi-nav-chevron`}></i>
-            </button>
-            {isOpen ? (
-              <ul className={`spmi-nav-children ${level > 0 ? "is-nested" : ""}`}>
-                {item.children?.map((child) => renderNavItem(child, level + 1))}
-              </ul>
-            ) : null}
-          </>
-        ) : (
-          <a className={[level > 0 ? "spmi-nav-child-link" : "", isActive ? "is-active" : ""].filter(Boolean).join(" ")} href={item.href}>
-            <i className={`la ${item.icon}`}></i>
-            <span className="nav-text">{item.label}</span>
-          </a>
-        )}
+      <li key={item.id}>
+        <a className={isActive ? "is-active" : ""} href={item.href}>
+          <i className={`la ${item.icon}`}></i>
+          <span className="nav-text">{item.shortLabel ?? item.label}</span>
+        </a>
       </li>
     );
   }
