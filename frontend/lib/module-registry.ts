@@ -100,19 +100,59 @@ function createActionNode(parent: ModuleNode, suffix: string, label: string, ico
   };
 }
 
+function createActionNodeWithChildren(
+  parent: ModuleNode,
+  suffix: string,
+  label: string,
+  icon: string,
+  description: string,
+  children: Array<{ suffix: string; label: string; icon: string; description: string }>,
+): ModuleNode {
+  const node = createActionNode(parent, suffix, label, icon, description);
+
+  return {
+    ...node,
+    children: children.map((child) => createActionNode(node, child.suffix, child.label, child.icon, child.description)),
+  };
+}
+
 function createDataInputChildren(parent: ModuleNode): ModuleNode[] {
   return [
-    createActionNode(parent, "daftar-data", "Daftar Data", "la-list", `Daftar data aktif untuk ${parent.label}.`),
-    createActionNode(parent, "form-input", "Form Input", "la-keyboard", `Form input dan perubahan data ${parent.label}.`),
-    createActionNode(parent, "draft-submit", "Draft & Submit", "la-paper-plane", `Draft, submit, dan status pengiriman ${parent.label}.`),
+    createActionNodeWithChildren(parent, "daftar-data", "Daftar Data", "la-list", `Daftar data aktif untuk ${parent.label}.`, [
+      { suffix: "pencarian", label: "Pencarian", icon: "la-search", description: `Pencarian cepat pada ${parent.label}.` },
+      { suffix: "filter", label: "Filter", icon: "la-filter", description: `Filter status, unit, periode, dan kategori ${parent.label}.` },
+      { suffix: "detail-data", label: "Detail Data", icon: "la-eye", description: `Detail record dan informasi pendukung ${parent.label}.` },
+    ]),
+    createActionNodeWithChildren(parent, "form-input", "Form Input", "la-keyboard", `Form input dan perubahan data ${parent.label}.`, [
+      { suffix: "identitas", label: "Identitas", icon: "la-id-card", description: `Field identitas utama untuk ${parent.label}.` },
+      { suffix: "metadata", label: "Metadata", icon: "la-tags", description: `Metadata unit, periode, pemilik, dan kategori ${parent.label}.` },
+      { suffix: "lampiran", label: "Lampiran", icon: "la-paperclip", description: `Lampiran dan evidence pendukung ${parent.label}.` },
+    ]),
+    createActionNodeWithChildren(parent, "draft-submit", "Draft & Submit", "la-paper-plane", `Draft, submit, dan status pengiriman ${parent.label}.`, [
+      { suffix: "draft", label: "Draft", icon: "la-file-alt", description: `Draft pekerjaan sebelum dikirim pada ${parent.label}.` },
+      { suffix: "submit", label: "Submit", icon: "la-paper-plane", description: `Pengiriman data ${parent.label} ke proses berikutnya.` },
+      { suffix: "status-pengajuan", label: "Status Pengajuan", icon: "la-tasks", description: `Status pengajuan dan tindak lanjut ${parent.label}.` },
+    ]),
   ];
 }
 
 function createReviewChildren(parent: ModuleNode): ModuleNode[] {
   return [
-    createActionNode(parent, "approval", "Approval", "la-check-circle", `Approval dan validasi berjenjang untuk ${parent.label}.`),
-    createActionNode(parent, "audit-trail", "Audit Trail", "la-stream", `Jejak aktivitas dan perubahan data ${parent.label}.`),
-    createActionNode(parent, "riwayat-versi", "Riwayat Versi", "la-code-branch", `Riwayat versi, revisi, dan catatan perubahan ${parent.label}.`),
+    createActionNodeWithChildren(parent, "approval", "Approval", "la-check-circle", `Approval dan validasi berjenjang untuk ${parent.label}.`, [
+      { suffix: "review", label: "Review", icon: "la-clipboard-check", description: `Review data dan kelengkapan ${parent.label}.` },
+      { suffix: "keputusan", label: "Keputusan", icon: "la-check-double", description: `Keputusan setuju, revisi, atau tolak untuk ${parent.label}.` },
+      { suffix: "catatan", label: "Catatan Approval", icon: "la-comment-dots", description: `Catatan approval dan arahan perbaikan ${parent.label}.` },
+    ]),
+    createActionNodeWithChildren(parent, "audit-trail", "Audit Trail", "la-stream", `Jejak aktivitas dan perubahan data ${parent.label}.`, [
+      { suffix: "aktivitas", label: "Aktivitas", icon: "la-history", description: `Aktivitas pengguna pada ${parent.label}.` },
+      { suffix: "perubahan-field", label: "Perubahan Field", icon: "la-exchange-alt", description: `Perbandingan perubahan field ${parent.label}.` },
+      { suffix: "export-log", label: "Export Log", icon: "la-file-export", description: `Export log aktivitas ${parent.label}.` },
+    ]),
+    createActionNodeWithChildren(parent, "riwayat-versi", "Riwayat Versi", "la-code-branch", `Riwayat versi, revisi, dan catatan perubahan ${parent.label}.`, [
+      { suffix: "versi-aktif", label: "Versi Aktif", icon: "la-check", description: `Versi aktif yang sedang digunakan pada ${parent.label}.` },
+      { suffix: "revisi", label: "Revisi", icon: "la-pen", description: `Daftar revisi dan perubahan ${parent.label}.` },
+      { suffix: "perbandingan", label: "Perbandingan", icon: "la-columns", description: `Perbandingan antar versi ${parent.label}.` },
+    ]),
   ];
 }
 
