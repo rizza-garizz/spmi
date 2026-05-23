@@ -86,8 +86,56 @@ function shouldCreateWorkflowChildren(node: ModuleNode) {
   return !isGeneratedLeaf && !isTerminalAction && isWorkflowArea;
 }
 
+function createActionNode(parent: ModuleNode, suffix: string, label: string, icon: string, description: string): ModuleNode {
+  const separator = parent.href.includes("#") ? "-" : "#";
+
+  return {
+    id: `${parent.id}-${suffix}`,
+    label,
+    href: `${parent.href}${separator}${suffix}`,
+    icon,
+    description,
+    roles: parent.roles,
+    status: parent.status ?? "active",
+  };
+}
+
+function createDataInputChildren(parent: ModuleNode): ModuleNode[] {
+  return [
+    createActionNode(parent, "daftar-data", "Daftar Data", "la-list", `Daftar data aktif untuk ${parent.label}.`),
+    createActionNode(parent, "form-input", "Form Input", "la-keyboard", `Form input dan perubahan data ${parent.label}.`),
+    createActionNode(parent, "draft-submit", "Draft & Submit", "la-paper-plane", `Draft, submit, dan status pengiriman ${parent.label}.`),
+  ];
+}
+
+function createReviewChildren(parent: ModuleNode): ModuleNode[] {
+  return [
+    createActionNode(parent, "approval", "Approval", "la-check-circle", `Approval dan validasi berjenjang untuk ${parent.label}.`),
+    createActionNode(parent, "audit-trail", "Audit Trail", "la-stream", `Jejak aktivitas dan perubahan data ${parent.label}.`),
+    createActionNode(parent, "riwayat-versi", "Riwayat Versi", "la-code-branch", `Riwayat versi, revisi, dan catatan perubahan ${parent.label}.`),
+  ];
+}
+
 function createWorkflowChildren(node: ModuleNode): ModuleNode[] {
   const separator = node.href.includes("#") ? "-" : "#";
+  const dataNode: ModuleNode = {
+    id: `${node.id}-data`,
+    label: "Data & Input",
+    href: `${node.href}${separator}data-input`,
+    icon: "la-edit",
+    description: `Area input, pembaruan data, dan aktivitas utama ${node.label}.`,
+    roles: node.roles,
+    status: node.status ?? "active",
+  };
+  const reviewNode: ModuleNode = {
+    id: `${node.id}-review`,
+    label: "Validasi & Riwayat",
+    href: `${node.href}${separator}validasi-riwayat`,
+    icon: "la-history",
+    description: `Validasi, approval, audit trail, dan riwayat perubahan ${node.label}.`,
+    roles: node.roles,
+    status: node.status ?? "active",
+  };
 
   return [
     {
@@ -100,22 +148,12 @@ function createWorkflowChildren(node: ModuleNode): ModuleNode[] {
       status: node.status ?? "active",
     },
     {
-      id: `${node.id}-data`,
-      label: "Data & Input",
-      href: `${node.href}${separator}data-input`,
-      icon: "la-edit",
-      description: `Area input, pembaruan data, dan aktivitas utama ${node.label}.`,
-      roles: node.roles,
-      status: node.status ?? "active",
+      ...dataNode,
+      children: createDataInputChildren(dataNode),
     },
     {
-      id: `${node.id}-review`,
-      label: "Validasi & Riwayat",
-      href: `${node.href}${separator}validasi-riwayat`,
-      icon: "la-history",
-      description: `Validasi, approval, audit trail, dan riwayat perubahan ${node.label}.`,
-      roles: node.roles,
-      status: node.status ?? "active",
+      ...reviewNode,
+      children: createReviewChildren(reviewNode),
     },
   ];
 }
