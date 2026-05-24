@@ -44,7 +44,7 @@ export function LoginForm() {
     defaultValues: {
       username: "",
       password: "",
-      rememberMe: true,
+      rememberMe: false,
     },
   });
 

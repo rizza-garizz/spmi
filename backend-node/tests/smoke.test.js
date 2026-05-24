@@ -5,6 +5,7 @@ const { findLocalUserByEmail } = require("../src/services/localAuth");
 process.env.APP_MODE = "local_mock";
 process.env.JWT_SECRET = "test-secret";
 process.env.JWT_EXPIRES_IN = "1d";
+process.env.NODE_ENV = "test";
 
 const app = require("../src/app");
 
@@ -186,6 +187,24 @@ test("security protects auth sessions direct URLs uploads and audit trail", asyn
   assert.equal(auditPayload.data.some((item) => item.status_code === 401), true);
 });
 
+test("enterprise read endpoints reject anonymous access", async () => {
+  const protectedPaths = [
+    "/catalog",
+    "/dashboard/summary",
+    "/standards",
+    "/documents",
+    "/ppepp/cycles",
+    "/ami/audits",
+    "/rtm/meetings",
+    "/indicators",
+    "/integrations",
+    "/hris/employees",
+  ];
+
+  const responses = await Promise.all(protectedPaths.map((path) => fetch(`${baseUrl}${path}`)));
+  assert.equal(responses.every((response) => response.status === 401), true);
+});
+
 test("local seed users carry perguruan tinggi role scopes", async () => {
   const cases = [
     ["admin@spmi.local", "admin_lpm", "LPM"],
@@ -228,7 +247,11 @@ test("GET /dashboard/summary returns KPI snapshot", async () => {
 });
 
 test("dashboard supports filters and export payloads", async () => {
-  const filteredResponse = await fetch(`${baseUrl}/dashboard/summary?fakultas=FIKOM&tahun=2026`);
+  const token = await loginAs("admin@spmi.local");
+  const authHeaders = { Authorization: `Bearer ${token}` };
+  const filteredResponse = await fetch(`${baseUrl}/dashboard/summary?fakultas=FIKOM&tahun=2026`, {
+    headers: authHeaders,
+  });
   const filteredPayload = await filteredResponse.json();
 
   assert.equal(filteredResponse.status, 200);
@@ -241,14 +264,18 @@ test("dashboard supports filters and export payloads", async () => {
     true
   );
 
-  const excelResponse = await fetch(`${baseUrl}/dashboard/export?format=excel&fakultas=FIKOM`);
+  const excelResponse = await fetch(`${baseUrl}/dashboard/export?format=excel&fakultas=FIKOM`, {
+    headers: authHeaders,
+  });
   const excelText = await excelResponse.text();
 
   assert.equal(excelResponse.status, 200);
   assert.equal(excelResponse.headers.get("content-type").includes("text/csv"), true);
   assert.equal(excelText.includes("Kode"), true);
 
-  const pdfResponse = await fetch(`${baseUrl}/dashboard/export?format=pdf`);
+  const pdfResponse = await fetch(`${baseUrl}/dashboard/export?format=pdf`, {
+    headers: authHeaders,
+  });
   const pdfText = await pdfResponse.text();
 
   assert.equal(pdfResponse.status, 200);
@@ -308,7 +335,10 @@ test("performance report covers dashboard documents concurrent users and org sca
 });
 
 test("GET /catalog exposes the required standard groups", async () => {
-  const response = await fetch(`${baseUrl}/catalog`);
+  const token = await loginAs("admin@spmi.local");
+  const response = await fetch(`${baseUrl}/catalog`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   const payload = await response.json();
 
   assert.equal(response.status, 200);
@@ -376,7 +406,11 @@ test("PUT and DELETE /standards keep revision history and hide deleted rows", as
   assert.equal(updatePayload.data.version, "1.1");
   assert.equal(updatePayload.data.revisions[0].action, "updated");
 
-  const revisionsResponse = await fetch(`${baseUrl}/standards/${standardId}/revisions`);
+  const revisionsResponse = await fetch(`${baseUrl}/standards/${standardId}/revisions`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   const revisionsPayload = await revisionsResponse.json();
 
   assert.equal(revisionsResponse.status, 200);
@@ -393,7 +427,11 @@ test("PUT and DELETE /standards keep revision history and hide deleted rows", as
   assert.equal(deleteResponse.status, 200);
   assert.equal(deletePayload.data.status, "deleted");
 
-  const listResponse = await fetch(`${baseUrl}/standards`);
+  const listResponse = await fetch(`${baseUrl}/standards`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   const listPayload = await listResponse.json();
   assert.equal(listResponse.status, 200);
   assert.equal(listPayload.data.some((item) => item.id === standardId), false);
@@ -1300,7 +1338,10 @@ test("POST /hris resources creates position, competency, and document", async ()
 });
 
 test("GET /hris/employees/:id returns related HRIS profile", async () => {
-  const response = await fetch(`${baseUrl}/hris/employees/EMP-001`);
+  const token = await loginAs("admin@spmi.local");
+  const response = await fetch(`${baseUrl}/hris/employees/EMP-001`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   const payload = await response.json();
 
   assert.equal(response.status, 200);
@@ -1536,7 +1577,9 @@ test("POST /imports allows admin role only", async () => {
 test("integration readiness covers SIAKAD SIMPEG finance repository PDDIKTI and SSO with logs", async () => {
   const adminToken = await loginAs("admin@spmi.local");
 
-  const listResponse = await fetch(`${baseUrl}/integrations`);
+  const listResponse = await fetch(`${baseUrl}/integrations`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
   const listPayload = await listResponse.json();
 
   assert.equal(listResponse.status, 200);

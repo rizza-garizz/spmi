@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const multer = require("multer");
 const env = require("../config/env");
 const AppError = require("./appError");
@@ -9,7 +10,8 @@ fs.mkdirSync(env.uploadDir, { recursive: true });
 const storage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, env.uploadDir),
   filename: (_, file, cb) => {
-    const safeName = `${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;
+    const extension = path.extname(file.originalname || "").toLowerCase();
+    const safeName = `${Date.now()}-${crypto.randomUUID()}${extension}`;
     cb(null, safeName);
   },
 });
@@ -61,7 +63,13 @@ const upload = multer({
 });
 
 function resolveUploadedFile(storedName) {
-  return path.join(env.uploadDir, storedName);
+  const resolvedPath = path.resolve(env.uploadDir, storedName);
+  const uploadRoot = path.resolve(env.uploadDir);
+  if (resolvedPath !== uploadRoot && !resolvedPath.startsWith(`${uploadRoot}${path.sep}`)) {
+    throw new AppError("Path file tidak aman", 400);
+  }
+
+  return resolvedPath;
 }
 
 module.exports = {

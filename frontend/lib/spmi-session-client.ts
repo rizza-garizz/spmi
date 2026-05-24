@@ -127,7 +127,7 @@ export function saveAuthSession(session: AuthSession, options: { rememberMe?: bo
     return;
   }
 
-  const rememberMe = options.rememberMe ?? session.rememberMe ?? true;
+  const rememberMe = options.rememberMe ?? session.rememberMe ?? false;
   const ttlMs = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
   const nextSession = {
     ...session,
@@ -148,8 +148,8 @@ export function saveLocalSession(session: AuthSession) {
     return;
   }
 
-  window.sessionStorage.removeItem(LOCAL_USER_KEY);
-  window.localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(session));
+  window.localStorage.removeItem(LOCAL_USER_KEY);
+  window.sessionStorage.setItem(LOCAL_USER_KEY, JSON.stringify(session));
 }
 
 export function dispatchAppEvent(name: "spmi-session-changed" | "spmi-data-changed") {
