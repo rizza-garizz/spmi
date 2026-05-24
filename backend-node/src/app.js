@@ -6,6 +6,7 @@ const routes = require("./routes");
 const errorHandler = require("./middlewares/errorHandler");
 const notFound = require("./middlewares/notFound");
 const { securityHeaders, auditTrail } = require("./middlewares/security");
+const { mutationRateLimit } = require("./middlewares/rateLimit");
 const openApiDocument = require("./config/openapi");
 const env = require("./config/env");
 
@@ -36,6 +37,13 @@ if (env.nodeEnv !== "test") {
 }
 app.use(securityHeaders);
 app.use(auditTrail);
+app.use((req, res, next) => {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method) && req.path !== "/auth/login") {
+    return mutationRateLimit(req, res, next);
+  }
+
+  return next();
+});
 
 if (env.apiDocsEnabled) {
   app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));

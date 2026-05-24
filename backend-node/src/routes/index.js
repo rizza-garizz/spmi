@@ -3,6 +3,7 @@ const catchAsync = require("../utils/catchAsync");
 const validate = require("../middlewares/validate");
 const { verifyToken } = require("../middlewares/auth");
 const requireRole = require("../middlewares/requireRole");
+const { authRateLimit } = require("../middlewares/rateLimit");
 const { upload } = require("../utils/fileStorage");
 const authController = require("../controllers/authController");
 const dashboardController = require("../controllers/dashboardController");
@@ -49,6 +50,8 @@ const ROLE_SURVEY_READ = ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kapro
 const ROLE_ADMIN_ONLY = ["admin_lpm"];
 
 router.get("/health", healthController.health);
+router.get("/health/live", healthController.live);
+router.get("/health/ready", catchAsync(healthController.ready));
 router.get("/system/status", catchAsync(systemController.status));
 
 router.get("/catalog", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.catalog);
@@ -141,7 +144,7 @@ router.post(
 router.get("/surveys", verifyToken, requireRole(...ROLE_SURVEY_READ), compatController.surveys);
 router.post("/surveys", verifyToken, requireRole(...ROLE_AMI_WRITE), compatController.createSurvey);
 
-router.post("/auth/login", validate(loginSchema), catchAsync(authController.login));
+router.post("/auth/login", authRateLimit, validate(loginSchema), catchAsync(authController.login));
 router.get("/auth/me", verifyToken, catchAsync(authController.me));
 router.post("/auth/logout", verifyToken, catchAsync(authController.logout));
 

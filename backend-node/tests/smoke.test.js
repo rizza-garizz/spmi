@@ -6,6 +6,8 @@ process.env.APP_MODE = "local_mock";
 process.env.JWT_SECRET = "test-secret";
 process.env.JWT_EXPIRES_IN = "1d";
 process.env.NODE_ENV = "test";
+process.env.AUTH_RATE_LIMIT_MAX = "250";
+process.env.MUTATION_RATE_LIMIT_MAX = "500";
 
 const app = require("../src/app");
 
@@ -66,6 +68,20 @@ test("GET /health returns healthy payload", async () => {
   assert.equal(response.status, 200);
   assert.equal(payload.success, true);
   assert.equal(payload.data.status, "ok");
+});
+
+test("health live and ready checks expose operational readiness", async () => {
+  const liveResponse = await fetch(`${baseUrl}/health/live`);
+  const livePayload = await liveResponse.json();
+  assert.equal(liveResponse.status, 200);
+  assert.equal(livePayload.data.status, "live");
+
+  const readyResponse = await fetch(`${baseUrl}/health/ready`);
+  const readyPayload = await readyResponse.json();
+  assert.equal(readyResponse.status, 200);
+  assert.equal(readyPayload.data.status, "ready");
+  assert.equal(readyPayload.data.checks.storage.status, "ok");
+  assert.equal(readyPayload.data.checks.database.status, "skipped");
 });
 
 test("GET /system/status exposes local_mock mode", async () => {
@@ -185,6 +201,18 @@ test("security protects auth sessions direct URLs uploads and audit trail", asyn
   assert.equal(auditPayload.success, true);
   assert.equal(auditPayload.data.some((item) => item.action.includes("auth.login")), true);
   assert.equal(auditPayload.data.some((item) => item.status_code === 401), true);
+});
+
+test("rate limit headers are sent for login attempts", async () => {
+  const response = await fetch(`${baseUrl}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "admin@spmi.local", password: "Password123!" }),
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("x-ratelimit-limit"), "250");
+  assert.ok(Number(response.headers.get("x-ratelimit-remaining")) >= 0);
 });
 
 test("enterprise read endpoints reject anonymous access", async () => {

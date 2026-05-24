@@ -71,6 +71,13 @@ enum ImportType {
   dokumen
 }
 
+enum ApprovalAction {
+  submit
+  approve
+  reject
+  revise
+}
+
 model User {
   id             String               @id @default(cuid())
   institutionId  String
@@ -147,16 +154,22 @@ model UserRole {
 model MutuStandard {
   id            String          @id @default(cuid())
   institutionId String
+  code          String?
   title         String
   description   String?
   category      String
   status        StandardStatus  @default(aktif)
+  version       String          @default("1.0")
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   deletedAt     DateTime?
   institution   Institution     @relation(fields: [institutionId], references: [id])
   documents     SpmiDocument[]
   ppeppCycles   PpeppCycle[]
+  revisions     MutuStandardRevision[]
+
+  @@unique([institutionId, code])
+  @@index([institutionId, category, status])
 }
 
 model SpmiDocument {
@@ -176,6 +189,41 @@ model SpmiDocument {
   standard     MutuStandard? @relation(fields: [standardId], references: [id])
   orgUnit      OrgUnit?      @relation(fields: [orgUnitId], references: [id])
   uploadedBy   User          @relation(fields: [uploadedById], references: [id])
+  versions     DocumentVersion[]
+
+  @@index([orgUnitId, standardId])
+}
+
+model MutuStandardRevision {
+  id          String       @id @default(cuid())
+  standardId  String
+  version     String
+  action      String
+  snapshot    Json
+  note        String?
+  actorId     String?
+  createdAt   DateTime     @default(now())
+  standard    MutuStandard @relation(fields: [standardId], references: [id])
+
+  @@index([standardId, createdAt])
+}
+
+model DocumentVersion {
+  id          String       @id @default(cuid())
+  documentId  String
+  version     Int
+  fileName    String
+  storedName  String
+  mimeType    String
+  sizeBytes   Int
+  checksum    String?
+  notes       String?
+  uploadedById String?
+  createdAt   DateTime    @default(now())
+  document    SpmiDocument @relation(fields: [documentId], references: [id])
+
+  @@unique([documentId, version])
+  @@index([checksum])
 }
 
 model PpeppCycle {
@@ -311,4 +359,56 @@ model TokenBlacklist {
   token      String   @unique
   expiresAt  DateTime
   createdAt  DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  actorEmail  String?
+  role        String?
+  action      String
+  entity      String?
+  entityId    String?
+  method      String?
+  path        String?
+  statusCode  Int?
+  ipAddress   String?
+  userAgent   String?
+  before      Json?
+  after       Json?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([entity, entityId])
+  @@index([action, createdAt])
+}
+
+model ApprovalWorkflow {
+  id            String   @id @default(cuid())
+  institutionId String
+  entity        String
+  step          String
+  ownerRoles    Json
+  nextStep      String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([institutionId, entity, step])
+}
+
+model ApprovalHistory {
+  id          String         @id @default(cuid())
+  entity      String
+  entityId    String
+  step        String
+  action      ApprovalAction
+  actorId     String?
+  actorEmail  String?
+  note        String?
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+
+  @@index([entity, entityId, createdAt])
 }

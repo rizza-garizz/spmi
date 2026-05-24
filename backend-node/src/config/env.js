@@ -12,6 +12,9 @@ const corsOrigins = (process.env.CORS_ORIGINS || "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 const apiDocsEnabled = process.env.ENABLE_API_DOCS === "true" || nodeEnv !== "production";
+const passwordMinLength = Number(process.env.PASSWORD_MIN_LENGTH || 8);
+const authRateLimitMax = Number(process.env.AUTH_RATE_LIMIT_MAX || 20);
+const mutationRateLimitMax = Number(process.env.MUTATION_RATE_LIMIT_MAX || 120);
 
 if (nodeEnv === "production") {
   if (appMode !== "database") {
@@ -40,4 +43,7 @@ module.exports = {
   uploadDir: path.resolve(rootDir, process.env.UPLOAD_DIR || "uploads"),
   corsOrigins,
   apiDocsEnabled,
+  passwordMinLength,
+  authRateLimitMax,
+  mutationRateLimitMax,
 };

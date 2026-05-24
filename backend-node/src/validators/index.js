@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const env = require("../config/env");
 
 const nullableStringId = z.preprocess(
   (value) => (value === "" ? null : value),
@@ -9,7 +10,7 @@ const objectId = z.string().min(1);
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(env.passwordMinLength),
 });
 
 const standardSchema = z.object({
