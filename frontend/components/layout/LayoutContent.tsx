@@ -12,6 +12,7 @@ import { TopbarSession } from "@/components/layout/topbar-session";
 import { ErrorBoundary } from "@/components/support/ErrorBoundary";
 import { DynamicBreadcrumb } from "@/components/layout/dynamic-breadcrumb";
 import { ModuleChildrenPanel } from "@/components/modules/module-children-panel";
+import { ModuleActionWorkspace } from "@/components/modules/module-action-workspace";
 
 function getHrefPath(href: string) {
   return href.split("#")[0];
@@ -111,6 +112,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
             <DataRefreshBridge />
             <DynamicBreadcrumb />
             <ModuleChildrenPanel />
+            <ModuleActionWorkspace />
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
