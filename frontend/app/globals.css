@@ -3611,6 +3611,75 @@ textarea:focus-visible,
   transform: translateY(64px);
 }
 
+.module-children-trail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  margin: 0 0 6px;
+  padding: 0 4px;
+  overflow-x: auto;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.module-children-trail span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.module-children-trail a {
+  color: #64748b;
+}
+
+.module-children-trail a:hover,
+.module-children-trail a:focus {
+  color: #16832c;
+}
+
+.module-children-trail strong {
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.module-children-trail i {
+  color: #b6c2d1;
+  font-size: 0.65rem;
+}
+
+.module-children-back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin-bottom: 6px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #176b26;
+  background: #eef9ef;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.module-children-back-link:hover,
+.module-children-back-link:focus {
+  color: #ffffff;
+  background: #2fad2f;
+}
+
+.module-children-back-link i {
+  font-size: 0.76rem;
+}
+
+.module-children-back-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .module-children-menu-title {
   display: block;
   min-height: 58px;
