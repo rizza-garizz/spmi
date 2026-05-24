@@ -1,4 +1,4 @@
-import { findModuleNodeByHref, moduleRegistry, type ModuleNode } from "@/lib/module-registry";
+import { findModuleNodeByHref, moduleRegistry, moduleSectionDescriptions, type ModuleNode } from "@/lib/module-registry";
 
 type ModulePageHeaderProps = {
   href?: string;
@@ -41,7 +41,11 @@ export function ModuleSectionLanding({ sectionId }: { sectionId: string }) {
 
   return (
     <main>
-      <ModulePageHeader title={section.label} description="Pilih child module sesuai pekerjaan yang ingin dibuka." eyebrow="Parent Module" />
+      <ModulePageHeader
+        title={section.label}
+        description={moduleSectionDescriptions[section.id] ?? "Pilih child module sesuai pekerjaan yang ingin dibuka."}
+        eyebrow="Tahap Proses Bisnis"
+      />
       <section className="module-landing-grid">
         {section.children.map((node) => (
           <ModuleLandingCard node={node} key={node.id} />

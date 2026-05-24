@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { RoleGate } from "@/components/auth/RoleGate";
-import { moduleRegistry } from "@/lib/module-registry";
+import { businessProcessFlow, moduleRegistry } from "@/lib/module-registry";
 
 const cardColors = ["bg-primary", "bg-success", "bg-info", "bg-warning", "bg-danger", "bg-dark"] as const;
 const coreModules = moduleRegistry
   .flatMap((section) => section.children)
-  .filter((node) => ["/dashboard", "/nilai", "/documents", "/standards", "/ppepp", "/ami"].includes(node.href))
+  .filter((node) => ["/organization", "/standards", "/indicators", "/ppepp", "/ami", "/rtl", "/nilai", "/dashboard"].includes(node.href))
   .map((node, index) => ({ ...node, color: cardColors[index % cardColors.length] }));
 
 export async function HomePage() {
@@ -31,10 +31,18 @@ export async function HomePage() {
         <div className="col-xl-12 col-xxl-12 col-lg-12">
           <div className="card">
             <div className="card-header">
-              <h4 className="card-title">Akses Cepat Modul Utama</h4>
+              <h4 className="card-title">Alur Kerja Utama SPMI</h4>
             </div>
             <div className="card-body">
-              <p>Pilih modul di bawah ini untuk memulai aktivitas penjaminan mutu Anda hari ini.</p>
+              <p>Mulai dari master data, tetapkan standar, jalankan PPEPP, evaluasi lewat AMI, kendalikan RTL/RTM, lalu tutup dengan peningkatan dan pelaporan.</p>
+              <div className="business-flow-strip" aria-label="Alur proses bisnis SPMI">
+                {businessProcessFlow.map((step) => (
+                  <a href={step.href} key={step.step}>
+                    <strong>{step.step}</strong>
+                    <span>{step.label}</span>
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -77,7 +85,7 @@ export async function HomePage() {
               <h5 className="card-title text-white">Ringkas</h5>
             </div>
             <div className="card-body mb-0">
-              <p className="card-text">Home menonjolkan pintu masuk, bukan data detail. Arahkan fokus pada navigasi kerja.</p>
+              <p className="card-text">User diarahkan mengikuti urutan kerja mutu: master data, standar, PPEPP, evaluasi, pengendalian, peningkatan.</p>
             </div>
           </div>
         </div>
@@ -87,7 +95,7 @@ export async function HomePage() {
               <h5 className="card-title text-white">Jelas</h5>
             </div>
             <div className="card-body mb-0">
-              <p className="card-text">Arah navigasi dipusatkan ke dashboard, nilai, dokumen, dan master data. Tidak berbelit-belit.</p>
+              <p className="card-text">Dashboard diposisikan sebagai monitoring pimpinan, bukan awal proses operasional.</p>
             </div>
           </div>
         </div>
@@ -97,7 +105,7 @@ export async function HomePage() {
               <h5 className="card-title text-white">Operasional</h5>
             </div>
             <div className="card-body mb-0">
-              <p className="card-text">Data kerja harian (isian) tetap tinggal di halaman domain masing-masing agar fokus terjaga.</p>
+              <p className="card-text">RTL dan RTM muncul setelah AMI supaya tindak lanjut terasa sebagai kelanjutan proses, bukan menu terpisah.</p>
             </div>
           </div>
         </div>

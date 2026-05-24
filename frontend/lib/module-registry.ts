@@ -1053,10 +1053,193 @@ const rawModuleRegistry: ModuleSection[] = [
   },
 ];
 
-export const moduleRegistry: ModuleSection[] = rawModuleRegistry.map((section) => ({
+const normalizedSourceSections: ModuleSection[] = rawModuleRegistry.map((section) => ({
   ...section,
   children: section.children.map((node) => normalizeModuleNode(node)),
 }));
+
+function findSourceNode(id: string) {
+  const source = normalizedSourceSections.flatMap((section) => section.children).find((node) => node.id === id);
+  if (!source) {
+    throw new Error(`Module node ${id} tidak ditemukan di registry sumber.`);
+  }
+
+  return source;
+}
+
+function createProcessNode(id: string, label: string, href: string, icon: string, description: string, roles: AppRole[], children: ModuleNode[] = []): ModuleNode {
+  return {
+    id,
+    label,
+    href,
+    icon,
+    description,
+    roles,
+    status: "active",
+    ...(children.length > 0 ? { children } : {}),
+  };
+}
+
+export const businessProcessFlow = [
+  {
+    step: "01",
+    label: "Master Data & Sumber Data",
+    href: "/modules/master-data",
+    description: "Validasi struktur kampus, SDM, periode, role, dan sumber data sebelum proses mutu dimulai.",
+  },
+  {
+    step: "02",
+    label: "Penetapan Standar",
+    href: "/modules/penetapan-standar",
+    description: "Tetapkan standar mutu, dokumen kebijakan, versi, dan metadata resmi.",
+  },
+  {
+    step: "03",
+    label: "Pelaksanaan & Capaian",
+    href: "/modules/pelaksanaan-capaian",
+    description: "Jalankan PPEPP dan input capaian indikator yang melekat pada standar.",
+  },
+  {
+    step: "04",
+    label: "Evaluasi Mutu",
+    href: "/modules/evaluasi-mutu",
+    description: "Lakukan AMI, survei, pengukuran, dan temuan berbasis evidence.",
+  },
+  {
+    step: "05",
+    label: "Pengendalian",
+    href: "/modules/pengendalian-rtl",
+    description: "Kelola RTL, verifikasi perbaikan, dan RTM sebagai pengendalian manajemen.",
+  },
+  {
+    step: "06",
+    label: "Peningkatan",
+    href: "/modules/peningkatan-mutu",
+    description: "Tutup siklus melalui revisi standar, program perbaikan, dan prioritas peningkatan.",
+  },
+  {
+    step: "07",
+    label: "Monitoring & Pelaporan",
+    href: "/modules/monitoring-pelaporan",
+    description: "Pimpinan memantau KPI, laporan AMI, kesiapan akreditasi, dan go-live readiness.",
+  },
+  {
+    step: "08",
+    label: "Administrasi Sistem",
+    href: "/modules/administrasi-sistem",
+    description: "Kelola integrasi, import, setting, akses, dan pengumuman sistem.",
+  },
+];
+
+export const moduleSectionDescriptions: Record<string, string> = Object.fromEntries(
+  businessProcessFlow.map((item) => [item.href.replace("/modules/", ""), item.description])
+);
+
+const peningkatanMutuNode = createProcessNode(
+  "improvement",
+  "Peningkatan Mutu",
+  "/nilai",
+  "la-level-up-alt",
+  "Prioritas peningkatan, revisi standar, dan tindak lanjut siklus berikutnya.",
+  allRoles,
+  [
+    createProcessNode(
+      "improvement-prioritas",
+      "Prioritas Peningkatan",
+      "/nilai#prioritas-kerja",
+      "la-bullseye",
+      "Daftar isu prioritas dari hasil evaluasi, AMI, dan RTM.",
+      allRoles
+    ),
+    createProcessNode(
+      "improvement-revisi-standar",
+      "Revisi Standar",
+      "/standards#daftar-standar-validasi-riwayat-riwayat-versi-revisi",
+      "la-code-branch",
+      "Revisi standar berdasarkan hasil pengendalian dan peningkatan.",
+      adminOnly
+    ),
+    createProcessNode(
+      "improvement-siklus-baru",
+      "Siklus PPEPP Berikutnya",
+      "/ppepp#buat-siklus",
+      "la-sync",
+      "Buka siklus baru setelah peningkatan disetujui.",
+      operatorRoles
+    ),
+  ]
+);
+
+export const moduleRegistry: ModuleSection[] = [
+  {
+    id: "master-data",
+    label: "01 Master Data & Sumber Data",
+    children: [
+      findSourceNode("organization"),
+      findSourceNode("hris"),
+      findSourceNode("access-info"),
+    ],
+  },
+  {
+    id: "penetapan-standar",
+    label: "02 Penetapan Standar",
+    children: [
+      findSourceNode("standards"),
+      findSourceNode("documents"),
+    ],
+  },
+  {
+    id: "pelaksanaan-capaian",
+    label: "03 Pelaksanaan & Capaian",
+    children: [
+      findSourceNode("indicators"),
+      findSourceNode("ppepp"),
+    ],
+  },
+  {
+    id: "evaluasi-mutu",
+    label: "04 Evaluasi Mutu",
+    children: [
+      findSourceNode("ami"),
+      findSourceNode("surveys"),
+    ],
+  },
+  {
+    id: "pengendalian-rtl",
+    label: "05 Pengendalian RTL & RTM",
+    children: [
+      findSourceNode("rtl"),
+      findSourceNode("rtm"),
+    ],
+  },
+  {
+    id: "peningkatan-mutu",
+    label: "06 Peningkatan Mutu",
+    children: [
+      peningkatanMutuNode,
+      findSourceNode("nilai"),
+    ],
+  },
+  {
+    id: "monitoring-pelaporan",
+    label: "07 Monitoring & Pelaporan",
+    children: [
+      findSourceNode("dashboard"),
+      findSourceNode("accreditation"),
+      findSourceNode("go-live"),
+      findSourceNode("news"),
+    ],
+  },
+  {
+    id: "administrasi-sistem",
+    label: "08 Administrasi Sistem",
+    children: [
+      findSourceNode("integrations"),
+      findSourceNode("imports"),
+      findSourceNode("settings"),
+    ],
+  },
+];
 
 export function flattenModuleNodes(nodes: ModuleNode[]): ModuleNode[] {
   return nodes.flatMap((node) => [node, ...flattenModuleNodes(node.children ?? [])]);

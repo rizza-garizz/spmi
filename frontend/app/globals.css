@@ -4448,6 +4448,52 @@ textarea:focus-visible,
   scroll-margin-top: 110px;
 }
 
+.business-flow-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.business-flow-strip a {
+  display: grid;
+  gap: 6px;
+  min-height: 82px;
+  padding: 13px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  color: #334155;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.business-flow-strip a:hover,
+.business-flow-strip a:focus {
+  color: #0f172a;
+  border-color: #bfe8c1;
+  background: #f0fdf4;
+}
+
+.business-flow-strip strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 28px;
+  border-radius: 999px;
+  color: #176b26;
+  background: #e9f8e9;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.business-flow-strip span {
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
 @media (max-width: 991px) {
   .hris-module-nav {
     align-items: flex-start;
@@ -4483,6 +4529,10 @@ textarea:focus-visible,
 
   .module-action-form-grid,
   .module-action-detail dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .business-flow-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -4544,6 +4594,10 @@ textarea:focus-visible,
   }
 
   .hris-structure-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .business-flow-strip {
     grid-template-columns: 1fr;
   }
 }
