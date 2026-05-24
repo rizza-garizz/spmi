@@ -78,12 +78,18 @@ const terminalActionKeywords = [
   "Bantuan",
 ];
 
+const expandableTerminalLabels = [
+  "Upload Dokumen",
+  "Tambah Indikator",
+];
+
 function shouldCreateWorkflowChildren(node: ModuleNode) {
   const isGeneratedLeaf = node.id.endsWith("-overview") || node.id.endsWith("-data") || node.id.endsWith("-review");
+  const isExpandableTerminal = expandableTerminalLabels.some((label) => node.label === label);
   const isTerminalAction = terminalActionKeywords.some((keyword) => node.label.includes(keyword));
   const isWorkflowArea = workflowChildKeywords.some((keyword) => node.label.includes(keyword));
 
-  return !isGeneratedLeaf && !isTerminalAction && isWorkflowArea;
+  return !isGeneratedLeaf && (isExpandableTerminal || (!isTerminalAction && isWorkflowArea));
 }
 
 function createActionNode(parent: ModuleNode, suffix: string, label: string, icon: string, description: string): ModuleNode {
