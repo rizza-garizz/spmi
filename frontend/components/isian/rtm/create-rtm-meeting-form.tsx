@@ -102,7 +102,7 @@ export function CreateRtmMeetingForm({ initialItems }: { initialItems: RtmPrevie
       </div>
       <div className="field">
         <label htmlFor="meeting_date">Tanggal</label>
-        <input id="meeting_date" name="meeting_date" type="date" />
+        <input id="meeting_date" name="meeting_date" type="date" required />
       </div>
       <div className="field">
         <label htmlFor="title">Judul</label>

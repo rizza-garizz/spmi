@@ -75,7 +75,15 @@ export function PpeppCycleMonitor({ cycles }: { cycles: PpeppCycle[] }) {
 
   async function uploadEvidence(cycleId: PpeppCycle["id"], stage: PpeppStage, event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file || !hasApiBaseUrl()) return;
+    if (!file) {
+      setMessage("Pilih file bukti PPEPP terlebih dahulu.");
+      return;
+    }
+    if (!hasApiBaseUrl()) {
+      setMessage("Backend belum tersambung. Bukti PPEPP tidak diupload.");
+      event.target.value = "";
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);

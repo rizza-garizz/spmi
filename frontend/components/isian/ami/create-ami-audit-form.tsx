@@ -125,7 +125,7 @@ export function CreateAmiAuditForm({ initialItems }: { initialItems: AuditPrevie
       </div>
       <div className="field">
         <label htmlFor="audit_date">Tanggal Audit</label>
-        <input id="audit_date" name="audit_date" type="date" />
+        <input id="audit_date" name="audit_date" type="date" required />
       </div>
       <div className="field">
         <label htmlFor="auditor_name">Auditor</label>

@@ -99,6 +99,11 @@ export function AoaMigrationForm() {
       return;
     }
 
+    if (!preview || readyCount === 0) {
+      setError("Preview harus dibuat dan minimal ada satu baris siap commit.");
+      return;
+    }
+
     setLoading("commit");
     try {
       const upload = new FormData();
