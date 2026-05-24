@@ -55,7 +55,13 @@ export function LoginForm() {
     router.push("/dashboard");
   }
 
-  const onSubmit = handleSubmit(async ({ username, password }) => {
+  function routeToAccessInfo(anchor: string, message: string) {
+    setSubmitState("idle");
+    setSubmitMessage(message);
+    window.location.assign(`/access-info${anchor}`);
+  }
+
+  const onSubmit = handleSubmit(async ({ username, password, rememberMe }) => {
     setSubmitState("loading");
     setSubmitMessage("");
 
@@ -92,11 +98,17 @@ export function LoginForm() {
           token: session.token,
           user: session.user,
           roles: session.roles,
-        });
+        }, { rememberMe });
         if (session.token) {
-          window.localStorage.setItem("spmi_token", session.token);
+          const tokenStorage = rememberMe ? window.localStorage : window.sessionStorage;
+          const staleTokenStorage = rememberMe ? window.sessionStorage : window.localStorage;
+          staleTokenStorage.removeItem("spmi_token");
+          tokenStorage.setItem("spmi_token", session.token);
         }
-        window.localStorage.setItem(
+        const userStorage = rememberMe ? window.localStorage : window.sessionStorage;
+        const staleUserStorage = rememberMe ? window.sessionStorage : window.localStorage;
+        staleUserStorage.removeItem("spmi_user");
+        userStorage.setItem(
           "spmi_user",
           JSON.stringify(session.user ?? { email: normalizedUsername, name: normalizedUsername })
         );
@@ -249,10 +261,18 @@ export function LoginForm() {
       </div>
 
       <div className="spmi-alt-grid">
-        <button type="button" className="spmi-alt-button">
+        <button
+          type="button"
+          className="spmi-alt-button"
+          onClick={() => routeToAccessInfo("#sso-universitas", "Mengarahkan ke panduan aktivasi SSO Universitas.")}
+        >
           SSO Universitas
         </button>
-        <button type="button" className="spmi-alt-button">
+        <button
+          type="button"
+          className="spmi-alt-button"
+          onClick={() => routeToAccessInfo("#nim-nidn", "Mengarahkan ke panduan akses NIM / NIDN.")}
+        >
           NIM / NIDN
         </button>
       </div>

@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  AUTH_SESSION_KEY,
-  LOCAL_USER_KEY,
   clientApiRequest,
+  clearAuthSession,
   dispatchAppEvent,
   getLegacyUser,
   readAuthSession,
@@ -81,10 +80,7 @@ export function TopbarSession() {
     } catch {
       // Tetap bersihkan sesi lokal meski API logout tidak terjangkau.
     } finally {
-      localStorage.removeItem(AUTH_SESSION_KEY);
-      localStorage.removeItem(LOCAL_USER_KEY);
-      localStorage.removeItem("spmi_token");
-      localStorage.removeItem("spmi_user");
+      clearAuthSession();
       dispatchAppEvent("spmi-session-changed");
       setOpen(false);
       router.push("/login");

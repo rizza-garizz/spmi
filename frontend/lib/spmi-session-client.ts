@@ -10,6 +10,8 @@ export type AuthSession = {
   };
   roles?: string[];
   isLocal?: boolean;
+  rememberMe?: boolean;
+  expiresAt?: string;
 };
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
@@ -31,13 +33,23 @@ export function readAuthSession(): AuthSession | null {
     return null;
   }
 
-  const raw = window.localStorage.getItem(AUTH_SESSION_KEY) ?? window.localStorage.getItem(LOCAL_USER_KEY);
+  const raw =
+    window.localStorage.getItem(AUTH_SESSION_KEY) ??
+    window.sessionStorage.getItem(AUTH_SESSION_KEY) ??
+    window.localStorage.getItem(LOCAL_USER_KEY) ??
+    window.sessionStorage.getItem(LOCAL_USER_KEY);
   if (!raw) {
     return null;
   }
 
   try {
-    return JSON.parse(raw) as AuthSession;
+    const session = JSON.parse(raw) as AuthSession;
+    if (session.expiresAt && new Date(session.expiresAt).getTime() <= Date.now()) {
+      clearAuthSession();
+      return null;
+    }
+
+    return session;
   } catch {
     return null;
   }
@@ -48,7 +60,7 @@ export function getAuthToken() {
     return null;
   }
 
-  return readAuthSession()?.token ?? window.localStorage.getItem("spmi_token") ?? null;
+  return readAuthSession()?.token ?? window.localStorage.getItem("spmi_token") ?? window.sessionStorage.getItem("spmi_token") ?? null;
 }
 
 export function getLegacyUser() {
@@ -56,7 +68,7 @@ export function getLegacyUser() {
     return null;
   }
 
-  const raw = window.localStorage.getItem("spmi_user");
+  const raw = window.localStorage.getItem("spmi_user") ?? window.sessionStorage.getItem("spmi_user");
   if (!raw) {
     return null;
   }
@@ -74,9 +86,13 @@ export function hasAnySession() {
   }
 
   return Boolean(
-    window.localStorage.getItem(AUTH_SESSION_KEY) ||
+    readAuthSession() ||
+      window.localStorage.getItem(AUTH_SESSION_KEY) ||
+      window.sessionStorage.getItem(AUTH_SESSION_KEY) ||
       window.localStorage.getItem(LOCAL_USER_KEY) ||
-      window.localStorage.getItem("spmi_token")
+      window.sessionStorage.getItem(LOCAL_USER_KEY) ||
+      window.localStorage.getItem("spmi_token") ||
+      window.sessionStorage.getItem("spmi_token")
   );
 }
 
@@ -93,12 +109,38 @@ export function parseApiPayload<T>(payload: unknown, fallback: T): T {
   return (payload as T) ?? fallback;
 }
 
-export function saveAuthSession(session: AuthSession) {
+export function clearAuthSession() {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+  [window.localStorage, window.sessionStorage].forEach((storage) => {
+    storage.removeItem(AUTH_SESSION_KEY);
+    storage.removeItem(LOCAL_USER_KEY);
+    storage.removeItem("spmi_token");
+    storage.removeItem("spmi_user");
+  });
+}
+
+export function saveAuthSession(session: AuthSession, options: { rememberMe?: boolean } = {}) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const rememberMe = options.rememberMe ?? session.rememberMe ?? true;
+  const ttlMs = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
+  const nextSession = {
+    ...session,
+    rememberMe,
+    expiresAt: session.expiresAt ?? new Date(Date.now() + ttlMs).toISOString(),
+  };
+  const storage = rememberMe ? window.localStorage : window.sessionStorage;
+  const otherStorage = rememberMe ? window.sessionStorage : window.localStorage;
+
+  otherStorage.removeItem(AUTH_SESSION_KEY);
+  otherStorage.removeItem("spmi_token");
+  otherStorage.removeItem("spmi_user");
+  storage.setItem(AUTH_SESSION_KEY, JSON.stringify(nextSession));
 }
 
 export function saveLocalSession(session: AuthSession) {
@@ -106,6 +148,7 @@ export function saveLocalSession(session: AuthSession) {
     return;
   }
 
+  window.sessionStorage.removeItem(LOCAL_USER_KEY);
   window.localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(session));
 }
 
