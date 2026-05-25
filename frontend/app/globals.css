@@ -5054,3 +5054,210 @@ textarea:focus-visible,
   background: var(--green-soft);
   color: var(--text);
 }
+
+/* Enterprise SaaS Sidebar */
+#main-wrapper:not(.menu-toggle) .nav-header,
+#main-wrapper:not(.menu-toggle) .dlabnav {
+  width: 280px;
+}
+
+#main-wrapper:not(.menu-toggle) .header {
+  padding-left: 280px;
+}
+
+#main-wrapper:not(.menu-toggle) .content-body {
+  margin-left: 280px;
+}
+
+.nav-header,
+.dlabnav {
+  background: #ffffff !important;
+  border-right: 1px solid #e5e7eb !important;
+}
+
+.nav-header {
+  min-height: 96px;
+  box-shadow:
+    12px 0 28px rgba(17, 24, 39, 0.035),
+    inset -1px 0 0 #e5e7eb;
+}
+
+.nav-header .brand-logo {
+  min-height: 96px;
+  padding: 24px;
+}
+
+.dlabnav {
+  box-shadow:
+    18px 0 40px rgba(17, 24, 39, 0.055),
+    inset -1px 0 0 #e5e7eb;
+}
+
+.dlabnav-scroll {
+  height: calc(100vh - 96px);
+  padding: 24px !important;
+}
+
+.dlabnav .metismenu,
+.spmi-nav-sublist {
+  display: grid;
+  gap: 8px;
+}
+
+.dlabnav .metismenu > li {
+  margin: 0;
+}
+
+.dlabnav .nav-label {
+  margin: 22px 0 8px;
+  padding: 0 2px;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.dlabnav .nav-label.first {
+  margin-top: 0;
+}
+
+.dlabnav a.nav-label:hover,
+.dlabnav a.nav-label:focus {
+  color: #64748b;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.dlabnav .metismenu a,
+.dlabnav .metismenu .spmi-nav-parent {
+  min-height: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: #334155;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    background 300ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease,
+    color 300ms ease,
+    transform 300ms ease;
+}
+
+.dlabnav .metismenu a i,
+.dlabnav .metismenu .spmi-nav-parent i {
+  width: 22px;
+  min-width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 1.15rem;
+  line-height: 1;
+  transition: color 300ms ease;
+}
+
+.dlabnav .metismenu a .nav-text,
+.dlabnav .metismenu .spmi-nav-parent .nav-text {
+  flex: 1;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.dlabnav .metismenu a:hover,
+.dlabnav .metismenu a:focus,
+.dlabnav .metismenu .spmi-nav-parent:hover,
+.dlabnav .metismenu .spmi-nav-parent:focus,
+.spmi-nav-sublist a:hover {
+  color: #16a34a;
+  border-color: transparent;
+  background: #f0fdf4;
+  box-shadow: none;
+  transform: translateX(2px);
+}
+
+.dlabnav .metismenu a:hover i,
+.dlabnav .metismenu a:focus i,
+.dlabnav .metismenu .spmi-nav-parent:hover i,
+.dlabnav .metismenu .spmi-nav-parent:focus i {
+  color: #16a34a;
+}
+
+.dlabnav .metismenu a.is-active,
+.dlabnav .metismenu .spmi-nav-parent.is-active {
+  color: #ffffff !important;
+  border-color: transparent;
+  background: linear-gradient(135deg, #22c55e, #10b981) !important;
+  box-shadow: 0 14px 28px rgba(34, 197, 94, 0.24);
+  transform: none;
+}
+
+.dlabnav .metismenu a.is-active i,
+.dlabnav .metismenu .spmi-nav-parent.is-active i {
+  color: #ffffff !important;
+}
+
+.dlabnav .metismenu a::before {
+  display: none;
+}
+
+.spmi-nav-children {
+  gap: 6px;
+  margin: 8px 0 10px 24px;
+  padding: 0 0 0 12px;
+  border-left: 1px solid #e5e7eb;
+}
+
+.dlabnav .metismenu .spmi-nav-child-link {
+  min-height: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  color: #475569;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.dlabnav .metismenu .spmi-nav-child-link i {
+  width: 18px;
+  min-width: 18px;
+  color: #94a3b8;
+  font-size: 1rem;
+}
+
+.dlabnav .metismenu .spmi-nav-child-link:hover,
+.dlabnav .metismenu .spmi-nav-child-link:focus {
+  color: #16a34a;
+  background: #f0fdf4;
+  transform: translateX(2px);
+}
+
+.dlabnav .metismenu .spmi-nav-child-link.is-active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #22c55e, #10b981) !important;
+  box-shadow: 0 12px 24px rgba(34, 197, 94, 0.2);
+}
+
+.dlabnav .metismenu .spmi-nav-child-link.is-active i {
+  color: #ffffff !important;
+}
+
+.menu-toggle .dlabnav-scroll {
+  padding: 16px 10px !important;
+}
+
+.menu-toggle .dlabnav .metismenu a {
+  justify-content: center;
+}
