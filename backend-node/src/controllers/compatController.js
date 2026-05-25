@@ -5,6 +5,7 @@ const {
   getDashboardExport,
   getDocumentsPage,
   getPerformanceReport,
+  getDataSyncMap,
   getHrisSummary,
   getHrisEmployeeProfile,
   getIntegrations,
@@ -98,6 +99,10 @@ function dashboardExport(req, res) {
 
 function performanceReport(_req, res) {
   return success(res, getPerformanceReport(), "Laporan performa sistem");
+}
+
+function dataSyncMap(_req, res) {
+  return success(res, getDataSyncMap(), "Peta sinkronisasi data antar modul");
 }
 
 function catalog(_req, res) {
@@ -842,6 +847,7 @@ module.exports = {
   dashboardSummary,
   dashboardExport,
   performanceReport,
+  dataSyncMap,
   catalog,
   standards,
   createStandard,

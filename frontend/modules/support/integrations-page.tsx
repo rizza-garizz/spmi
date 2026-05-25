@@ -1,4 +1,4 @@
-import { getCatalogSnapshot, getIntegrations } from "@/lib/spmi-catalog-api";
+import { getCatalogSnapshot, getDataSyncMap, getIntegrations } from "@/lib/spmi-catalog-api";
 import { NilaiCardGrid } from "@/components/nilai/core";
 
 const checkLabels: Record<string, string> = {
@@ -22,6 +22,7 @@ const statusLabels: Record<string, string> = {
 
 export async function IntegrationsPage() {
   const data = await getIntegrations();
+  const syncMap = await getDataSyncMap();
   const catalog = await getCatalogSnapshot();
   const requiredSystems = ["SIAKAD", "SIMPEG", "Keuangan", "Repository", "PDDIKTI", "SSO/IAM"];
   const readinessSummary = data.sources.reduce(
@@ -67,6 +68,61 @@ export async function IntegrationsPage() {
               {statusLabels[status] || status}: {total}
             </span>
           ))}
+        </div>
+      </section>
+      <section className="section">
+        <div className="section-head">
+          <div>
+            <h2>Sinkron Data Antar Modul</h2>
+            <p>Relasi data internal dipantau dari struktur kampus, HRIS, standar, PPEPP, dokumen, AMI, RTL, RTM, dan dashboard.</p>
+          </div>
+          <div className="section-tag">Internal sync: {statusLabels[syncMap.summary.status] || syncMap.summary.status}</div>
+        </div>
+        <div className="metric-grid">
+          <article className="metric-card">
+            <span className="metric-label">Relasi OK</span>
+            <strong>{syncMap.summary.ok}/{syncMap.summary.relationship_total}</strong>
+            <p>Rule data lintas modul sudah tersambung.</p>
+          </article>
+          <article className="metric-card">
+            <span className="metric-label">Perlu Review</span>
+            <strong>{syncMap.summary.warning}</strong>
+            <p>Relasi yang masih butuh penguatan referensi.</p>
+          </article>
+          <article className="metric-card">
+            <span className="metric-label">Modul Terpantau</span>
+            <strong>{syncMap.summary.module_total}</strong>
+            <p>Registry modul mutu dan HRIS.</p>
+          </article>
+        </div>
+        <div className="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Relasi</th>
+                <th>Status</th>
+                <th>Linked</th>
+                <th>Missing</th>
+                <th>Business Rule</th>
+              </tr>
+            </thead>
+            <tbody>
+              {syncMap.relationships.map((item) => (
+                <tr key={item.key}>
+                  <td>
+                    <strong>{item.source}</strong>
+                    <p>{item.target}</p>
+                  </td>
+                  <td>
+                    <span className="badge badge-light">{statusLabels[item.status] || item.status}</span>
+                  </td>
+                  <td>{item.linked}</td>
+                  <td>{item.missing}</td>
+                  <td>{item.business_rule}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
       <section className="section">

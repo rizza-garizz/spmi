@@ -117,6 +117,42 @@ export type IntegrationConnector = {
   >;
 };
 
+export type DataSyncMap = {
+  generated_at: string;
+  summary: {
+    status: string;
+    relationship_total: number;
+    ok: number;
+    warning: number;
+    module_total: number;
+  };
+  modules: Record<string, Record<string, unknown>>;
+  relationships: Array<{
+    key: string;
+    source: string;
+    target: string;
+    status: string;
+    linked: number;
+    missing: number;
+    business_rule: string;
+  }>;
+  warnings: Array<{ key: string; message: string; missing: number }>;
+};
+
+const emptyDataSyncMap: DataSyncMap = {
+  generated_at: "",
+  summary: {
+    status: "warning",
+    relationship_total: 0,
+    ok: 0,
+    warning: 0,
+    module_total: 0,
+  },
+  modules: {},
+  relationships: [],
+  warnings: [],
+};
+
 async function fetchJson<T>(path: string, fallback: T): Promise<T> {
   if (!apiBaseUrl) {
     return fallback;
@@ -283,6 +319,10 @@ export async function getSurveys() {
 export async function getIntegrations() {
   const sources = await fetchJson("/integrations", emptyCatalog.integrations);
   return { sources };
+}
+
+export async function getDataSyncMap() {
+  return fetchJson<DataSyncMap>("/sync/map", emptyDataSyncMap);
 }
 
 export async function getImports() {

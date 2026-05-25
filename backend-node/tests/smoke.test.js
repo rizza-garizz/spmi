@@ -219,6 +219,7 @@ test("enterprise read endpoints reject anonymous access", async () => {
   const protectedPaths = [
     "/catalog",
     "/dashboard/summary",
+    "/sync/map",
     "/standards",
     "/documents",
     "/ppepp/cycles",
@@ -653,6 +654,7 @@ test("POST /ami/audits creates a local audit", async () => {
 test("AMI workflow supports assignment, instruments, findings, follow-up, verification, and summary", async () => {
   const auditorToken = await loginAs("auditor@spmi.local");
   const unitToken = await loginAs("unit@spmi.local");
+  const kaprodiToken = await loginAs("kaprodi@spmi.local");
 
   const createdResponse = await fetch(`${baseUrl}/ami/audits`, {
     method: "POST",
@@ -726,6 +728,21 @@ test("AMI workflow supports assignment, instruments, findings, follow-up, verifi
 
   assert.equal(findingResponse.status, 201);
   assert.equal(findingPayload.data.category, "Mayor");
+  assert.ok(findingPayload.data.follow_up.rtl_action_id);
+
+  const rtmAfterFindingResponse = await fetch(`${baseUrl}/rtm/meetings`, {
+    headers: {
+      Authorization: `Bearer ${kaprodiToken}`,
+    },
+  });
+  const rtmAfterFindingPayload = await rtmAfterFindingResponse.json();
+  const syncedAction = rtmAfterFindingPayload.data
+    .flatMap((meeting) => meeting.actions || [])
+    .find((action) => String(action.source_finding_id) === String(findingId));
+
+  assert.equal(rtmAfterFindingResponse.status, 200);
+  assert.equal(Boolean(syncedAction), true);
+  assert.equal(syncedAction.source_ami_id, auditId);
 
   const followUpResponse = await fetch(`${baseUrl}/ami/audits/${auditId}/findings/${findingId}/follow-up`, {
     method: "PATCH",
@@ -771,6 +788,19 @@ test("AMI workflow supports assignment, instruments, findings, follow-up, verifi
 
   assert.equal(summaryResponse.status, 200);
   assert.equal(summaryPayload.data.categories.mayor, 1);
+
+  const syncResponse = await fetch(`${baseUrl}/sync/map`, {
+    headers: {
+      Authorization: `Bearer ${auditorToken}`,
+    },
+  });
+  const syncPayload = await syncResponse.json();
+  const amiToRtl = syncPayload.data.relationships.find((item) => item.key === "ami_to_rtl");
+
+  assert.equal(syncResponse.status, 200);
+  assert.equal(syncPayload.success, true);
+  assert.equal(Boolean(amiToRtl), true);
+  assert.equal(amiToRtl.linked >= 1, true);
 });
 
 test("end-to-end campus workflow simulation identifies no blocking process bottleneck", async () => {

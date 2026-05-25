@@ -616,6 +616,102 @@ function getHrisEmployeeProfile(employeeId) {
   };
 }
 
+function toStandardReference(standard) {
+  if (!standard) return null;
+  return {
+    id: standard.id,
+    code: standard.code,
+    title: standard.title,
+    category: standard.category,
+    version: standard.version,
+  };
+}
+
+function getOrgUnitReference(code) {
+  const orgUnit = orgUnitIndex.get(code);
+  if (!orgUnit) return null;
+  return {
+    code: orgUnit.code,
+    name: orgUnit.name,
+    type: orgUnit.type,
+    parent_code: orgUnit.parent_code || null,
+  };
+}
+
+function getOrCreateAmiRtmMeeting(audit) {
+  let meeting = state.meetings.find((item) => item.code === "RTM-AMI-SYNC");
+  if (!meeting) {
+    meeting = {
+      id: "RTM-AMI-SYNC",
+      code: "RTM-AMI-SYNC",
+      title: "RTM Pengendalian Temuan AMI",
+      meeting_date: new Date().toISOString().slice(0, 10),
+      status: "running",
+      conclusion: "Rapat kontrol tindak lanjut otomatis dari temuan AMI.",
+      org_unit_code: "LPM",
+      approval: approvalSeed("review_lpm", "in_review"),
+      actions: [],
+    };
+    state.meetings.unshift(meeting);
+  }
+
+  if (audit?.org_unit_code && !meeting.related_units?.includes(audit.org_unit_code)) {
+    meeting.related_units = [...(meeting.related_units || []), audit.org_unit_code];
+  }
+
+  return meeting;
+}
+
+function syncRtlActionFromFinding(audit, finding, user = null) {
+  if (!audit || !finding) return null;
+  const meeting = getOrCreateAmiRtmMeeting(audit);
+  const existing = meeting.actions.find((item) => String(item.source_finding_id) === String(finding.id));
+  const status = finding.follow_up?.status === "done" ? "done" : finding.follow_up?.status || "open";
+  const progress = status === "done" ? 100 : Number(finding.follow_up?.progress || 0);
+
+  if (existing) {
+    Object.assign(existing, {
+      action_item: `Tindak lanjut ${finding.category}: ${finding.title}`,
+      due_date: finding.follow_up?.due_date || existing.due_date || null,
+      status,
+      progress,
+      owner_notes: finding.follow_up?.plan || finding.recommendation || existing.owner_notes || "",
+      evidence: finding.follow_up?.evidence || existing.evidence || [],
+      updated_at: new Date().toISOString(),
+    });
+    finding.follow_up.rtl_action_id = existing.id;
+    return existing;
+  }
+
+  const action = {
+    id: Number(`${Date.now()}${meeting.actions.length + 1}`),
+    action_item: `Tindak lanjut ${finding.category}: ${finding.title}`,
+    due_date: finding.follow_up?.due_date || null,
+    status,
+    progress,
+    owner_notes: finding.follow_up?.plan || finding.recommendation || "",
+    evidence: finding.follow_up?.evidence || [],
+    unit: audit.org_unit || getOrgUnitReference(audit.org_unit_code) || { name: audit.org_unit_code || "Unit Kerja" },
+    org_unit_code: audit.org_unit_code || "LPM",
+    approval: approvalSeed("review_prodi", "in_review"),
+    source_module: "ami",
+    source_ami_id: audit.id,
+    source_finding_id: finding.id,
+    source_finding_category: finding.category,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  meeting.actions.unshift(action);
+  finding.follow_up.rtl_action_id = action.id;
+  recordMutationAudit("rtl", "auto_created_from_ami", action, null, user, {
+    audit_id: audit.id,
+    finding_id: finding.id,
+    status_code: 201,
+  });
+  return action;
+}
+
 function findDuplicateValues(items, fields) {
   const duplicates = [];
 
@@ -979,6 +1075,233 @@ function getStandardGroup(title = "") {
   if (normalized.includes("keuangan")) return "Keuangan";
   if (normalized.includes("sarana") || normalized.includes("sarpras")) return "Sarpras";
   return "Tata Kelola";
+}
+
+function findStandardReference(data = {}) {
+  if (data.standard && typeof data.standard === "object") {
+    return toStandardReference(data.standard);
+  }
+
+  const candidates = [
+    data.standard_id,
+    data.standardId,
+    data.standar_id,
+    data.mutu_standard_id,
+    data.standard_code,
+    data.standardCode,
+    data.standar,
+    data.standard,
+  ]
+    .filter(Boolean)
+    .map((value) => normalizeComparable(value));
+
+  let standard = getActiveStandards().find((item) =>
+    candidates.some((candidate) =>
+      [item.id, item.code, item.title].some((value) => normalizeComparable(value) === candidate)
+    )
+  );
+
+  if (!standard && (data.category || data.type)) {
+    const normalizedCategory = normalizeStandardCategory(data.category || data.type);
+    standard = getActiveStandards().find((item) => normalizeStandardCategory(item.category) === normalizedCategory);
+  }
+
+  return toStandardReference(standard);
+}
+
+function normalizeStandardRefForData(data = {}, fallback = null) {
+  return findStandardReference(data) || fallback || null;
+}
+
+function getDataSyncMap() {
+  const activeStandards = getActiveStandards();
+  const validOrgCodes = new Set((catalog.orgUnits || []).map((item) => item.code));
+  const validStandardCodes = new Set(activeStandards.map((item) => item.code));
+  const hrisEmployeesByName = new Map(state.hris.employees.map((item) => [normalizeComparable(item.name), item]));
+  const allRtlActions = state.meetings.flatMap((meeting) =>
+    (meeting.actions || []).map((action) => ({ ...action, meeting_id: meeting.id, meeting_title: meeting.title }))
+  );
+  const findings = state.audits.flatMap((audit) =>
+    (audit.findings || []).map((finding) => ({ ...finding, audit_id: audit.id, audit_title: audit.title, org_unit_code: audit.org_unit_code }))
+  );
+  const ppeppStages = state.ppeppCycles.flatMap((cycle) => cycle.stages || []);
+  const ppeppEvidence = ppeppStages.flatMap((stage) => stage.evidence || []);
+  const documentVersions = state.documents.flatMap((document) => document.versions || []);
+  const linkedIndicatorStandards = state.indicators.filter((item) => validStandardCodes.has(item.standard?.code)).length;
+  const linkedDocumentStandards = state.documents.filter((item) => {
+    const standard = normalizeStandardRefForData(item);
+    return Boolean(standard?.code && validStandardCodes.has(standard.code));
+  }).length;
+  const linkedPpeppStandards = state.ppeppCycles.filter((item) => {
+    const standard = normalizeStandardRefForData(item);
+    return Boolean(standard?.code && validStandardCodes.has(standard.code));
+  }).length;
+  const linkedRtlFindings = findings.filter((finding) =>
+    allRtlActions.some((action) => String(action.source_finding_id) === String(finding.id))
+  ).length;
+  const employeePositionLinks = state.hris.positions.filter((position) =>
+    hrisEmployeesByName.has(normalizeComparable(position.holder))
+  ).length;
+  const roleScopeLinks = (catalog.seedUsers || []).filter((user) => validOrgCodes.has(user.org_unit_code)).length;
+
+  const relationships = [
+    {
+      key: "organization_to_roles",
+      source: "Struktur Perguruan Tinggi",
+      target: "Role & Scope Pengguna",
+      status: roleScopeLinks === (catalog.seedUsers || []).length ? "ok" : "warning",
+      linked: roleScopeLinks,
+      missing: Math.max(0, (catalog.seedUsers || []).length - roleScopeLinks),
+      business_rule: "Setiap user wajib punya scope fakultas/prodi/unit agar row-level access control konsisten.",
+    },
+    {
+      key: "hris_to_roles",
+      source: "HRIS Jabatan Aktif",
+      target: "Role Struktural SPMI",
+      status: employeePositionLinks === state.hris.positions.length ? "ok" : "warning",
+      linked: employeePositionLinks,
+      missing: Math.max(0, state.hris.positions.length - employeePositionLinks),
+      business_rule: "Jabatan HRIS menjadi referensi kewenangan Dekan, Kaprodi, Unit, dan pimpinan.",
+    },
+    {
+      key: "standards_to_indicators",
+      source: "Standar Mutu",
+      target: "Indikator KPI",
+      status: linkedIndicatorStandards === state.indicators.length ? "ok" : "warning",
+      linked: linkedIndicatorStandards,
+      missing: Math.max(0, state.indicators.length - linkedIndicatorStandards),
+      business_rule: "Indikator harus menunjuk standar supaya dashboard ketercapaian valid.",
+    },
+    {
+      key: "standards_to_ppepp",
+      source: "Standar Mutu",
+      target: "Siklus PPEPP",
+      status: linkedPpeppStandards === state.ppeppCycles.length ? "ok" : "warning",
+      linked: linkedPpeppStandards,
+      missing: Math.max(0, state.ppeppCycles.length - linkedPpeppStandards),
+      business_rule: "PPEPP berjalan per standar atau kategori standar yang jelas.",
+    },
+    {
+      key: "standards_to_documents",
+      source: "Standar Mutu",
+      target: "Dokumen & Evidence",
+      status: linkedDocumentStandards === state.documents.length ? "ok" : "warning",
+      linked: linkedDocumentStandards,
+      missing: Math.max(0, state.documents.length - linkedDocumentStandards),
+      business_rule: "Dokumen harus punya referensi standar/kategori untuk audit dan repository.",
+    },
+    {
+      key: "ppepp_to_evidence",
+      source: "Tahapan PPEPP",
+      target: "Evidence Digital",
+      status: ppeppEvidence.length > 0 ? "ok" : "warning",
+      linked: ppeppEvidence.length,
+      missing: ppeppEvidence.length > 0 ? 0 : ppeppStages.length,
+      business_rule: "Setiap tahap PPEPP perlu bukti agar monitoring proses dapat diaudit.",
+    },
+    {
+      key: "ami_to_rtl",
+      source: "Temuan AMI",
+      target: "RTL / RTM",
+      status: linkedRtlFindings === findings.length ? "ok" : "warning",
+      linked: linkedRtlFindings,
+      missing: Math.max(0, findings.length - linkedRtlFindings),
+      business_rule: "Setiap temuan AMI otomatis masuk daftar tindak lanjut dan dapat dibahas di RTM.",
+    },
+    {
+      key: "rtl_to_rtm",
+      source: "RTL",
+      target: "Rapat Tinjauan Manajemen",
+      status: allRtlActions.length > 0 ? "ok" : "warning",
+      linked: allRtlActions.length,
+      missing: allRtlActions.length > 0 ? 0 : 1,
+      business_rule: "RTL harus berada dalam agenda RTM agar pengendalian mutu terdokumentasi.",
+    },
+    {
+      key: "dashboard_to_sources",
+      source: "Dashboard KPI",
+      target: "Indikator, PPEPP, AMI, Dokumen",
+      status: state.indicators.length && state.audits.length && state.ppeppCycles.length && state.documents.length ? "ok" : "warning",
+      linked: state.indicators.length + state.audits.length + state.ppeppCycles.length + state.documents.length,
+      missing: 0,
+      business_rule: "Dashboard pimpinan membaca data agregat dari modul operasional, bukan angka lepas.",
+    },
+  ];
+
+  const warningCount = relationships.filter((item) => item.status !== "ok").length;
+
+  return {
+    generated_at: new Date().toISOString(),
+    summary: {
+      status: warningCount ? "warning" : "ok",
+      relationship_total: relationships.length,
+      ok: relationships.length - warningCount,
+      warning: warningCount,
+      module_total: 10,
+    },
+    modules: {
+      organization: {
+        total_units: catalog.orgUnits.length,
+        user_scopes: roleScopeLinks,
+      },
+      hris: {
+        employees: state.hris.employees.length,
+        positions: state.hris.positions.length,
+        linked_positions: employeePositionLinks,
+        competencies: state.hris.competencies.length,
+        documents: state.hris.documents.length,
+      },
+      standards: {
+        total: activeStandards.length,
+        categories: STANDARD_CATEGORIES.map((category) => ({
+          key: category.key,
+          total: activeStandards.filter((item) => normalizeStandardCategory(item.category) === category.key).length,
+        })),
+      },
+      indicators: {
+        total: state.indicators.length,
+        linked_to_standard: linkedIndicatorStandards,
+        orphan: Math.max(0, state.indicators.length - linkedIndicatorStandards),
+      },
+      ppepp: {
+        cycles: state.ppeppCycles.length,
+        stages: ppeppStages.length,
+        evidence: ppeppEvidence.length,
+        linked_to_standard: linkedPpeppStandards,
+      },
+      documents: {
+        total: state.documents.length,
+        versions: documentVersions.length,
+        linked_to_standard: linkedDocumentStandards,
+      },
+      ami: {
+        audits: state.audits.length,
+        findings: findings.length,
+        findings_with_rtl: linkedRtlFindings,
+      },
+      rtl: {
+        actions: allRtlActions.length,
+        open: allRtlActions.filter((item) => item.status !== "done").length,
+        done: allRtlActions.filter((item) => item.status === "done").length,
+      },
+      rtm: {
+        meetings: state.meetings.length,
+        active: state.meetings.filter((item) => item.status !== "done").length,
+      },
+      dashboard: {
+        indicators: state.indicators.length,
+        source_records: state.indicators.length + state.audits.length + state.ppeppCycles.length + state.documents.length,
+      },
+    },
+    relationships,
+    warnings: relationships
+      .filter((item) => item.status !== "ok")
+      .map((item) => ({
+        key: item.key,
+        message: `${item.source} belum sepenuhnya sinkron dengan ${item.target}.`,
+        missing: item.missing,
+      })),
+  };
 }
 
 function getFilteredIndicators(filters = {}) {
@@ -1358,6 +1681,7 @@ function addDocument(data, user) {
     org_unit_code: data.org_unit_code || null,
     document_date: data.document_date || data.tanggal || new Date().toISOString().slice(0, 10),
     category: data.category || data.kategori || data.type || "kebijakan",
+    standard: findStandardReference(data),
     owner: data.owner || data.penanggung_jawab || user?.name || user?.email || "system",
     metadata: {
       tanggal: data.document_date || data.tanggal || new Date().toISOString().slice(0, 10),
@@ -1476,6 +1800,7 @@ function addFinding(auditId, data) {
       action: "finding_created",
       note: `${finding.category}: ${finding.description}`,
     });
+    syncRtlActionFromFinding(audit, finding, { email: data.changed_by || "system" });
   }
   return finding;
 }
@@ -1547,6 +1872,7 @@ function addPpeppCycle(data, user) {
     period: data.period || "yearly",
     status: data.status || "planned",
     org_unit_code: data.org_unit_code || null,
+    standard: findStandardReference(data),
     approval: getInitialApproval(user),
     academic_year_start: data.academic_year_start || null,
     academic_year_end: data.academic_year_end || null,
@@ -1760,6 +2086,7 @@ function updateAmiFindingFollowUp(auditId, findingId, data, user) {
     note: finding.title,
   });
   audit.recap = calculateAmiRecap(audit);
+  syncRtlActionFromFinding(audit, finding, user);
   return audit;
 }
 
@@ -1808,9 +2135,7 @@ function addIndicator(data, user) {
     target_value: Number(data.target_value || 0),
     unit: data.unit || "%",
     source_type: data.source_type || "manual",
-    standard: data.mutu_standard_id
-      ? { id: data.mutu_standard_id, code: String(data.mutu_standard_id), title: "Standar terkait" }
-      : null,
+    standard: findStandardReference(data),
     org_unit_code: data.org_unit_code || null,
     approval: getInitialApproval(user),
     latest_value: null,
@@ -2173,6 +2498,7 @@ module.exports = {
   getDashboardExport,
   getDocumentsPage,
   getPerformanceReport,
+  getDataSyncMap,
   getHrisSummary,
   getHrisEmployeeProfile,
   getIntegrations,

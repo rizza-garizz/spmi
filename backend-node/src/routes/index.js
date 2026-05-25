@@ -58,6 +58,7 @@ router.get("/catalog", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatContr
 router.get("/dashboard/summary", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.dashboardSummary);
 router.get("/dashboard/export", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.dashboardExport);
 router.get("/performance/report", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.performanceReport);
+router.get("/sync/map", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.dataSyncMap);
 router.get("/standards", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.standards);
 router.post("/standards", verifyToken, requireRole(...ROLE_ADMIN_ONLY), compatController.createStandard);
 router.get("/standards/:id/revisions", verifyToken, requireRole(...ROLE_ALL_ACTIVE), compatController.standardRevisions);
