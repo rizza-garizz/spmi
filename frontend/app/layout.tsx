@@ -20,7 +20,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/envato/images/favicon.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="/envato/vendor/jqvmap/css/jqvmap.min.css" />
         <link rel="stylesheet" href="/envato/vendor/chartist/css/chartist.min.css" />
         <link rel="stylesheet" href="/envato/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" />
