@@ -5926,3 +5926,273 @@ small,
   font-size: 13px !important;
   font-weight: 600 !important;
 }
+
+/* Enterprise Forms */
+:root {
+  --form-border: #d1d5db;
+  --form-border-focus: #22c55e;
+  --form-error: #ef4444;
+  --form-label: #374151;
+  --form-helper: #64748b;
+  --form-radius: 14px;
+  --form-height: 48px;
+  --form-focus-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+  --form-error-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+}
+
+label,
+.form-label,
+.field label,
+.module-action-form label,
+.auth-field label,
+.hris-field label,
+.input-label {
+  color: var(--form-label) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0 !important;
+}
+
+.form-group,
+.field,
+.module-action-form label,
+.auth-field,
+.hris-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-control,
+.form-select,
+.module-action-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.module-action-form select,
+.module-action-form textarea,
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.field select,
+.field textarea,
+.spmi-input-shell input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+select,
+textarea {
+  width: 100%;
+  min-height: var(--form-height) !important;
+  padding: 12px 14px !important;
+  border: 1px solid var(--form-border) !important;
+  border-radius: var(--form-radius) !important;
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.45 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background-color 220ms ease,
+    color 220ms ease;
+}
+
+textarea,
+textarea.form-control,
+.module-action-form textarea,
+.field textarea {
+  min-height: 112px !important;
+  resize: vertical;
+}
+
+input[type="file"],
+input[type="file"].form-control,
+.module-action-form input[type="file"] {
+  height: auto !important;
+  min-height: var(--form-height) !important;
+  padding: 10px 14px !important;
+  cursor: pointer;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  min-height: auto !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  accent-color: var(--form-border-focus);
+}
+
+.form-control::placeholder,
+.module-action-form input::placeholder,
+.module-action-form textarea::placeholder,
+.field input::placeholder,
+.field textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1;
+}
+
+.form-control:hover,
+.form-select:hover,
+.module-action-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
+.module-action-form select:hover,
+.module-action-form textarea:hover,
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
+.field select:hover,
+.field textarea:hover,
+.spmi-input-shell input:hover,
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="number"]:hover,
+input[type="date"]:hover,
+input[type="search"]:hover,
+input[type="url"]:hover,
+input[type="tel"]:hover,
+select:hover,
+textarea:hover {
+  border-color: #9ca3af !important;
+}
+
+.form-control:focus,
+.form-control:focus-visible,
+.form-select:focus,
+.form-select:focus-visible,
+.module-action-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+.module-action-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus-visible,
+.module-action-form select:focus,
+.module-action-form select:focus-visible,
+.module-action-form textarea:focus,
+.module-action-form textarea:focus-visible,
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus-visible,
+.field select:focus,
+.field select:focus-visible,
+.field textarea:focus,
+.field textarea:focus-visible,
+.spmi-input-shell input:focus,
+.spmi-input-shell input:focus-visible,
+input[type="text"]:focus,
+input[type="text"]:focus-visible,
+input[type="email"]:focus,
+input[type="email"]:focus-visible,
+input[type="password"]:focus,
+input[type="password"]:focus-visible,
+input[type="number"]:focus,
+input[type="number"]:focus-visible,
+input[type="date"]:focus,
+input[type="date"]:focus-visible,
+input[type="search"]:focus,
+input[type="search"]:focus-visible,
+input[type="url"]:focus,
+input[type="url"]:focus-visible,
+input[type="tel"]:focus,
+input[type="tel"]:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  border-color: var(--form-border-focus) !important;
+  box-shadow: var(--form-focus-shadow) !important;
+  outline: none !important;
+}
+
+.form-text,
+.form-note,
+.field-helper,
+.helper-text,
+.help-text,
+.input-helper,
+.form-hint,
+.caption {
+  display: block;
+  margin-top: 6px;
+  color: var(--form-helper) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.45 !important;
+}
+
+.invalid-feedback,
+.error-text,
+.field-error,
+.form-note-error,
+.text-danger {
+  display: block;
+  margin-top: 6px;
+  color: var(--form-error) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid,
+.was-validated .form-control:invalid,
+.was-validated .form-select:invalid,
+.module-action-form input[aria-invalid="true"],
+.module-action-form select[aria-invalid="true"],
+.module-action-form textarea[aria-invalid="true"],
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"],
+.field textarea[aria-invalid="true"],
+.spmi-input-shell input[aria-invalid="true"],
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--form-error) !important;
+  background-color: #fffafa !important;
+}
+
+.form-control.is-invalid:focus,
+.form-control.is-invalid:focus-visible,
+.form-select.is-invalid:focus,
+.form-select.is-invalid:focus-visible,
+.was-validated .form-control:invalid:focus,
+.was-validated .form-control:invalid:focus-visible,
+.was-validated .form-select:invalid:focus,
+.was-validated .form-select:invalid:focus-visible,
+.module-action-form input[aria-invalid="true"]:focus,
+.module-action-form input[aria-invalid="true"]:focus-visible,
+.module-action-form select[aria-invalid="true"]:focus,
+.module-action-form select[aria-invalid="true"]:focus-visible,
+.module-action-form textarea[aria-invalid="true"]:focus,
+.module-action-form textarea[aria-invalid="true"]:focus-visible,
+.field input[aria-invalid="true"]:focus,
+.field input[aria-invalid="true"]:focus-visible,
+.field select[aria-invalid="true"]:focus,
+.field select[aria-invalid="true"]:focus-visible,
+.field textarea[aria-invalid="true"]:focus,
+.field textarea[aria-invalid="true"]:focus-visible,
+.spmi-input-shell input[aria-invalid="true"]:focus,
+.spmi-input-shell input[aria-invalid="true"]:focus-visible,
+input[aria-invalid="true"]:focus,
+input[aria-invalid="true"]:focus-visible,
+select[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus-visible,
+textarea[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus-visible {
+  border-color: var(--form-error) !important;
+  box-shadow: var(--form-error-shadow) !important;
+}
+
+.form-control:disabled,
+.form-select:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+.form-control[readonly],
+input[readonly],
+textarea[readonly] {
+  color: #94a3b8 !important;
+  background-color: #f8fafc !important;
+  border-color: #e5e7eb !important;
+  cursor: not-allowed;
+}
