@@ -5707,3 +5707,139 @@ small,
   font-weight: 700 !important;
   line-height: 1.15 !important;
 }
+
+/* Premium Lightweight Card System */
+:root {
+  --card-bg: #ffffff;
+  --card-radius: 20px;
+  --card-padding: 24px;
+  --card-border: #f1f5f9;
+  --card-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  --card-shadow-hover: 0 16px 38px rgba(15, 23, 42, 0.08);
+}
+
+.card,
+.hero-panel,
+.stat,
+.glass,
+.timeline-item,
+.meta-card,
+.module-page-header,
+.module-landing-card,
+.module-action-workspace,
+.module-action-card,
+.module-action-side,
+.module-action-detail,
+.module-action-panel,
+.hris-page-toolbar,
+.hris-structure-card,
+.hris-module-shell,
+.table-card,
+.metric-card,
+.auth-card,
+.auth-status-card,
+.form-preview,
+.footer-bar {
+  border: 1px solid var(--card-border) !important;
+  border-radius: var(--card-radius) !important;
+  background: var(--card-bg) !important;
+  box-shadow: var(--card-shadow) !important;
+  transition:
+    transform 300ms ease,
+    box-shadow 300ms ease,
+    border-color 300ms ease,
+    background 300ms ease;
+}
+
+.card:hover,
+.hero-panel:hover,
+.stat:hover,
+.glass:hover,
+.timeline-item:hover,
+.meta-card:hover,
+.module-page-header:hover,
+.module-landing-card:hover,
+.module-action-workspace:hover,
+.module-action-card:hover,
+.module-action-side:hover,
+.module-action-detail:hover,
+.module-action-panel:hover,
+.hris-page-toolbar:hover,
+.hris-structure-card:hover,
+.hris-module-shell:hover,
+.table-card:hover,
+.metric-card:hover,
+.auth-card:hover,
+.auth-status-card:hover,
+.form-preview:hover,
+.footer-bar:hover {
+  border-color: #e2e8f0 !important;
+  box-shadow: var(--card-shadow-hover) !important;
+  transform: translateY(-2px);
+}
+
+.card-header {
+  padding: var(--card-padding) var(--card-padding) 16px !important;
+  border-bottom: 1px solid var(--card-border) !important;
+  border-radius: var(--card-radius) var(--card-radius) 0 0 !important;
+  background: var(--card-bg) !important;
+}
+
+.card-body {
+  padding: var(--card-padding) !important;
+}
+
+.card-footer {
+  padding: 16px var(--card-padding) var(--card-padding) !important;
+  border-top: 1px solid var(--card-border) !important;
+  border-radius: 0 0 var(--card-radius) var(--card-radius) !important;
+  background: var(--card-bg) !important;
+}
+
+.card > :only-child:not(.card-body):not(.card-header):not(.card-footer) {
+  padding: var(--card-padding);
+}
+
+.module-page-header,
+.module-landing-card,
+.module-action-workspace,
+.module-action-card,
+.module-action-side,
+.module-action-detail,
+.module-action-panel,
+.hris-page-toolbar,
+.hris-structure-card,
+.hris-module-shell,
+.metric-card,
+.auth-card,
+.auth-status-card,
+.form-preview,
+.meta-card,
+.timeline-item,
+.stat,
+.hero-panel {
+  padding: var(--card-padding) !important;
+}
+
+.table-card {
+  overflow: hidden;
+}
+
+.table-card table,
+.card table {
+  margin-bottom: 0;
+}
+
+.widget-stat.card {
+  border: 1px solid transparent !important;
+  border-radius: var(--card-radius) !important;
+  box-shadow: var(--card-shadow) !important;
+  transition:
+    transform 300ms ease,
+    box-shadow 300ms ease;
+}
+
+.widget-stat.card:hover {
+  box-shadow: var(--card-shadow-hover) !important;
+  transform: translateY(-2px);
+}
