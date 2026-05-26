@@ -6196,3 +6196,320 @@ textarea[readonly] {
   border-color: #e5e7eb !important;
   cursor: not-allowed;
 }
+
+/* Enterprise Micro Interactions */
+:root {
+  --motion-fast: 200ms;
+  --motion-normal: 260ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+}
+
+@keyframes spmi-page-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spmi-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spmi-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spmi-skeleton-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes spmi-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.content-body,
+.page-content,
+.authincation,
+.module-action-workspace,
+.module-page-header,
+.module-landing-card,
+.hris-module-shell,
+.form-shell {
+  animation: spmi-page-fade var(--motion-normal) var(--motion-ease) both;
+}
+
+.card,
+.widget-stat.card,
+.module-landing-card,
+.module-action-card,
+.module-action-side,
+.module-action-detail,
+.module-action-panel,
+.module-children-menu,
+.hris-structure-card,
+.hris-module-shell,
+.table-card,
+.auth-card,
+.auth-status-card,
+.metric-card,
+.meta-card,
+.form-preview,
+.timeline-item,
+.stat,
+.hero-panel {
+  will-change: transform;
+  transition:
+    transform var(--motion-normal) var(--motion-ease),
+    box-shadow var(--motion-normal) var(--motion-ease),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    opacity var(--motion-fast) ease !important;
+}
+
+.card:hover,
+.widget-stat.card:hover,
+.module-landing-card:hover,
+.module-action-card:hover,
+.module-action-side:hover,
+.module-action-detail:hover,
+.module-action-panel:hover,
+.hris-structure-card:hover,
+.hris-module-shell:hover,
+.table-card:hover,
+.auth-card:hover,
+.auth-status-card:hover,
+.metric-card:hover,
+.meta-card:hover,
+.form-preview:hover,
+.timeline-item:hover,
+.stat:hover,
+.hero-panel:hover {
+  box-shadow: var(--motion-shadow) !important;
+  transform: translateY(-2px);
+}
+
+.btn,
+button,
+[role="button"],
+.spmi-submit-button,
+.spmi-alt-button,
+.nav-control-button,
+.dropdown-role-link,
+.module-children-menu-title,
+.module-children-menu-item,
+.hris-module-trigger,
+.hris-module-dropdown-list a,
+.managed-card-link,
+a.card {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    opacity var(--motion-fast) ease !important;
+}
+
+.btn:hover,
+button:hover,
+[role="button"]:hover,
+.spmi-submit-button:hover,
+.spmi-alt-button:hover,
+.nav-control-button:hover,
+.dropdown-role-link:hover,
+.module-children-menu-title:hover,
+.module-children-menu-item:hover,
+.hris-module-trigger:hover,
+.hris-module-dropdown-list a:hover,
+.managed-card-link:hover,
+a.card:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active,
+button:active,
+[role="button"]:active,
+.spmi-submit-button:active,
+.spmi-alt-button:active,
+.module-children-menu-item:active,
+.hris-module-dropdown-list a:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn:disabled,
+button:disabled,
+[aria-disabled="true"] {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.dlabnav .metismenu a,
+.dlabnav .metismenu .spmi-nav-parent,
+.dlabnav .metismenu .spmi-nav-child-link,
+.header-right a,
+.header-right button,
+.breadcrumb a,
+.spmi-dynamic-breadcrumb a {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    opacity var(--motion-fast) ease !important;
+}
+
+.dlabnav .metismenu a:hover,
+.dlabnav .metismenu .spmi-nav-parent:hover,
+.dlabnav .metismenu .spmi-nav-child-link:hover,
+.header-right a:hover,
+.header-right button:hover {
+  transform: translateX(2px);
+}
+
+.dropdown-menu,
+.dropdown-menu.show,
+.dropdown-menu[style*="display: block"],
+.module-children-menu-child,
+.hris-module-dropdown,
+.profile-dropdown,
+.notification-dropdown,
+.select2-dropdown {
+  transform-origin: top center;
+  transition:
+    opacity var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease),
+    visibility var(--motion-fast) ease !important;
+}
+
+.dropdown-menu.show,
+.dropdown-menu[style*="display: block"],
+.module-children-menu-child,
+.hris-module-nav li:hover .hris-module-dropdown,
+.hris-module-nav li:focus-within .hris-module-dropdown,
+.profile-dropdown.show,
+.notification-dropdown.show {
+  animation: spmi-dropdown-in var(--motion-fast) var(--motion-ease) both;
+}
+
+.modal,
+.modal-backdrop,
+.offcanvas,
+.swal2-container {
+  transition:
+    opacity var(--motion-normal) ease,
+    transform var(--motion-normal) var(--motion-ease) !important;
+}
+
+.modal.show .modal-dialog,
+.modal-dialog,
+.offcanvas.show,
+.swal2-popup {
+  animation: spmi-modal-in var(--motion-normal) var(--motion-ease) both;
+}
+
+.toast,
+.toast.show,
+.Toastify__toast,
+.alert,
+.spmi-toast,
+.notification-card {
+  animation: spmi-toast-in var(--motion-normal) var(--motion-ease) both;
+  border-radius: 16px !important;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12) !important;
+  transition:
+    opacity var(--motion-normal) ease,
+    transform var(--motion-normal) var(--motion-ease),
+    box-shadow var(--motion-normal) ease !important;
+}
+
+.toast:hover,
+.Toastify__toast:hover,
+.alert:hover,
+.spmi-toast:hover,
+.notification-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14) !important;
+}
+
+.skeleton,
+.loading-skeleton,
+.spmi-skeleton,
+.placeholder,
+.placeholder-glow .placeholder,
+[data-loading="true"] {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  color: transparent !important;
+  background: linear-gradient(90deg, #eef2f7 0%, #f8fafc 42%, #eef2f7 84%) !important;
+  background-size: 220% 100% !important;
+  animation: spmi-skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+.skeleton *,
+.loading-skeleton *,
+.spmi-skeleton *,
+[data-loading="true"] * {
+  visibility: hidden;
+}
+
+.table tbody tr,
+.managed-card,
+.module-action-list-item,
+.list-group-item,
+.timeline-card {
+  transition:
+    background-color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) ease !important;
+}
+
+.table tbody tr:hover,
+.managed-card:hover,
+.module-action-list-item:hover,
+.list-group-item:hover,
+.timeline-card:hover {
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
