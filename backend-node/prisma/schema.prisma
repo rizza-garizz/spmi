@@ -8,6 +8,8 @@ datasource db {
 }
 
 enum Role {
+  super_admin
+  lpm
   admin_lpm
   auditor
   dekan
@@ -15,6 +17,7 @@ enum Role {
   kaprodi
   sekprodi
   unit_kerja
+  operator
   guest
 }
 

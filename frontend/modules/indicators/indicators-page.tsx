@@ -34,7 +34,7 @@ type CatalogOrgUnit = { code: string; name: string; type: string };
 
 export function IndicatorsPage() {
   const roles = useCurrentRoles();
-  const canEditIndicators = hasRoleAccess(["admin_lpm", "kaprodi", "sekprodi", "unit_kerja"], roles);
+  const canEditIndicators = hasRoleAccess(["super_admin", "lpm", "admin_lpm", "kaprodi", "sekprodi", "unit_kerja", "operator"], roles);
   const [indicators, setIndicators] = useState<Indicator[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -81,15 +81,18 @@ export function IndicatorsPage() {
 
   const fetchCatalog = async () => {
     try {
-      const res = await clientApiRequest("/catalog");
-      const json = await res.json();
-      const catalog = parseApiPayload<{ standards: CatalogStandard[]; orgUnits: CatalogOrgUnit[] }>(json, {
-        standards: [],
-        orgUnits: [],
-      });
-      const nextStandards = Array.isArray(catalog.standards) ? catalog.standards : [];
+      const [standardsRes, orgUnitsRes] = await Promise.all([
+        clientApiRequest("/standards"),
+        clientApiRequest("/org-units"),
+      ]);
+      const [standardsJson, orgUnitsJson] = await Promise.all([
+        standardsRes.json(),
+        orgUnitsRes.json(),
+      ]);
+      const nextStandards = parseApiPayload<CatalogStandard[]>(standardsJson, []);
+      const nextOrgUnits = parseApiPayload<CatalogOrgUnit[]>(orgUnitsJson, []);
       setStandards(nextStandards);
-      setOrgUnits(Array.isArray(catalog.orgUnits) ? catalog.orgUnits : []);
+      setOrgUnits(Array.isArray(nextOrgUnits) ? nextOrgUnits : []);
       setNewIndicator((current) => ({
         ...current,
         code: current.code || makeNextCode("IKU", indicators.map((item) => item.code)),

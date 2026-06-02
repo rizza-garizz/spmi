@@ -84,6 +84,22 @@ export function HrisPanelManager({
   const [openForms, setOpenForms] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState("");
 
+  function openForm(section: "positions" | "competencies" | "documents") {
+    setMessage("");
+    if (section === "positions") setEditingPosition(null);
+    if (section === "competencies") setEditingCompetency(null);
+    if (section === "documents") setEditingDocument(null);
+    setOpenForms((current) => ({ ...current, [section]: !current[section] }));
+  }
+
+  function closeForm(section: "positions" | "competencies" | "documents") {
+    setMessage("");
+    if (section === "positions") setEditingPosition(null);
+    if (section === "competencies") setEditingCompetency(null);
+    if (section === "documents") setEditingDocument(null);
+    setOpenForms((current) => ({ ...current, [section]: false }));
+  }
+
   async function submitRecord<T>(
     event: FormEvent<HTMLFormElement>,
     endpoint: string,
@@ -94,6 +110,11 @@ export function HrisPanelManager({
     event.preventDefault();
     const form = event.currentTarget;
     const payload = Object.fromEntries(new FormData(form).entries());
+
+    if (employees.length === 0 && ("employee" in payload || "holder" in payload)) {
+      setMessage("Data pegawai belum tersedia. Tambahkan pegawai terlebih dahulu sebelum menyimpan data HRIS terkait.");
+      return;
+    }
 
     if (!hasApiBaseUrl()) {
       setMessage("API belum dikonfigurasi. Data tidak ditulis agar tetap sinkron.");
@@ -126,6 +147,11 @@ export function HrisPanelManager({
     event.preventDefault();
     const form = event.currentTarget;
     const payload = new FormData(form);
+
+    if (employees.length === 0) {
+      setMessage("Data pegawai belum tersedia. Tambahkan pegawai terlebih dahulu sebelum menyimpan dokumen SDM.");
+      return;
+    }
 
     if (!hasApiBaseUrl()) {
       setMessage("API belum dikonfigurasi. Data tidak ditulis agar tetap sinkron.");
@@ -195,17 +221,17 @@ export function HrisPanelManager({
         </div>
         <div className="hris-toolbar-actions">
           {sections.includes("positions") ? (
-            <button className="btn btn-primary" type="button" onClick={() => setOpenForms((current) => ({ ...current, positions: !current.positions }))}>
+            <button className="btn btn-primary" type="button" onClick={() => openForm("positions")}>
               {openForms.positions ? "Tutup Form Jabatan" : "Tambah Jabatan"}
             </button>
           ) : null}
           {sections.includes("competencies") ? (
-            <button className="btn btn-primary" type="button" onClick={() => setOpenForms((current) => ({ ...current, competencies: !current.competencies }))}>
+            <button className="btn btn-primary" type="button" onClick={() => openForm("competencies")}>
               {openForms.competencies ? "Tutup Form Kompetensi" : "Tambah Kompetensi"}
             </button>
           ) : null}
           {sections.includes("documents") ? (
-            <button className="btn btn-primary" type="button" onClick={() => setOpenForms((current) => ({ ...current, documents: !current.documents }))}>
+            <button className="btn btn-primary" type="button" onClick={() => openForm("documents")}>
               {openForms.documents ? "Tutup Form Dokumen" : "Tambah Dokumen"}
             </button>
           ) : null}
@@ -273,9 +299,9 @@ export function HrisPanelManager({
                 </div>
                 <button className="btn btn-primary w-100" type="submit">{editingPosition ? "Update Jabatan" : "Simpan Jabatan"}</button>
                 {editingPosition ? (
-                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setEditingPosition(null)}>Batal Edit</button>
+                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => closeForm("positions")}>Batal Edit</button>
                 ) : openForms.positions ? (
-                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setOpenForms((current) => ({ ...current, positions: false }))}>Batal</button>
+                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => closeForm("positions")}>Batal</button>
                 ) : null}
               </form>
             </div>
@@ -323,11 +349,18 @@ export function HrisPanelManager({
                   <div className="col-md-6">
                     <div className="form-group mb-3">
                       <label className="form-label" htmlFor="hris-competency-category">Kategori</label>
-                      <select id="hris-competency-category" name="category" className="form-control" defaultValue={editingCompetency?.category || "Sertifikasi"}>
-                        <option value="Sertifikasi">Sertifikasi</option>
-                        <option value="Pelatihan">Pelatihan</option>
-                        <option value="Kompetensi">Kompetensi</option>
-                      </select>
+                      {competencyCategory ? (
+                        <>
+                          <input type="hidden" name="category" value={competencyCategory} />
+                          <input id="hris-competency-category" className="form-control" value={competencyCategory} readOnly />
+                        </>
+                      ) : (
+                        <select id="hris-competency-category" name="category" className="form-control" defaultValue={editingCompetency?.category || "Sertifikasi"}>
+                          <option value="Sertifikasi">Sertifikasi</option>
+                          <option value="Pelatihan">Pelatihan</option>
+                          <option value="Kompetensi">Kompetensi</option>
+                        </select>
+                      )}
                     </div>
                   </div>
                   <div className="col-md-6">
@@ -347,9 +380,9 @@ export function HrisPanelManager({
                 </div>
                 <button className="btn btn-primary w-100" type="submit">{editingCompetency ? "Update Kompetensi" : "Simpan Kompetensi"}</button>
                 {editingCompetency ? (
-                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setEditingCompetency(null)}>Batal Edit</button>
+                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => closeForm("competencies")}>Batal Edit</button>
                 ) : openForms.competencies ? (
-                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setOpenForms((current) => ({ ...current, competencies: false }))}>Batal</button>
+                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => closeForm("competencies")}>Batal</button>
                 ) : null}
               </form>
             </div>
@@ -381,13 +414,20 @@ export function HrisPanelManager({
                 </div>
                 <div className="form-group mb-3">
                   <label className="form-label" htmlFor="hris-document-type">Jenis Dokumen</label>
-                  <select id="hris-document-type" name="type" className="form-control" defaultValue={editingDocument?.type || "SK Jabatan"}>
-                    <option value="SK Jabatan">SK Jabatan</option>
-                    <option value="Sertifikat">Sertifikat</option>
-                    <option value="SK Pengangkatan">SK Pengangkatan</option>
-                    <option value="Ijazah">Ijazah</option>
-                    <option value="Surat Tugas">Surat Tugas</option>
-                  </select>
+                  {documentType ? (
+                    <>
+                      <input type="hidden" name="type" value={documentType} />
+                      <input id="hris-document-type" className="form-control" value={documentType} readOnly />
+                    </>
+                  ) : (
+                    <select id="hris-document-type" name="type" className="form-control" defaultValue={editingDocument?.type || "SK Jabatan"}>
+                      <option value="SK Jabatan">SK Jabatan</option>
+                      <option value="Sertifikat">Sertifikat</option>
+                      <option value="SK Pengangkatan">SK Pengangkatan</option>
+                      <option value="Ijazah">Ijazah</option>
+                      <option value="Surat Tugas">Surat Tugas</option>
+                    </select>
+                  )}
                 </div>
                 <div className="form-group mb-3">
                   <label className="form-label" htmlFor="hris-document-status">Status</label>
@@ -404,9 +444,9 @@ export function HrisPanelManager({
                 </div>
                 <button className="btn btn-primary w-100" type="submit">{editingDocument ? "Update Dokumen" : "Simpan Dokumen"}</button>
                 {editingDocument ? (
-                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setEditingDocument(null)}>Batal Edit</button>
+                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => closeForm("documents")}>Batal Edit</button>
                 ) : openForms.documents ? (
-                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setOpenForms((current) => ({ ...current, documents: false }))}>Batal</button>
+                  <button className="btn btn-light w-100 mt-2" type="button" onClick={() => closeForm("documents")}>Batal</button>
                 ) : null}
               </form>
             </div>
@@ -414,7 +454,7 @@ export function HrisPanelManager({
         </div> : null}
       </div>
 
-      {message ? <div className="alert alert-info">{message}</div> : null}
+      {message ? <div className="alert alert-info" role="status">{message}</div> : null}
 
       <div className="row">
         {sections.includes("positions") ? <div className={sections.length === 1 && !openForms.positions && !editingPosition ? "col-xl-12" : "col-xl-4 col-xxl-4 col-lg-4"}>
@@ -430,7 +470,7 @@ export function HrisPanelManager({
                     <div className="text-muted">{position.holder}</div>
                     <span className="badge badge-light mt-2">{position.unit} · {position.period}</span>
                     <div className="mt-2">
-                      <button className="btn btn-sm btn-outline-secondary me-2" type="button" onClick={() => setEditingPosition(position)}>Edit</button>
+                      <button className="btn btn-sm btn-outline-secondary me-2" type="button" onClick={() => { setMessage(""); setEditingPosition(position); }}>Edit</button>
                       {position.id ? (
                         <button className="btn btn-sm btn-outline-danger" type="button" onClick={() => deleteRecord(`/hris/positions/${position.id}`, () => setPositions((current) => current.filter((item) => item.id !== position.id)), "Jabatan berhasil dihapus dari HRIS.")}>Hapus</button>
                       ) : null}
@@ -455,7 +495,7 @@ export function HrisPanelManager({
                     <div className="text-muted">{item.employee}</div>
                     <span className="badge badge-primary mt-2">{item.category} · {item.year} · {item.status}</span>
                     <div className="mt-2">
-                      <button className="btn btn-sm btn-outline-secondary me-2" type="button" onClick={() => setEditingCompetency(item)}>Edit</button>
+                      <button className="btn btn-sm btn-outline-secondary me-2" type="button" onClick={() => { setMessage(""); setEditingCompetency(item); }}>Edit</button>
                       {item.id ? (
                         <button className="btn btn-sm btn-outline-danger" type="button" onClick={() => deleteRecord(`/hris/competencies/${item.id}`, () => setCompetencies((current) => current.filter((competency) => competency.id !== item.id)), "Kompetensi berhasil dihapus dari HRIS.")}>Hapus</button>
                       ) : null}
@@ -483,7 +523,7 @@ export function HrisPanelManager({
                     </span>
                     {item.fileName ? <div className="text-muted mt-2" style={{ fontSize: "0.8rem" }}>File: {item.fileName}</div> : null}
                     <div className="mt-2">
-                      <button className="btn btn-sm btn-outline-secondary me-2" type="button" onClick={() => setEditingDocument(item)}>Edit</button>
+                      <button className="btn btn-sm btn-outline-secondary me-2" type="button" onClick={() => { setMessage(""); setEditingDocument(item); }}>Edit</button>
                       {item.id ? (
                         <button className="btn btn-sm btn-outline-danger" type="button" onClick={() => deleteRecord(`/hris/documents/${item.id}`, () => setDocuments((current) => current.filter((document) => document.id !== item.id)), "Dokumen SDM berhasil dihapus dari HRIS.")}>Hapus</button>
                       ) : null}

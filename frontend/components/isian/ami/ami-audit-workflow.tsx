@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { hasRoleAccess } from "@/lib/spmi-access";
+import { useCurrentRoles } from "@/lib/spmi-access-client";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
 
 type AmiFinding = {
@@ -46,6 +48,9 @@ const categoryOptions = ["Minor", "Mayor", "Observasi"];
 export function AmiAuditWorkflow({ audits }: { audits: AmiAudit[] }) {
   const [items, setItems] = useState(audits);
   const [message, setMessage] = useState("");
+  const roles = useCurrentRoles();
+  const canWriteAmi = hasRoleAccess(["super_admin", "lpm", "admin_lpm", "auditor"], roles);
+  const canUpdateRtl = hasRoleAccess(["super_admin", "lpm", "admin_lpm", "kaprodi", "sekprodi", "unit_kerja", "operator"], roles);
 
   async function patchAudit(path: string, body: Record<string, unknown>) {
     if (!hasApiBaseUrl()) {
@@ -155,9 +160,11 @@ export function AmiAuditWorkflow({ audits }: { audits: AmiAudit[] }) {
                 Auditor: {audit.auditor?.name || "-"} · Jadwal: {audit.scheduled_date || "-"} · Status: {audit.status}
               </p>
             </div>
-            <button className="btn btn-sm btn-primary" type="button" onClick={() => updateAssignment(audit)}>
-              Update Penugasan
-            </button>
+            {canWriteAmi ? (
+              <button className="btn btn-sm btn-primary" type="button" onClick={() => updateAssignment(audit)}>
+                Update Penugasan
+              </button>
+            ) : null}
           </div>
 
           <div className="grid grid-4">
@@ -174,35 +181,45 @@ export function AmiAuditWorkflow({ audits }: { audits: AmiAudit[] }) {
                 {(audit.instruments || []).map((instrument) => (
                   <div className="d-flex justify-content-between align-items-center mb-2" key={instrument.id}>
                     <span>{instrument.code} · {instrument.title}</span>
-                    <button className="btn btn-sm btn-outline-primary" type="button" onClick={() => checkInstrument(audit, instrument)}>
-                      Periksa
-                    </button>
+                    {canWriteAmi ? (
+                      <button className="btn btn-sm btn-outline-primary" type="button" onClick={() => checkInstrument(audit, instrument)}>
+                        Periksa
+                      </button>
+                    ) : null}
                   </div>
                 ))}
               </div>
             </div>
             <div className="card">
               <div className="card-body">
-                <h5>Tambah Temuan</h5>
-                <div className="form-actions">
-                  {categoryOptions.map((category) => (
-                    <button className="btn btn-sm btn-outline-primary" type="button" key={category} onClick={() => addFinding(audit, category)}>
-                      {category}
-                    </button>
-                  ))}
-                </div>
-                <hr />
+                {canWriteAmi ? (
+                  <>
+                    <h5>Tambah Temuan</h5>
+                    <div className="form-actions">
+                      {categoryOptions.map((category) => (
+                        <button className="btn btn-sm btn-outline-primary" type="button" key={category} onClick={() => addFinding(audit, category)}>
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+                    <hr />
+                  </>
+                ) : null}
                 {(audit.findings || []).slice(0, 4).map((finding) => (
                   <div className="mb-3" key={finding.id}>
                     <strong>{finding.category}</strong>
                     <p className="mb-1 text-muted">{finding.description}</p>
                     <div className="form-actions">
-                      <button className="btn btn-sm btn-outline-warning" type="button" onClick={() => followUp(audit, finding)}>
-                        Tindak Lanjut
-                      </button>
-                      <button className="btn btn-sm btn-success" type="button" onClick={() => verify(audit, finding)}>
-                        Verifikasi
-                      </button>
+                      {canUpdateRtl ? (
+                        <button className="btn btn-sm btn-outline-warning" type="button" onClick={() => followUp(audit, finding)}>
+                          Tindak Lanjut
+                        </button>
+                      ) : null}
+                      {canWriteAmi ? (
+                        <button className="btn btn-sm btn-success" type="button" onClick={() => verify(audit, finding)}>
+                          Verifikasi
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 ))}

@@ -31,7 +31,7 @@ export function RtlPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  const canUpdateActions = hasRoleAccess(["admin_lpm", "kaprodi", "sekprodi", "unit_kerja"], roles);
+  const canUpdateActions = hasRoleAccess(["super_admin", "lpm", "admin_lpm", "kaprodi", "sekprodi", "unit_kerja", "operator"], roles);
 
   const fetchActions = async () => {
     try {

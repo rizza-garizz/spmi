@@ -1,7 +1,6 @@
-import { getCatalogSnapshot } from "@/lib/spmi-catalog-api";
-import { HrisEmployeeManager } from "@/components/hris/hris-employee-manager";
+import { getHrisSummary } from "@/lib/spmi-catalog-api";
 import { HrisModuleMenu, HrisStructureMap } from "@/components/hris/hris-module-menu";
-import { HrisPanelManager } from "@/components/hris/hris-panel-manager";
+import { DeferredHrisEmployeeManager, DeferredHrisPanelManager } from "@/components/hris/deferred-hris-managers";
 
 type EmployeeTypeFilter = "Dosen" | "Tendik" | "Dosen dengan Tugas Tambahan";
 
@@ -26,8 +25,7 @@ function HrisHeader({ title, subtitle }: { title: string; subtitle: string }) {
 }
 
 export async function HrisOverviewPage() {
-  const catalog = await getCatalogSnapshot();
-  const hris = catalog.hris;
+  const hris = await getHrisSummary();
 
   return (
     <>
@@ -66,37 +64,37 @@ export async function HrisMasterStructurePage() {
 }
 
 export async function HrisEmployeePage({ filterType }: { filterType?: EmployeeTypeFilter }) {
-  const catalog = await getCatalogSnapshot();
+  const hris = await getHrisSummary();
   const title = filterType || "Master Pegawai";
   const employees = filterType
-    ? catalog.hris.employees.filter((employee) => employee.type === filterType)
-    : catalog.hris.employees;
+    ? hris.employees.filter((employee) => employee.type === filterType)
+    : hris.employees;
 
   return (
     <>
       <HrisHeader title={title} subtitle="Kelola data pegawai dan identitas SDM." />
       <HrisModuleMenu />
-      <HrisEmployeeManager initialEmployees={employees} />
+      <DeferredHrisEmployeeManager initialEmployees={employees} />
     </>
   );
 }
 
 export async function HrisPositionPage({ structuralOnly = false }: { structuralOnly?: boolean }) {
-  const catalog = await getCatalogSnapshot();
+  const hris = await getHrisSummary();
   const positions = structuralOnly
-    ? catalog.hris.positions.filter((position) => !["Staff SDM", "Dosen Tetap"].includes(position.title))
-    : catalog.hris.positions;
+    ? hris.positions.filter((position) => !["Staff SDM", "Dosen Tetap"].includes(position.title))
+    : hris.positions;
 
   return (
     <>
       <HrisHeader title={structuralOnly ? "Jabatan Struktural" : "Jabatan"} subtitle="Kelola jabatan aktif dan struktur penugasan SDM." />
       <HrisModuleMenu />
       {!structuralOnly ? <HrisStructureMap rootHref="/hris/jabatan" /> : null}
-      <HrisPanelManager
-        employees={catalog.hris.employees}
+      <DeferredHrisPanelManager
+        employees={hris.employees}
         initialPositions={positions}
-        initialCompetencies={catalog.hris.competencies}
-        initialDocuments={catalog.hris.documents}
+        initialCompetencies={hris.competencies}
+        initialDocuments={hris.documents}
         sections={["positions"]}
       />
     </>
@@ -104,18 +102,18 @@ export async function HrisPositionPage({ structuralOnly = false }: { structuralO
 }
 
 export async function HrisCompetencyPage({ category }: { category?: string }) {
-  const catalog = await getCatalogSnapshot();
+  const hris = await getHrisSummary();
 
   return (
     <>
       <HrisHeader title={category || "Kompetensi"} subtitle="Kelola sertifikasi, pelatihan, dan kompetensi SDM." />
       <HrisModuleMenu />
       {!category ? <HrisStructureMap rootHref="/hris/kompetensi" /> : null}
-      <HrisPanelManager
-        employees={catalog.hris.employees}
-        initialPositions={catalog.hris.positions}
-        initialCompetencies={catalog.hris.competencies}
-        initialDocuments={catalog.hris.documents}
+      <DeferredHrisPanelManager
+        employees={hris.employees}
+        initialPositions={hris.positions}
+        initialCompetencies={hris.competencies}
+        initialDocuments={hris.documents}
         sections={["competencies"]}
         competencyCategory={category}
       />
@@ -124,18 +122,18 @@ export async function HrisCompetencyPage({ category }: { category?: string }) {
 }
 
 export async function HrisDocumentPage({ type, title }: { type?: string; title?: string }) {
-  const catalog = await getCatalogSnapshot();
+  const hris = await getHrisSummary();
 
   return (
     <>
       <HrisHeader title={title || type || "Dokumen SDM"} subtitle="Kelola dokumen dan file eviden sumber daya manusia." />
       <HrisModuleMenu />
       {!type ? <HrisStructureMap rootHref="/hris/dokumen" /> : null}
-      <HrisPanelManager
-        employees={catalog.hris.employees}
-        initialPositions={catalog.hris.positions}
-        initialCompetencies={catalog.hris.competencies}
-        initialDocuments={catalog.hris.documents}
+      <DeferredHrisPanelManager
+        employees={hris.employees}
+        initialPositions={hris.positions}
+        initialCompetencies={hris.competencies}
+        initialDocuments={hris.documents}
         sections={["documents"]}
         documentType={type}
       />
@@ -144,7 +142,7 @@ export async function HrisDocumentPage({ type, title }: { type?: string; title?:
 }
 
 export async function HrisIntegrationPage({ focus }: { focus?: "standar" | "ami" }) {
-  const catalog = await getCatalogSnapshot();
+  const hris = await getHrisSummary();
 
   return (
     <>
@@ -159,7 +157,7 @@ export async function HrisIntegrationPage({ focus }: { focus?: "standar" | "ami"
             </div>
             <div className="card-body">
               <ul className="list-group list-group-flush">
-                {catalog.hris.spmiLinks.map((item) => (
+                {hris.spmiLinks.map((item) => (
                   <li className="list-group-item" key={item}>
                     <i className="la la-check text-success me-2"></i>{item}
                   </li>

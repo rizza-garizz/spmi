@@ -1,4 +1,5 @@
 import { getAmiAudits } from "@/lib/spmi-catalog-api";
+import { RoleGate } from "@/components/auth/RoleGate";
 import { CreateAmiAuditForm } from "@/components/isian/ami/create-ami-audit-form";
 import { AmiAuditWorkflow } from "@/components/isian/ami/ami-audit-workflow";
 import { ProgressiveSection } from "@/components/support/progressive-section";
@@ -133,22 +134,24 @@ export default async function AmiPage() {
         </div>
       </div>
 
-      <div className="row">
-        <div className="col-xl-12 col-xxl-12 col-sm-12">
-          <ProgressiveSection
-            eyebrow="Audit"
-            title="Jadwalkan Audit Baru"
-            description="Operator bisa fokus membaca daftar audit. Penjadwalan baru dibuka saat diperlukan."
-            actionLabel="Jadwalkan Audit"
-          >
-            <div className="card">
-              <div className="card-body">
-                <CreateAmiAuditForm initialItems={audits} />
+      <RoleGate allowedRoles={["super_admin", "lpm", "admin_lpm", "auditor"]}>
+        <div className="row">
+          <div className="col-xl-12 col-xxl-12 col-sm-12">
+            <ProgressiveSection
+              eyebrow="Audit"
+              title="Jadwalkan Audit Baru"
+              description="Operator bisa fokus membaca daftar audit. Penjadwalan baru dibuka saat diperlukan."
+              actionLabel="Jadwalkan Audit"
+            >
+              <div className="card">
+                <div className="card-body">
+                  <CreateAmiAuditForm initialItems={audits} />
+                </div>
               </div>
-            </div>
-          </ProgressiveSection>
+            </ProgressiveSection>
+          </div>
         </div>
-      </div>
+      </RoleGate>
     </>
   );
 }

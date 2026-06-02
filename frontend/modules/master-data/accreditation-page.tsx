@@ -1,35 +1,87 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4000";
+import { clientApiRequest, parseApiPayload } from "@/lib/spmi-session-client";
 
 interface Accreditation {
-  id: number;
+  id: string;
+  faculty_name: string;
   unit_name: string;
-  rank: string; // Unggul, Baik Sekali, Baik, A, B, C
-  instrument: string; // BAN-PT, LAM-TEKNIK, etc.
+  level: string;
+  rank: string;
+  sk: string;
+  instrument: string;
   expiry_date: string;
   certificate_url: string | null;
 }
 
+type CatalogFaculty = {
+  code: string;
+  name: string;
+  programs?: Array<{
+    name: string;
+    level: string;
+    accreditation?: {
+      rank?: string;
+      sk?: string;
+      expiry?: string;
+      instrument?: string;
+      certificate?: string | null;
+    };
+  }>;
+};
+
 export function AccreditationPage() {
   const [data, setData] = useState<Accreditation[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Mock data as fallback for now
-  const mockData: Accreditation[] = [
-    { id: 1, unit_name: "S1 Teknik Informatika", rank: "Unggul", instrument: "LAM-INFOKOM", expiry_date: "2026-12-31", certificate_url: "#" },
-    { id: 2, unit_name: "S1 Sistem Informasi", rank: "Baik Sekali", instrument: "LAM-INFOKOM", expiry_date: "2024-08-15", certificate_url: "#" },
-    { id: 3, unit_name: "S1 Manajemen", rank: "A", instrument: "BAN-PT", expiry_date: "2025-05-20", certificate_url: "#" },
-  ];
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // Simulating fetch
-    setTimeout(() => {
-      setData(mockData);
-      setLoading(false);
-    }, 500);
+    let active = true;
+
+    async function loadAccreditation() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await clientApiRequest("/catalog");
+        const payload = await response.json();
+        const catalog = parseApiPayload<{ faculties?: CatalogFaculty[] }>(payload, { faculties: [] });
+        const rows = (catalog.faculties || []).flatMap((faculty) =>
+          (faculty.programs || [])
+            .filter((program) => program.accreditation)
+            .map((program) => ({
+              id: `${faculty.code}-${program.name}`,
+              faculty_name: faculty.name,
+              unit_name: program.name,
+              level: program.level,
+              rank: program.accreditation?.rank || "-",
+              sk: program.accreditation?.sk || "-",
+              instrument: program.accreditation?.instrument || "-",
+              expiry_date: program.accreditation?.expiry || "",
+              certificate_url: program.accreditation?.certificate || null,
+            }))
+        );
+
+        if (active) {
+          setData(rows);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err.message : "Data akreditasi gagal dimuat.");
+          setData([]);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadAccreditation();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const getDaysLeft = (expiry: string) => {
@@ -65,12 +117,16 @@ export function AccreditationPage() {
             </div>
             <div className="card-body">
               <div className="table-responsive">
+                {error && <div className="alert alert-outline-danger">{error}</div>}
                 <table className="table table-bordered table-responsive-sm">
                   <thead className="thead-primary">
                     <tr>
+                      <th>Fakultas</th>
                       <th>Program Studi</th>
+                      <th>Jenjang</th>
                       <th>Peringkat</th>
                       <th>Lembaga/Instrumen</th>
+                      <th>SK</th>
                       <th>Berlaku Sampai</th>
                       <th>Status Sisa Hari</th>
                       <th>Aksi</th>
@@ -78,19 +134,24 @@ export function AccreditationPage() {
                   </thead>
                   <tbody>
                     {loading ? (
-                      <tr><td colSpan={6} className="text-center">Memuat...</td></tr>
+                      <tr><td colSpan={9} className="text-center">Memuat...</td></tr>
+                    ) : data.length === 0 ? (
+                      <tr><td colSpan={9} className="text-center">Data akreditasi belum tersedia.</td></tr>
                     ) : data.map((item) => {
                       const days = getDaysLeft(item.expiry_date);
                       const statusColor = days < 180 ? "text-danger font-w600" : "text-dark";
                       return (
                         <tr key={item.id}>
+                          <td>{item.faculty_name}</td>
                           <td>{item.unit_name}</td>
+                          <td>{item.level}</td>
                           <td>
                             <span className={`badge ${getRankBadge(item.rank)}`}>
                               {item.rank}
                             </span>
                           </td>
                           <td>{item.instrument}</td>
+                          <td>{item.sk}</td>
                           <td>{item.expiry_date}</td>
                           <td>
                             <span className={statusColor}>
@@ -99,7 +160,11 @@ export function AccreditationPage() {
                             </span>
                           </td>
                           <td>
-                            <a href={item.certificate_url || "#"} className="btn btn-xs btn-outline-primary">
+                            <a
+                              href={item.certificate_url || "#"}
+                              className={`btn btn-xs btn-outline-primary${!item.certificate_url ? " disabled" : ""}`}
+                              aria-disabled={!item.certificate_url}
+                            >
                               <i className="la la-download"></i> Sertifikat
                             </a>
                           </td>

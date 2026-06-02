@@ -1,26 +1,27 @@
-const INSTITUTION_ROLES = new Set(["admin_lpm"]);
+const INSTITUTION_ROLES = new Set(["super_admin", "admin_lpm"]);
+const LPM_ROLES = new Set(["lpm", "admin_lpm"]);
 const FACULTY_ROLES = new Set(["dekan", "wakil_dekan"]);
 const PROGRAM_ROLES = new Set(["kaprodi", "sekprodi"]);
-const UNIT_ROLES = new Set(["unit_kerja"]);
+const UNIT_ROLES = new Set(["unit_kerja", "operator"]);
 const AUDIT_ROLES = new Set(["auditor"]);
 const catalog = require("../../data/spmi-catalog.json");
 
 const ROLE_GROUPS = {
-  admin: ["admin_lpm"],
-  lpm_bpm: ["admin_lpm", "auditor"],
+  admin: ["super_admin", "admin_lpm"],
+  lpm_bpm: ["lpm", "admin_lpm", "auditor"],
   fakultas: ["dekan", "wakil_dekan"],
   prodi: ["kaprodi", "sekprodi"],
-  unit_pendukung: ["unit_kerja"],
+  unit_pendukung: ["unit_kerja", "operator"],
   auditor: ["auditor"],
   pimpinan: ["dekan", "wakil_dekan"],
 };
 
 const APPROVAL_CHAIN = [
-  { step: "draft", ownerRoles: ["unit_kerja", "sekprodi"], next: "review_prodi" },
+  { step: "draft", ownerRoles: ["unit_kerja", "operator", "sekprodi"], next: "review_prodi" },
   { step: "review_prodi", ownerRoles: ["kaprodi"], next: "review_fakultas" },
   { step: "review_fakultas", ownerRoles: ["dekan", "wakil_dekan"], next: "review_lpm" },
-  { step: "review_lpm", ownerRoles: ["admin_lpm"], next: "approved" },
-  { step: "approved", ownerRoles: ["admin_lpm"], next: null },
+  { step: "review_lpm", ownerRoles: ["lpm", "admin_lpm", "super_admin"], next: "approved" },
+  { step: "approved", ownerRoles: ["lpm", "admin_lpm", "super_admin"], next: null },
 ];
 
 function getUserRoles(user) {
@@ -42,7 +43,7 @@ function canApproveStep(user, step) {
   const workflow = APPROVAL_CHAIN.find((item) => item.step === step);
   if (!workflow) return false;
   const roles = getUserRoles(user);
-  return workflow.ownerRoles.some((role) => roles.includes(role));
+  return roles.includes("super_admin") || workflow.ownerRoles.some((role) => roles.includes(role));
 }
 
 function getOrgUnitCode(user) {
@@ -69,6 +70,7 @@ function canAccessOrgUnit(user, targetOrgUnitCode, options = {}) {
 
   const roles = getUserRoles(user);
   if (roles.some((role) => INSTITUTION_ROLES.has(role))) return true;
+  if (roles.some((role) => LPM_ROLES.has(role))) return true;
   if (options.allowAuditor && roles.some((role) => AUDIT_ROLES.has(role))) return true;
 
   const scopeCode = getOrgUnitCode(user);
@@ -164,6 +166,7 @@ function transitionApproval(item, user, action, note = "") {
 function getScopeLevel(user) {
   const roles = getUserRoles(user);
   if (roles.some((role) => INSTITUTION_ROLES.has(role))) return "institution";
+  if (roles.some((role) => LPM_ROLES.has(role))) return "institution";
   if (roles.some((role) => FACULTY_ROLES.has(role))) return "faculty";
   if (roles.some((role) => PROGRAM_ROLES.has(role))) return "program";
   if (roles.some((role) => UNIT_ROLES.has(role))) return "unit";

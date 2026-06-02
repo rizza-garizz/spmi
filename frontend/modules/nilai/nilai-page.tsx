@@ -1,37 +1,19 @@
 import { getCatalogSnapshot, getDashboardSummary, getAmiAudits, getImports, getRtmMeetings, getSurveys } from "@/lib/spmi-catalog-api";
 
 export async function NilaiPage() {
-  const catalog = await getCatalogSnapshot();
-  const summary = await getDashboardSummary();
+  const [catalog, summary, auditsResult, importsResult, meetingsResult, surveysResult] = await Promise.all([
+    getCatalogSnapshot(),
+    getDashboardSummary(),
+    getAmiAudits().catch(() => ({ data: [] as any[] })),
+    getImports().catch(() => ({ data: [] as Array<{ id: number; type: string; title: string; status: string }> })),
+    getRtmMeetings().catch(() => ({ data: [] as any[] })),
+    getSurveys().catch(() => ({ data: [] as any[] })),
+  ]);
 
-  let audits: any[] = [];
-  let imports: Array<{ id: number; type: string; title: string; status: string }> = [];
-  let meetings: any[] = [];
-  let surveys: any[] = [];
-
-  try {
-    audits = (await getAmiAudits()).data;
-  } catch {
-    audits = [];
-  }
-
-  try {
-    imports = (await getImports()).data;
-  } catch {
-    imports = [];
-  }
-
-  try {
-    meetings = (await getRtmMeetings()).data;
-  } catch {
-    meetings = [];
-  }
-
-  try {
-    surveys = (await getSurveys()).data;
-  } catch {
-    surveys = [];
-  }
+  const audits = auditsResult.data;
+  const imports = importsResult.data;
+  const meetings = meetingsResult.data;
+  const surveys = surveysResult.data;
 
   const quickStats = summary.metrics ?? [];
   const modules = summary.modules ?? [];

@@ -60,6 +60,7 @@ async function login(req, res) {
     if (localUser && await bcrypt.compare(password, localUser.passwordHash)) {
       const token = signToken(localUser);
       const decoded = jwt.decode(token) || {};
+      res.locals.auditActor = localUser;
 
       return success(
         res,
@@ -88,6 +89,7 @@ async function login(req, res) {
 
   const token = signToken(user);
   const decoded = jwt.decode(token) || {};
+  res.locals.auditActor = user;
 
   return success(
     res,

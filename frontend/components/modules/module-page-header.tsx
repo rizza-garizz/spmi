@@ -1,4 +1,9 @@
+"use client";
+
+import { hasRoleAccess } from "@/lib/spmi-access";
+import { useCurrentRoles } from "@/lib/spmi-access-client";
 import { findModuleNodeByHref, moduleRegistry, moduleSectionDescriptions, type ModuleNode } from "@/lib/module-registry";
+import { EnterpriseModuleWorkspace } from "@/components/modules/enterprise-module-workspace";
 
 type ModulePageHeaderProps = {
   href?: string;
@@ -29,6 +34,7 @@ export function ModulePageHeader({ href, node, title, description, eyebrow = "Mo
 }
 
 export function ModuleSectionLanding({ sectionId }: { sectionId: string }) {
+  const roles = useCurrentRoles();
   const section = moduleRegistry.find((item) => item.id === sectionId);
 
   if (!section) {
@@ -39,23 +45,26 @@ export function ModuleSectionLanding({ sectionId }: { sectionId: string }) {
     );
   }
 
+  const allowedChildren = section.children.filter((node) => hasRoleAccess(node.roles, roles));
+  const sectionWorkspaceNode: ModuleNode = {
+    id: section.id,
+    label: section.label,
+    href: `/modules/${section.id}`,
+    icon: "la-layer-group",
+    description: moduleSectionDescriptions[section.id] ?? "Pilih child module sesuai pekerjaan yang ingin dibuka.",
+    roles,
+    status: "active",
+    children: allowedChildren,
+  };
+
   return (
-    <main>
-      <ModulePageHeader
-        title={section.label}
-        description={moduleSectionDescriptions[section.id] ?? "Pilih child module sesuai pekerjaan yang ingin dibuka."}
-        eyebrow="Tahap Proses Bisnis"
-      />
-      <section className="module-landing-grid">
-        {section.children.map((node) => (
-          <ModuleLandingCard node={node} key={node.id} />
-        ))}
-      </section>
-    </main>
+    <EnterpriseModuleWorkspace node={sectionWorkspaceNode} trail={[sectionWorkspaceNode]} eyebrow="Tahap Proses Bisnis" />
   );
 }
 
-function ModuleLandingCard({ node }: { node: ModuleNode }) {
+function ModuleLandingCard({ node, roles }: { node: ModuleNode; roles: ReturnType<typeof useCurrentRoles> }) {
+  const allowedChildren = (node.children || []).filter((child) => hasRoleAccess(child.roles, roles));
+
   return (
     <article className="module-landing-card">
       <div className="module-landing-card-head">
@@ -64,9 +73,9 @@ function ModuleLandingCard({ node }: { node: ModuleNode }) {
       </div>
       <h2>{node.label}</h2>
       <p>{node.description}</p>
-      {node.children && node.children.length > 0 ? (
+      {allowedChildren.length > 0 ? (
         <div className="module-child-list">
-          {node.children.slice(0, 5).map((child) => (
+          {allowedChildren.slice(0, 5).map((child) => (
             <a href={child.href} key={child.id}>
               <span>{child.label}</span>
               <i className="la la-angle-right"></i>

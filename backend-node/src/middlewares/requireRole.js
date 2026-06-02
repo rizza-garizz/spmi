@@ -13,7 +13,7 @@ module.exports = function requireRole(...roles) {
         ? roleAssignments
         : [req.user.role];
 
-    if (!assignedRoles.some((role) => roles.includes(role))) {
+    if (!assignedRoles.includes("super_admin") && !assignedRoles.some((role) => roles.includes(role))) {
       return failure(res, "Anda tidak memiliki akses ke resource ini", 403);
     }
 

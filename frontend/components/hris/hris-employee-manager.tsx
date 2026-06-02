@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { clientApiRequest, dispatchAppEvent, hasApiBaseUrl } from "@/lib/spmi-session-client";
 import { useSpmiCatalogOptions } from "@/lib/use-spmi-catalog-options";
 
@@ -31,7 +31,9 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  const filteredEmployees = employees.filter((employee) => {
+  const typeOptions = useMemo(() => Array.from(new Set(employees.map((employee) => employee.type).filter(Boolean))).sort(), [employees]);
+  const statusOptions = useMemo(() => Array.from(new Set(employees.map((employee) => employee.status).filter(Boolean))).sort(), [employees]);
+  const filteredEmployees = useMemo(() => employees.filter((employee) => {
     const haystack = [
       employee.name,
       employee.email,
@@ -48,9 +50,15 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
       (!typeFilter || employee.type === typeFilter) &&
       (!statusFilter || employee.status === statusFilter)
     );
-  });
+  }), [employees, searchTerm, statusFilter, typeFilter]);
   const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / pageSize));
-  const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedEmployees = useMemo(() => filteredEmployees.slice((currentPage - 1) * pageSize, currentPage * pageSize), [currentPage, filteredEmployees]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   function resetFilters() {
     setSearchTerm("");
@@ -60,6 +68,11 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
   }
 
   function exportCsv() {
+    if (filteredEmployees.length === 0) {
+      setMessage("Tidak ada data pegawai untuk diekspor.");
+      return;
+    }
+
     const rows = [
       ["Nama", "NIP", "NIDN", "Email", "Tipe", "Status", "Unit", "Jabatan", "Jabatan Fungsional", "Pendidikan"],
       ...filteredEmployees.map((employee) => [
@@ -191,7 +204,7 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
             <p>Kelola data pegawai dari satu tabel. Form hanya muncul saat dibutuhkan.</p>
           </div>
           <div className="hris-toolbar-actions">
-            <button className="btn btn-outline-primary" type="button" onClick={exportCsv}>
+            <button className="btn btn-outline-primary" type="button" onClick={exportCsv} disabled={filteredEmployees.length === 0}>
               <i className="la la-file-excel-o me-1"></i> Export CSV
             </button>
             <button
@@ -199,6 +212,7 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
               type="button"
               onClick={() => {
                 setEditingEmployee(null);
+                setMessage("");
                 setShowForm((current) => !current);
               }}
             >
@@ -231,22 +245,20 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
                 <div className="col-md-6">
                   <div className="form-group mb-3">
                     <label className="form-label" htmlFor="hris-type">Tipe</label>
-                    <select id="hris-type" name="type" className="form-control" defaultValue={editingEmployee?.type || "Dosen"}>
-                      <option value="Dosen">Dosen</option>
-                      <option value="Tendik">Tendik</option>
-                      <option value="Dosen dengan Tugas Tambahan">Dosen dengan Tugas Tambahan</option>
+                    <select id="hris-type" name="type" className="form-control" defaultValue={editingEmployee?.type || typeOptions[0] || "Dosen"}>
+                      {(typeOptions.length ? typeOptions : ["Dosen", "Tendik", "Dosen dengan Tugas Tambahan"]).map((type) => (
+                        <option value={type} key={type}>{type}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
                 <div className="col-md-6">
                   <div className="form-group mb-3">
                     <label className="form-label" htmlFor="hris-status">Status</label>
-                    <select id="hris-status" name="status" className="form-control" defaultValue={editingEmployee?.status || "Aktif"}>
-                      <option value="Aktif">Aktif</option>
-                      <option value="Nonaktif">Nonaktif</option>
-                      <option value="Cuti">Cuti</option>
-                      <option value="Berhenti">Berhenti</option>
-                      <option value="Pensiun">Pensiun</option>
+                    <select id="hris-status" name="status" className="form-control" defaultValue={editingEmployee?.status || statusOptions[0] || "Aktif"}>
+                      {(statusOptions.length ? statusOptions : ["Aktif", "Nonaktif", "Cuti", "Berhenti", "Pensiun"]).map((status) => (
+                        <option value={status} key={status}>{status}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -278,11 +290,10 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
               </div>
               <button className="btn btn-primary w-100" type="submit">{editingEmployee ? "Update Pegawai" : "Simpan Pegawai"}</button>
               {editingEmployee ? (
-                <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setEditingEmployee(null)}>Batal Edit</button>
+                <button className="btn btn-light w-100 mt-2" type="button" onClick={() => { setEditingEmployee(null); setMessage(""); }}>Batal Edit</button>
               ) : showForm ? (
-                <button className="btn btn-light w-100 mt-2" type="button" onClick={() => setShowForm(false)}>Batal</button>
+                <button className="btn btn-light w-100 mt-2" type="button" onClick={() => { setShowForm(false); setMessage(""); }}>Batal</button>
               ) : null}
-              {message ? <p className="form-note mt-3">{message}</p> : null}
             </form>
           </div>
         </div>
@@ -294,6 +305,11 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
             <h4 className="card-title">Master Pegawai</h4>
           </div>
           <div className="card-body">
+            {message ? (
+              <div className="alert alert-info" role="status">
+                {message}
+              </div>
+            ) : null}
             <div className="row mb-3">
               <div className="col-md-5 mb-2 mb-md-0">
                 <input
@@ -306,19 +322,17 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
               <div className="col-md-3 mb-2 mb-md-0">
                 <select className="form-control" value={typeFilter} onChange={(event) => { setTypeFilter(event.target.value); setCurrentPage(1); }}>
                   <option value="">Semua tipe</option>
-                  <option value="Dosen">Dosen</option>
-                  <option value="Tendik">Tendik</option>
-                  <option value="Dosen dengan Tugas Tambahan">Dosen dengan Tugas Tambahan</option>
+                  {typeOptions.map((type) => (
+                    <option value={type} key={type}>{type}</option>
+                  ))}
                 </select>
               </div>
               <div className="col-md-2 mb-2 mb-md-0">
                 <select className="form-control" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setCurrentPage(1); }}>
                   <option value="">Semua status</option>
-                  <option value="Aktif">Aktif</option>
-                  <option value="Nonaktif">Nonaktif</option>
-                  <option value="Cuti">Cuti</option>
-                  <option value="Berhenti">Berhenti</option>
-                  <option value="Pensiun">Pensiun</option>
+                  {statusOptions.map((status) => (
+                    <option value={status} key={status}>{status}</option>
+                  ))}
                 </select>
               </div>
               <div className="col-md-2">
@@ -361,6 +375,7 @@ export function HrisEmployeeManager({ initialEmployees }: { initialEmployees: Hr
                       <td>
                         <button className="btn btn-sm btn-outline-secondary me-2" type="button" onClick={() => {
                           setEditingEmployee(employee);
+                          setMessage("");
                           setShowForm(false);
                         }}>
                           Edit

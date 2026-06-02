@@ -73,7 +73,7 @@ async function main() {
     update: {
       name: "Admin LPM",
       passwordHash: defaultPassword,
-      role: "admin_lpm",
+      role: "super_admin",
       institutionId: institution.id,
       orgUnitId: lpm.id,
     },
@@ -81,15 +81,39 @@ async function main() {
       name: "Admin LPM",
       email: "admin@spmi.local",
       passwordHash: defaultPassword,
-      role: "admin_lpm",
+      role: "super_admin",
       institutionId: institution.id,
       orgUnitId: lpm.id,
     },
   });
   await prisma.userRole.upsert({
-    where: { userId_role_scopeOrgUnitId: { userId: admin.id, role: "admin_lpm", scopeOrgUnitId: lpm.id } },
+    where: { userId_role_scopeOrgUnitId: { userId: admin.id, role: "super_admin", scopeOrgUnitId: lpm.id } },
     update: {},
-    create: { userId: admin.id, role: "admin_lpm", scopeOrgUnitId: lpm.id },
+    create: { userId: admin.id, role: "super_admin", scopeOrgUnitId: lpm.id },
+  });
+
+  const lpmUser = await prisma.user.upsert({
+    where: { email: "lpm@spmi.local" },
+    update: {
+      name: "LPM Mutu",
+      passwordHash: defaultPassword,
+      role: "lpm",
+      institutionId: institution.id,
+      orgUnitId: lpm.id,
+    },
+    create: {
+      name: "LPM Mutu",
+      email: "lpm@spmi.local",
+      passwordHash: defaultPassword,
+      role: "lpm",
+      institutionId: institution.id,
+      orgUnitId: lpm.id,
+    },
+  });
+  await prisma.userRole.upsert({
+    where: { userId_role_scopeOrgUnitId: { userId: lpmUser.id, role: "lpm", scopeOrgUnitId: lpm.id } },
+    update: {},
+    create: { userId: lpmUser.id, role: "lpm", scopeOrgUnitId: lpm.id },
   });
 
   const auditor = await prisma.user.upsert({
@@ -234,6 +258,30 @@ async function main() {
     where: { userId_role_scopeOrgUnitId: { userId: unit.id, role: "unit_kerja", scopeOrgUnitId: prodi.id } },
     update: {},
     create: { userId: unit.id, role: "unit_kerja", scopeOrgUnitId: prodi.id },
+  });
+
+  const operator = await prisma.user.upsert({
+    where: { email: "operator@spmi.local" },
+    update: {
+      name: "Operator SPMI",
+      passwordHash: defaultPassword,
+      role: "operator",
+      institutionId: institution.id,
+      orgUnitId: prodi.id,
+    },
+    create: {
+      name: "Operator SPMI",
+      email: "operator@spmi.local",
+      passwordHash: defaultPassword,
+      role: "operator",
+      institutionId: institution.id,
+      orgUnitId: prodi.id,
+    },
+  });
+  await prisma.userRole.upsert({
+    where: { userId_role_scopeOrgUnitId: { userId: operator.id, role: "operator", scopeOrgUnitId: prodi.id } },
+    update: {},
+    create: { userId: operator.id, role: "operator", scopeOrgUnitId: prodi.id },
   });
 
   const standard1 = await prisma.mutuStandard.upsert({

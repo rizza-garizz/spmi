@@ -21,9 +21,11 @@ const statusLabels: Record<string, string> = {
 };
 
 export async function IntegrationsPage() {
-  const data = await getIntegrations();
-  const syncMap = await getDataSyncMap();
-  const catalog = await getCatalogSnapshot();
+  const [data, syncMap, catalog] = await Promise.all([
+    getIntegrations(),
+    getDataSyncMap(),
+    getCatalogSnapshot(),
+  ]);
   const requiredSystems = ["SIAKAD", "SIMPEG", "Keuangan", "Repository", "PDDIKTI", "SSO/IAM"];
   const readinessSummary = data.sources.reduce(
     (acc, source) => {

@@ -1,5 +1,6 @@
 export const AUTH_SESSION_KEY = "spmi_auth_session";
 export const LOCAL_USER_KEY = "spmi_local_user";
+export const AUTH_TOKEN_COOKIE = "spmi_auth_token";
 
 export type AuthSession = {
   token?: string;
@@ -120,6 +121,7 @@ export function clearAuthSession() {
     storage.removeItem("spmi_token");
     storage.removeItem("spmi_user");
   });
+  document.cookie = `${AUTH_TOKEN_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
 }
 
 export function saveAuthSession(session: AuthSession, options: { rememberMe?: boolean } = {}) {
@@ -141,6 +143,11 @@ export function saveAuthSession(session: AuthSession, options: { rememberMe?: bo
   otherStorage.removeItem("spmi_token");
   otherStorage.removeItem("spmi_user");
   storage.setItem(AUTH_SESSION_KEY, JSON.stringify(nextSession));
+
+  if (nextSession.token) {
+    const maxAgeSeconds = Math.max(60, Math.floor((new Date(nextSession.expiresAt).getTime() - Date.now()) / 1000));
+    document.cookie = `${AUTH_TOKEN_COOKIE}=${encodeURIComponent(nextSession.token)}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax`;
+  }
 }
 
 export function saveLocalSession(session: AuthSession) {

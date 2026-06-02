@@ -13,7 +13,6 @@ const {
   getIntegrationLogs,
   checkIntegration,
   syncIntegration,
-  getAuditLogs,
   addStandard,
   getActiveStandards,
   getStandardRevisions,
@@ -53,6 +52,7 @@ const {
   updateHrisDocument,
   deleteHrisDocument,
 } = require("../services/catalogStore");
+const { listAuditEvents, recordAuditEvent, recordApprovalHistory } = require("../services/auditService");
 const { success, failure } = require("../utils/apiResponse");
 const {
   canAccessOrgUnit,
@@ -66,7 +66,7 @@ function canReadScopedItem(req, item, options = {}) {
 }
 
 function scopedItems(req, items, options = {}) {
-  return items.filter((item) => canReadScopedItem(req, item, options));
+  return items.filter((item) => !item.deleted_at && item.status !== "deleted" && canReadScopedItem(req, item, options));
 }
 
 function prepareScopedPayload(req) {
@@ -171,6 +171,44 @@ function documents(req, res) {
     );
   }
   return success(res, scopedItems(req, state.documents), "Daftar dokumen");
+}
+
+function updateDocumentRecord(req, res) {
+  const document = state.documents.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!document) return failure(res, "Dokumen tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, document)) return failure(res, "Anda tidak dapat mengubah dokumen ini.", 403);
+
+  const payload = req.body || {};
+  Object.assign(document, {
+    title: payload.title || document.title,
+    type: payload.type || document.type,
+    category: payload.category || document.category,
+    owner: payload.owner || payload.penanggung_jawab || document.owner,
+    org_unit_code: payload.org_unit_code || payload.orgUnitCode || document.org_unit_code,
+    status: payload.status || document.status,
+    document_date: payload.document_date || payload.tanggal || document.document_date,
+    metadata: {
+      ...(document.metadata || {}),
+      ...(payload.metadata || {}),
+      unit: payload.unit || payload.org_unit_code || document.metadata?.unit,
+      kategori: payload.category || document.metadata?.kategori,
+      penanggung_jawab: payload.owner || payload.penanggung_jawab || document.metadata?.penanggung_jawab,
+      tanggal: payload.document_date || payload.tanggal || document.metadata?.tanggal,
+    },
+    updated_at: new Date().toISOString(),
+  });
+
+  return success(res, document, "Dokumen berhasil diperbarui di mode lokal.");
+}
+
+function deleteDocumentRecord(req, res) {
+  const document = state.documents.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!document) return failure(res, "Dokumen tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, document)) return failure(res, "Anda tidak dapat menghapus dokumen ini.", 403);
+
+  document.status = "deleted";
+  document.deleted_at = new Date().toISOString();
+  return success(res, document, "Dokumen berhasil dinonaktifkan di mode lokal.");
 }
 
 function createDocument(req, res) {
@@ -288,6 +326,33 @@ function ppeppCycles(req, res) {
   return success(res, scopedItems(req, getCatalogSnapshot().ppeppCycles), "Daftar siklus PPEPP");
 }
 
+function updatePpeppCycleRecord(req, res) {
+  const cycle = state.ppeppCycles.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!cycle) return failure(res, "Siklus PPEPP tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, cycle)) return failure(res, "Anda tidak dapat mengubah data di luar scope unit kerja.", 403);
+
+  Object.assign(cycle, {
+    name: req.body?.name || req.body?.title || cycle.name,
+    period: req.body?.period || cycle.period,
+    year: req.body?.year || cycle.year,
+    status: req.body?.status || cycle.status,
+    org_unit_code: req.body?.org_unit_code || cycle.org_unit_code,
+    updated_at: new Date().toISOString(),
+  });
+
+  return success(res, cycle, "Siklus PPEPP berhasil diperbarui di mode lokal.");
+}
+
+function deletePpeppCycleRecord(req, res) {
+  const cycle = state.ppeppCycles.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!cycle) return failure(res, "Siklus PPEPP tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, cycle)) return failure(res, "Anda tidak dapat menghapus data di luar scope unit kerja.", 403);
+
+  cycle.status = "deleted";
+  cycle.deleted_at = new Date().toISOString();
+  return success(res, cycle, "Siklus PPEPP berhasil dinonaktifkan di mode lokal.");
+}
+
 function createPpeppCycle(req, res) {
   const payload = prepareScopedPayload(req);
   if (!payload) return failure(res, "Anda tidak dapat membuat data di luar scope unit kerja.", 403);
@@ -343,6 +408,34 @@ function uploadPpeppEvidence(req, res) {
 
 function amiAudits(req, res) {
   return success(res, scopedItems(req, state.audits, { allowAuditor: true }), "Daftar audit mutu internal");
+}
+
+function updateAmiAuditRecord(req, res) {
+  const audit = state.audits.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat mengubah audit di luar scope.", 403);
+
+  Object.assign(audit, {
+    title: req.body?.title || req.body?.name || audit.title,
+    scheduled_date: req.body?.scheduled_date || req.body?.audit_date || audit.scheduled_date,
+    audit_date: req.body?.audit_date || audit.audit_date,
+    status: req.body?.status || audit.status,
+    org_unit_code: req.body?.org_unit_code || audit.org_unit_code,
+    notes: req.body?.notes || audit.notes,
+    updated_at: new Date().toISOString(),
+  });
+
+  return success(res, audit, "AMI audit berhasil diperbarui di mode lokal.");
+}
+
+function deleteAmiAuditRecord(req, res) {
+  const audit = state.audits.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!audit) return failure(res, "Audit tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, audit, { allowAuditor: true })) return failure(res, "Anda tidak dapat menghapus audit di luar scope.", 403);
+
+  audit.status = "deleted";
+  audit.deleted_at = new Date().toISOString();
+  return success(res, audit, "AMI audit berhasil dinonaktifkan di mode lokal.");
 }
 
 function createAmiAudit(req, res) {
@@ -496,6 +589,7 @@ function amiAuditReport(req, res) {
 
 function rtmMeetings(req, res) {
   const meetings = state.meetings
+    .filter((meeting) => !meeting.deleted_at && meeting.status !== "deleted")
     .map((meeting) => ({
       ...meeting,
       actions: scopedItems(req, meeting.actions || []),
@@ -503,6 +597,34 @@ function rtmMeetings(req, res) {
     .filter((meeting) => canReadScopedItem(req, meeting) || meeting.actions.length > 0);
 
   return success(res, meetings, "Daftar rapat tinjauan manajemen");
+}
+
+function updateMeetingRecord(req, res) {
+  const meeting = state.meetings.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!meeting) return failure(res, "Rapat RTM tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, meeting)) return failure(res, "Anda tidak dapat mengubah RTM di luar scope unit kerja.", 403);
+
+  Object.assign(meeting, {
+    title: req.body?.title || meeting.title,
+    meeting_date: req.body?.meeting_date || meeting.meeting_date,
+    status: req.body?.status || meeting.status,
+    conclusion: req.body?.conclusion || meeting.conclusion,
+    org_unit_code: req.body?.org_unit_code || meeting.org_unit_code,
+    ppepp_cycle_id: req.body?.ppepp_cycle_id || meeting.ppepp_cycle_id,
+    updated_at: new Date().toISOString(),
+  });
+
+  return success(res, meeting, "Rapat RTM berhasil diperbarui di mode lokal.");
+}
+
+function deleteMeetingRecord(req, res) {
+  const meeting = state.meetings.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!meeting) return failure(res, "Rapat RTM tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, meeting)) return failure(res, "Anda tidak dapat menghapus RTM di luar scope unit kerja.", 403);
+
+  meeting.status = "deleted";
+  meeting.deleted_at = new Date().toISOString();
+  return success(res, meeting, "Rapat RTM berhasil dinonaktifkan di mode lokal.");
 }
 
 function createMeeting(req, res) {
@@ -542,6 +664,36 @@ function updateMeetingActionProgress(req, res) {
 
 function indicators(req, res) {
   return success(res, scopedItems(req, state.indicators), "Daftar indikator mutu");
+}
+
+function updateIndicatorRecord(req, res) {
+  const indicator = state.indicators.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!indicator) return failure(res, "Indikator tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, indicator)) return failure(res, "Anda tidak dapat mengubah indikator di luar scope unit kerja.", 403);
+
+  Object.assign(indicator, {
+    code: req.body?.code || indicator.code,
+    name: req.body?.name || req.body?.title || indicator.name,
+    target: req.body?.target ?? indicator.target,
+    actual: req.body?.actual ?? indicator.actual,
+    unit: req.body?.unit || indicator.unit,
+    period: req.body?.period || indicator.period,
+    status: req.body?.status || indicator.status,
+    org_unit_code: req.body?.org_unit_code || indicator.org_unit_code,
+    updated_at: new Date().toISOString(),
+  });
+
+  return success(res, indicator, "Indikator berhasil diperbarui di mode lokal.");
+}
+
+function deleteIndicatorRecord(req, res) {
+  const indicator = state.indicators.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!indicator) return failure(res, "Indikator tidak ditemukan.", 404);
+  if (!canReadScopedItem(req, indicator)) return failure(res, "Anda tidak dapat menghapus indikator di luar scope unit kerja.", 403);
+
+  indicator.status = "deleted";
+  indicator.deleted_at = new Date().toISOString();
+  return success(res, indicator, "Indikator berhasil dinonaktifkan di mode lokal.");
 }
 
 function createIndicator(req, res) {
@@ -587,7 +739,7 @@ function resolveGovernanceCollection(entity) {
   return null;
 }
 
-function updateApproval(req, res) {
+async function updateApproval(req, res) {
   const collection = resolveGovernanceCollection(req.params.entity);
   if (!collection) return failure(res, "Entitas approval tidak dikenal.", 404);
 
@@ -597,11 +749,55 @@ function updateApproval(req, res) {
     return failure(res, "Anda tidak dapat mengakses approval di luar scope unit kerja.", 403);
   }
 
-  const nextApproval = transitionApproval(item, req.user, req.body?.action, req.body?.note || "");
+  const previousApproval = item.approval ? { ...item.approval } : null;
+  const previousStatus = item.status || null;
+  const requestedAction = String(req.body?.action || "").toLowerCase();
+  const nextApproval = transitionApproval(item, req.user, requestedAction, req.body?.note || "");
   if (!nextApproval) return failure(res, "Role Anda tidak berwenang menjalankan tahap approval ini.", 403);
 
   item.approval = nextApproval;
   item.status = nextApproval.status === "approved" ? "approved" : item.status;
+
+  if (["approve", "reject", "submit"].includes(requestedAction)) {
+    await recordAuditEvent({
+      actor_id: req.user?.id || null,
+      actor_email: req.user?.email || req.user?.username || "system",
+      role: Array.isArray(req.user?.roles) ? req.user.roles.join(",") : req.user?.role || null,
+      action: `approval.${requestedAction}`,
+      entity: req.params.entity,
+      entity_id: req.params.id,
+      method: req.method,
+      path: req.originalUrl,
+      status_code: 200,
+      ip_address: req.ip,
+      user_agent: req.get("user-agent") || null,
+      before: {
+        approval: previousApproval,
+        status: previousStatus,
+      },
+      after: {
+        approval: nextApproval,
+        status: item.status || null,
+      },
+      metadata: {
+        note: req.body?.note || "",
+      },
+    });
+    await recordApprovalHistory({
+      entity: req.params.entity,
+      entity_id: req.params.id,
+      step: previousApproval?.step || nextApproval.step,
+      action: requestedAction,
+      actor_id: req.user?.id || null,
+      actor_email: req.user?.email || req.user?.username || "system",
+      note: req.body?.note || "",
+      metadata: {
+        previous_status: previousStatus,
+        next_status: item.status || null,
+      },
+    });
+    res.locals.skipAuditTrail = true;
+  }
 
   return success(res, item, "Status approval berhasil diperbarui di mode lokal.");
 }
@@ -648,12 +844,21 @@ function integrationSync(req, res) {
   return success(res, result, "Sinkronisasi integrasi berhasil dijalankan.", 201);
 }
 
-function auditTrail(req, res) {
-  return success(res, getAuditLogs(req.query || {}), "Audit trail aktivitas user");
+async function auditTrail(req, res) {
+  return success(res, await listAuditEvents(req.query || {}), "Audit trail aktivitas user");
 }
 
 function imports(_req, res) {
-  return success(res, getCatalogSnapshot().imports, "Riwayat import");
+  return success(res, getCatalogSnapshot().imports.filter((item) => !item.deleted_at && item.status !== "deleted"), "Riwayat import");
+}
+
+function deleteImportRecord(req, res) {
+  const item = state.imports.find((entry) => String(entry.id) === String(req.params.id) && !entry.deleted_at && entry.status !== "deleted");
+  if (!item) return failure(res, "Import tidak ditemukan.", 404);
+
+  item.status = "deleted";
+  item.deleted_at = new Date().toISOString();
+  return success(res, item, "Riwayat import berhasil dinonaktifkan di mode lokal.");
 }
 
 function hris(_req, res) {
@@ -815,7 +1020,31 @@ function deleteHrisDocumentRecord(req, res) {
 }
 
 function surveys(_req, res) {
-  return success(res, getCatalogSnapshot().surveys, "Daftar survei");
+  return success(res, getCatalogSnapshot().surveys.filter((item) => !item.deleted_at && item.status !== "deleted"), "Daftar survei");
+}
+
+function updateSurveyRecord(req, res) {
+  const survey = state.surveys.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!survey) return failure(res, "Survei tidak ditemukan.", 404);
+
+  Object.assign(survey, {
+    title: req.body?.title || survey.title,
+    target: req.body?.target || survey.target,
+    status: req.body?.status || survey.status,
+    ppepp_cycle_id: req.body?.ppepp_cycle_id || survey.ppepp_cycle_id,
+    updated_at: new Date().toISOString(),
+  });
+
+  return success(res, survey, "Survei berhasil diperbarui di mode lokal.");
+}
+
+function deleteSurveyRecord(req, res) {
+  const survey = state.surveys.find((item) => String(item.id) === String(req.params.id) && !item.deleted_at && item.status !== "deleted");
+  if (!survey) return failure(res, "Survei tidak ditemukan.", 404);
+
+  survey.status = "deleted";
+  survey.deleted_at = new Date().toISOString();
+  return success(res, survey, "Survei berhasil dinonaktifkan di mode lokal.");
 }
 
 function createSurvey(req, res) {
@@ -856,16 +1085,22 @@ module.exports = {
   deleteStandardRecord,
   documents,
   createDocument,
+  updateDocumentRecord,
+  deleteDocumentRecord,
   documentVersion,
   documentVersionDownload,
   documentVersionPreview,
   createDocumentVersion,
   ppeppCycles,
   createPpeppCycle,
+  updatePpeppCycleRecord,
+  deletePpeppCycleRecord,
   updatePpeppCycleStage,
   uploadPpeppEvidence,
   amiAudits,
   createAmiAudit,
+  updateAmiAuditRecord,
+  deleteAmiAuditRecord,
   createFinding,
   updateAmiAuditAssignment,
   updateAmiAuditInstrument,
@@ -875,9 +1110,13 @@ module.exports = {
   amiAuditReport,
   rtmMeetings,
   createMeeting,
+  updateMeetingRecord,
+  deleteMeetingRecord,
   updateMeetingActionProgress,
   indicators,
   createIndicator,
+  updateIndicatorRecord,
+  deleteIndicatorRecord,
   createIndicatorValue,
   updateApproval,
   orgUnits,
@@ -888,6 +1127,7 @@ module.exports = {
   integrationSync,
   auditTrail,
   imports,
+  deleteImportRecord,
   hris,
   hrisEmployees,
   hrisEmployeeProfile,
@@ -908,5 +1148,7 @@ module.exports = {
   deleteHrisDocumentRecord,
   surveys,
   createSurvey,
+  updateSurveyRecord,
+  deleteSurveyRecord,
   createImport,
 };

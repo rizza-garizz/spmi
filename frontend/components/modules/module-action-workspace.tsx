@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { hasRoleAccess } from "@/lib/spmi-access";
+import { useCurrentRoles } from "@/lib/spmi-access-client";
 import { findModuleTrail, type ModuleNode } from "@/lib/module-registry";
 
 function getNodeLabel(node: ModuleNode | undefined) {
@@ -34,17 +36,40 @@ type ActionWorkspaceProps = {
 function ActionWorkspaceBody({ current, parent, root, onDone }: ActionWorkspaceProps) {
   const actionKey = getActionKey(current.label);
   const context = parent?.label ?? root?.label ?? "Modul";
+  const persistRequiredActions = new Set([
+    "identitas",
+    "metadata",
+    "lampiran",
+    "draft",
+    "submit",
+    "status-pengajuan",
+    "review",
+    "keputusan",
+    "catatan-approval",
+    "revisi",
+    "versi-aktif",
+  ]);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("Aktif");
   const [unit, setUnit] = useState("Semua Unit");
   const [period, setPeriod] = useState("2026/2027");
-  const [primaryText, setPrimaryText] = useState("");
-  const [secondaryText, setSecondaryText] = useState("");
-  const [attachmentName, setAttachmentName] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>, message: string) {
     event.preventDefault();
     onDone(message);
+  }
+
+  if (persistRequiredActions.has(actionKey)) {
+    return (
+      <div className="module-action-detail">
+        <p>
+          Aksi {current.label} membutuhkan record aktif agar perubahan tersimpan ke API. Buka modul operasional parent untuk memilih atau membuat data terlebih dahulu.
+        </p>
+        <a href={parent?.href ?? root?.href ?? current.href} className="module-action-primary">
+          <i className="la la-arrow-right"></i>Buka Modul Operasional
+        </a>
+      </div>
+    );
   }
 
   if (actionKey === "pencarian") {
@@ -109,105 +134,6 @@ function ActionWorkspaceBody({ current, parent, root, onDone }: ActionWorkspaceP
     );
   }
 
-  if (["identitas", "metadata"].includes(actionKey)) {
-    return (
-      <form className="module-action-form module-action-form-grid" onSubmit={(event) => handleSubmit(event, `${current.label} ${context} berhasil disimpan sebagai draft tervalidasi.`)}>
-        <label>
-          Kode
-          <input value={primaryText} onChange={(event) => setPrimaryText(event.target.value)} placeholder="Kode otomatis/manual" />
-        </label>
-        <label>
-          Nama
-          <input value={secondaryText} onChange={(event) => setSecondaryText(event.target.value)} placeholder={`Nama ${context}`} />
-        </label>
-        <label>
-          Penanggung jawab
-          <select value={unit} onChange={(event) => setUnit(event.target.value)}>
-            <option>LPM</option>
-            <option>Fakultas</option>
-            <option>Prodi</option>
-            <option>Unit</option>
-          </select>
-        </label>
-        <button type="submit" className="module-action-primary"><i className="la la-save"></i>Simpan {current.label}</button>
-      </form>
-    );
-  }
-
-  if (actionKey === "lampiran") {
-    return (
-      <form className="module-action-form" onSubmit={(event) => handleSubmit(event, attachmentName ? `Lampiran ${attachmentName} siap diunggah untuk ${context}.` : "Pilih file lampiran terlebih dahulu.")}>
-        <label>
-          File lampiran
-          <input type="file" onChange={(event) => setAttachmentName(event.target.files?.[0]?.name ?? "")} />
-        </label>
-        <button type="submit" className="module-action-primary"><i className="la la-upload"></i>Upload Lampiran</button>
-      </form>
-    );
-  }
-
-  if (["draft", "review", "catatan-approval", "revisi"].includes(actionKey)) {
-    return (
-      <form className="module-action-form" onSubmit={(event) => handleSubmit(event, `${current.label} untuk ${context} berhasil disimpan.`)}>
-        <label>
-          Catatan
-          <textarea value={primaryText} onChange={(event) => setPrimaryText(event.target.value)} placeholder={`Tulis catatan ${current.label.toLowerCase()}`} rows={4} />
-        </label>
-        <button type="submit" className="module-action-primary"><i className="la la-save"></i>Simpan {current.label}</button>
-      </form>
-    );
-  }
-
-  if (actionKey === "submit") {
-    return (
-      <form className="module-action-form" onSubmit={(event) => handleSubmit(event, `${context} berhasil dikirim ke workflow approval.`)}>
-        <label className="module-action-check">
-          <input type="checkbox" required />
-          <span>Saya sudah memeriksa kelengkapan data dan lampiran.</span>
-        </label>
-        <button type="submit" className="module-action-primary"><i className="la la-paper-plane"></i>Submit ke Approval</button>
-      </form>
-    );
-  }
-
-  if (actionKey === "status-pengajuan") {
-    return (
-      <form className="module-action-form" onSubmit={(event) => handleSubmit(event, `Status ${context} diperbarui menjadi ${status}.`)}>
-        <label>
-          Status pengajuan
-          <select value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option>Draft</option>
-            <option>Diajukan</option>
-            <option>Direview</option>
-            <option>Disetujui</option>
-            <option>Perlu Revisi</option>
-          </select>
-        </label>
-        <button type="submit" className="module-action-primary"><i className="la la-sync"></i>Update Status</button>
-      </form>
-    );
-  }
-
-  if (actionKey === "keputusan") {
-    return (
-      <form className="module-action-form module-action-form-grid" onSubmit={(event) => handleSubmit(event, `Keputusan ${status} untuk ${context} berhasil dicatat.`)}>
-        <label>
-          Keputusan
-          <select value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option>Setujui</option>
-            <option>Minta Revisi</option>
-            <option>Tolak</option>
-          </select>
-        </label>
-        <label>
-          Catatan
-          <input value={primaryText} onChange={(event) => setPrimaryText(event.target.value)} placeholder="Catatan keputusan" />
-        </label>
-        <button type="submit" className="module-action-primary"><i className="la la-check-double"></i>Simpan Keputusan</button>
-      </form>
-    );
-  }
-
   if (actionKey === "aktivitas") {
     return (
       <div className="module-action-timeline">
@@ -244,15 +170,6 @@ function ActionWorkspaceBody({ current, parent, root, onDone }: ActionWorkspaceP
     );
   }
 
-  if (actionKey === "versi-aktif") {
-    return (
-      <div className="module-action-detail">
-        <div className="module-action-version"><strong>Versi 1.1</strong><span>Aktif sejak 24 Mei 2026</span></div>
-        <button type="button" className="module-action-primary" onClick={() => onDone(`Versi aktif ${context} berhasil dikonfirmasi.`)}><i className="la la-check"></i>Tetapkan Versi Aktif</button>
-      </div>
-    );
-  }
-
   if (actionKey === "perbandingan") {
     return (
       <form className="module-action-form module-action-form-grid" onSubmit={(event) => handleSubmit(event, `Perbandingan versi ${context} berhasil ditampilkan.`)}>
@@ -283,6 +200,7 @@ export function ModuleActionWorkspace() {
   const pathname = usePathname();
   const [hash, setHash] = useState("");
   const [message, setMessage] = useState("");
+  const roles = useCurrentRoles();
 
   useEffect(() => {
     function syncHash() {
@@ -301,7 +219,7 @@ export function ModuleActionWorkspace() {
   const parent = trail[trail.length - 2];
   const root = trail[0];
 
-  if (!hash || !current || current.children?.length) {
+  if (!hash || !current || current.children?.length || !hasRoleAccess(current.roles, roles)) {
     return null;
   }
 

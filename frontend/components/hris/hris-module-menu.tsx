@@ -1,9 +1,15 @@
+import Link from "next/link";
+import type { Route } from "next";
 import { findModuleNodeByHref, type ModuleNode } from "@/lib/module-registry";
 
 const hrisRoot = findModuleNodeByHref("/hris");
 const hrisMenus = hrisRoot?.children ?? [];
 
 export { hrisMenus };
+
+function routeHref(href: string) {
+  return href as Route;
+}
 
 export function HrisModuleMenu() {
   return (
@@ -15,10 +21,10 @@ export function HrisModuleMenu() {
         <ul>
           {hrisMenus.map((menu) => (
             <li key={menu.label}>
-              <a className="hris-module-trigger" href={menu.href}>
+              <Link className="hris-module-trigger" href={routeHref(menu.href)}>
                 <i className={`la ${menu.icon}`}></i>
                 <span>{menu.label}</span>
-              </a>
+              </Link>
               <div className="hris-module-dropdown">
                 <div className="hris-module-dropdown-head">
                   <strong>{menu.label}</strong>
@@ -26,10 +32,10 @@ export function HrisModuleMenu() {
                 </div>
                 <div className="hris-module-dropdown-list">
                   {(menu.children ?? []).map((child) => (
-                    <a href={child.href} key={child.label}>
+                    <Link href={routeHref(child.href)} key={child.label}>
                       <span>{child.label}</span>
                       <i className="la la-angle-right"></i>
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -57,7 +63,7 @@ export function HrisStructureMap({ rootHref = "/hris" }: { rootHref?: string }) 
           <h4>{root?.label || "Mulai dari kebutuhan yang ingin dikerjakan"}</h4>
           <p>{root?.description}</p>
         </div>
-        <a href={items[0]?.href || "/hris/master-sdm/pegawai"}>Buka Child Pertama</a>
+        <Link href={routeHref(items[0]?.href || "/hris/master-sdm/pegawai")}>Buka Child Pertama</Link>
       </div>
       <div className="hris-structure-grid">
         {items.map((menu) => (
@@ -71,10 +77,10 @@ export function HrisStructureMap({ rootHref = "/hris" }: { rootHref?: string }) 
             </div>
             <div className="hris-structure-children">
               {(menu.children && menu.children.length > 0 ? menu.children : [menu]).map((child) => (
-                <a href={child.href} key={child.label}>
+                <Link href={routeHref(child.href)} key={child.label}>
                   <span>{child.label}</span>
                   <i className="la la-angle-right"></i>
-                </a>
+                </Link>
               ))}
             </div>
           </article>

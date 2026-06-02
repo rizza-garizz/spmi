@@ -13,8 +13,10 @@ function getLocalPasswordHash(email, password) {
 }
 
 const roleMap = {
-  admin: "admin_lpm",
-  lpm: "admin_lpm",
+  super_admin: "super_admin",
+  superadmin: "super_admin",
+  admin: "super_admin",
+  lpm: "lpm",
   admin_lpm: "admin_lpm",
   auditor: "auditor",
   dekan: "dekan",
@@ -24,6 +26,7 @@ const roleMap = {
   sekprodi: "sekprodi",
   unit: "unit_kerja",
   unit_kerja: "unit_kerja",
+  operator: "operator",
 };
 
 function buildOrgUnits() {

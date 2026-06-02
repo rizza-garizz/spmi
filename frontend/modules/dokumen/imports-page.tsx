@@ -6,16 +6,11 @@ import { ProgressiveSection } from "@/components/support/progressive-section";
 import { ManagedCardGrid } from "@/components/support/managed-card-grid";
 
 export default async function ImportsPage() {
-  let summary = { metrics: [] as Array<{ label: string; value: number }> };
-  let imports = { data: [] as Array<{ id: number; type: string; title: string; status: string }> };
-  const catalog = await getCatalogSnapshot();
-
-  try {
-    summary = await getDashboardSummary();
-    imports = await getImports();
-  } catch {
-    //
-  }
+  const [catalog, summary, imports] = await Promise.all([
+    getCatalogSnapshot(),
+    getDashboardSummary().catch(() => ({ metrics: [] as Array<{ label: string; value: number }> })),
+    getImports().catch(() => ({ data: [] as Array<{ id: number; type: string; title: string; status: string }> })),
+  ]);
 
   return (
     <main className="shell">

@@ -10,23 +10,15 @@ type AccessOverviewProps = {
 
 export async function AccessOverview({ eyebrow, title, description }: AccessOverviewProps) {
   const catalog = await getCatalogSnapshot();
-  const accessByRole = activeRoles.reduce<Record<AppRole, string[]>>((acc, role) => {
+  const accessByRole = activeRoles.reduce<Partial<Record<AppRole, string[]>>>((acc, role) => {
     acc[role] = [];
     return acc;
-  }, {
-    admin_lpm: [],
-    auditor: [],
-    dekan: [],
-    wakil_dekan: [],
-    kaprodi: [],
-    sekprodi: [],
-    unit_kerja: [],
-    guest: [],
-  });
+  }, { guest: [] });
 
   routeRules.forEach((rule) => {
     rule.roles.forEach((role) => {
-      accessByRole[role].push(rule.path);
+      accessByRole[role] ??= [];
+      accessByRole[role]?.push(rule.path);
     });
   });
 
@@ -70,7 +62,7 @@ export async function AccessOverview({ eyebrow, title, description }: AccessOver
           columns={3}
           items={catalog.roles.map((role) => {
             const normalizedRole = normalizeRole(role.name);
-            const accessibleRoutes = normalizedRole === "guest" ? [] : accessByRole[normalizedRole];
+            const accessibleRoutes = normalizedRole === "guest" ? [] : accessByRole[normalizedRole] ?? [];
 
             return {
               key: `${role.name}-routes`,

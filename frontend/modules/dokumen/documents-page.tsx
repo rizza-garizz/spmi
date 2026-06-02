@@ -43,7 +43,7 @@ type CatalogStandard = { id?: number | string; code: string; title: string };
 export function DocumentsPage() {
   const { showToast } = useToast();
   const roles = useCurrentRoles();
-  const canUpload = hasRoleAccess(["admin_lpm", "kaprodi", "sekprodi", "unit_kerja"], roles);
+  const canUpload = hasRoleAccess(["super_admin", "lpm", "admin_lpm", "kaprodi", "sekprodi", "unit_kerja", "operator"], roles);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentTypes, setDocumentTypes] = useState<Array<{ value: string; label: string }>>([]);
   const [orgUnits, setOrgUnits] = useState<CatalogOrgUnit[]>([]);

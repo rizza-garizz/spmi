@@ -498,8 +498,16 @@
   ],
   "roles": [
     {
+      "name": "super_admin",
+      "scope": "Seluruh menu, konfigurasi sistem, integrasi, import, role, dan akses lintas unit."
+    },
+    {
+      "name": "lpm",
+      "scope": "Pengelolaan proses mutu, standar, dokumen, AMI, PPEPP, RTM, akreditasi, dan approval LPM."
+    },
+    {
       "name": "admin_lpm",
-      "scope": "Seluruh modul inti, pengaturan akses, standar mutu, dan integrasi sistem."
+      "scope": "Role legacy untuk kompatibilitas akun lama."
     },
     {
       "name": "auditor",
@@ -524,6 +532,10 @@
     {
       "name": "unit_kerja",
       "scope": "Input implementasi, dokumen, indikator, dan tindak lanjut unit kerja."
+    },
+    {
+      "name": "operator",
+      "scope": "Input operasional tanpa akses pengaturan sistem atau approval pimpinan."
     }
   ],
   "orgUnits": [
@@ -549,7 +561,14 @@
       "name": "SPMI Admin",
       "email": "admin@spmi.local",
       "password": "Password123!",
-      "role": "admin_lpm",
+      "role": "super_admin",
+      "org_unit_code": "LPM"
+    },
+    {
+      "name": "LPM Mutu",
+      "email": "lpm@spmi.local",
+      "password": "Password123!",
+      "role": "lpm",
       "org_unit_code": "LPM"
     },
     {
@@ -592,6 +611,13 @@
       "email": "unit@spmi.local",
       "password": "Password123!",
       "role": "unit_kerja",
+      "org_unit_code": "SI"
+    },
+    {
+      "name": "Operator SPMI",
+      "email": "operator@spmi.local",
+      "password": "Password123!",
+      "role": "operator",
       "org_unit_code": "SI"
     }
   ],

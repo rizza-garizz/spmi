@@ -236,10 +236,12 @@ test("enterprise read endpoints reject anonymous access", async () => {
 
 test("local seed users carry perguruan tinggi role scopes", async () => {
   const cases = [
-    ["admin@spmi.local", "admin_lpm", "LPM"],
+    ["admin@spmi.local", "super_admin", "LPM"],
+    ["lpm@spmi.local", "lpm", "LPM"],
     ["dekan@spmi.local", "dekan", "FIKOM"],
     ["kaprodi@spmi.local", "kaprodi", "SI"],
     ["unit@spmi.local", "unit_kerja", "SI"],
+    ["operator@spmi.local", "operator", "SI"],
   ];
 
   for (const [email, role, orgCode] of cases) {

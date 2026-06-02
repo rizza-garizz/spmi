@@ -1,7 +1,9 @@
 import { readAuthSession } from "@/lib/spmi-session-client";
-import { getAllModuleNodes } from "@/lib/module-registry";
+import { getAllModuleNodes, moduleRegistry } from "@/lib/module-registry";
 
 export type AppRole =
+  | "super_admin"
+  | "lpm"
   | "admin_lpm"
   | "auditor"
   | "dekan"
@@ -9,6 +11,7 @@ export type AppRole =
   | "kaprodi"
   | "sekprodi"
   | "unit_kerja"
+  | "operator"
   | "guest";
 
 type RouteRule = {
@@ -17,6 +20,8 @@ type RouteRule = {
 };
 
 export const activeRoles: AppRole[] = [
+  "super_admin",
+  "lpm",
   "admin_lpm",
   "auditor",
   "dekan",
@@ -24,11 +29,14 @@ export const activeRoles: AppRole[] = [
   "kaprodi",
   "sekprodi",
   "unit_kerja",
+  "operator",
 ];
 
 const roleAlias: Record<string, AppRole> = {
-  admin: "admin_lpm",
-  lpm: "admin_lpm",
+  super_admin: "super_admin",
+  superadmin: "super_admin",
+  admin: "super_admin",
+  lpm: "lpm",
   admin_lpm: "admin_lpm",
   auditor: "auditor",
   dekan: "dekan",
@@ -38,12 +46,21 @@ const roleAlias: Record<string, AppRole> = {
   sekprodi: "sekprodi",
   unit: "unit_kerja",
   unit_kerja: "unit_kerja",
+  operator: "operator",
 };
 
 export const rolePresentation: Record<AppRole, { label: string; summary: string }> = {
+  super_admin: {
+    label: "Super Admin",
+    summary: "Mengelola seluruh menu, konfigurasi sistem, integrasi, import, role, dan akses lintas unit.",
+  },
+  lpm: {
+    label: "LPM",
+    summary: "Mengelola proses mutu, standar, dokumen, AMI, PPEPP, RTM, akreditasi, dan approval LPM.",
+  },
   admin_lpm: {
-    label: "Admin / LPM",
-    summary: "Mengelola seluruh modul inti, pengaturan akses, standar mutu, dan integrasi sistem.",
+    label: "Admin / LPM (Legacy)",
+    summary: "Role lama yang tetap didukung dan diperlakukan sebagai akses LPM/Super Admin sesuai konteks modul.",
   },
   auditor: {
     label: "Auditor",
@@ -68,6 +85,10 @@ export const rolePresentation: Record<AppRole, { label: string; summary: string 
   unit_kerja: {
     label: "Unit Kerja",
     summary: "Mengelola implementasi unit, unggah dokumen, indikator, dan tindak lanjut operasional unit.",
+  },
+  operator: {
+    label: "Operator",
+    summary: "Melakukan input operasional yang ditugaskan tanpa akses pengaturan sistem atau approval pimpinan.",
   },
   guest: {
     label: "Guest",
@@ -104,6 +125,10 @@ export function getCurrentRoles(): AppRole[] {
 }
 
 export function hasRoleAccess(allowedRoles: AppRole[], roles: AppRole[] = getCurrentRoles()) {
+  if (roles.includes("super_admin")) {
+    return true;
+  }
+
   return roles.some((role) => allowedRoles.includes(role));
 }
 
@@ -114,6 +139,13 @@ export function canAccessPath(pathname: string, roles: AppRole[] = getCurrentRol
 
   if (pathname === "/" || pathname === "/dashboard" || pathname === "/news") {
     return roles[0] !== "guest";
+  }
+
+  if (pathname.startsWith("/modules/")) {
+    const sectionId = pathname.replace("/modules/", "").split("/")[0];
+    const section = moduleRegistry.find((item) => item.id === sectionId);
+    if (!section) return false;
+    return section.children.some((node) => hasRoleAccess(node.roles, roles));
   }
 
   const rule = routeRules.find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));

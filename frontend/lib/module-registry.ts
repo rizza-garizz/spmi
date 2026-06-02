@@ -18,11 +18,14 @@ export type ModuleSection = {
   children: ModuleNode[];
 };
 
-const allRoles: AppRole[] = ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja"];
-const leadershipRoles: AppRole[] = ["admin_lpm", "dekan", "wakil_dekan"];
-const qualityRoles: AppRole[] = ["admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"];
-const operatorRoles: AppRole[] = ["admin_lpm", "auditor", "kaprodi", "sekprodi", "unit_kerja"];
-const adminOnly: AppRole[] = ["admin_lpm"];
+const allRoles: AppRole[] = ["super_admin", "lpm", "admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja", "operator"];
+const leadershipRoles: AppRole[] = ["super_admin", "lpm", "admin_lpm", "dekan", "wakil_dekan"];
+const qualityRoles: AppRole[] = ["super_admin", "lpm", "admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"];
+const operatorRoles: AppRole[] = ["super_admin", "lpm", "admin_lpm", "kaprodi", "sekprodi", "unit_kerja", "operator"];
+const qualityAdminRoles: AppRole[] = ["super_admin", "lpm", "admin_lpm"];
+const auditWriteRoles: AppRole[] = ["super_admin", "lpm", "admin_lpm", "auditor"];
+const systemAdminRoles: AppRole[] = ["super_admin", "admin_lpm"];
+const adminOnly: AppRole[] = systemAdminRoles;
 
 const workflowChildKeywords = [
   "Dashboard",
@@ -348,7 +351,7 @@ const rawModuleRegistry: ModuleSection[] = [
             href: "/standards#tambah-standar",
             icon: "la-plus-circle",
             description: "Tambah standar dengan penomoran otomatis.",
-            roles: adminOnly,
+            roles: qualityAdminRoles,
             status: "active",
           },
           {
@@ -515,7 +518,7 @@ const rawModuleRegistry: ModuleSection[] = [
             href: "/ami#penugasan-auditor",
             icon: "la-user-check",
             description: "Kelola auditor, jadwal, dan status assignment.",
-            roles: qualityRoles,
+            roles: auditWriteRoles,
             status: "active",
           },
           {
@@ -524,7 +527,7 @@ const rawModuleRegistry: ModuleSection[] = [
             href: "/ami#instrumen-audit",
             icon: "la-tasks",
             description: "Checklist instrumen, skor, dan catatan audit.",
-            roles: qualityRoles,
+            roles: auditWriteRoles,
             status: "active",
           },
           {
@@ -533,7 +536,7 @@ const rawModuleRegistry: ModuleSection[] = [
             href: "/ami#temuan-verifikasi",
             icon: "la-search-plus",
             description: "Temuan minor/mayor/observasi, tindak lanjut, dan verifikasi.",
-            roles: qualityRoles,
+            roles: auditWriteRoles,
             status: "active",
           },
         ],
@@ -563,7 +566,7 @@ const rawModuleRegistry: ModuleSection[] = [
             href: "/surveys#buat-survei",
             icon: "la-plus-circle",
             description: "Membuat survei dengan target dan siklus PPEPP.",
-            roles: qualityRoles,
+            roles: auditWriteRoles,
             status: "active",
           },
         ],
@@ -1173,7 +1176,7 @@ const peningkatanMutuNode = createProcessNode(
 export const moduleRegistry: ModuleSection[] = [
   {
     id: "master-data",
-    label: "01 Master Data & Sumber Data",
+    label: "01 Master Data",
     children: [
       findSourceNode("organization"),
       findSourceNode("hris"),
@@ -1190,7 +1193,7 @@ export const moduleRegistry: ModuleSection[] = [
   },
   {
     id: "pelaksanaan-capaian",
-    label: "03 Pelaksanaan & Capaian",
+    label: "03 Pelaksanaan",
     children: [
       findSourceNode("indicators"),
       findSourceNode("ppepp"),
@@ -1198,7 +1201,7 @@ export const moduleRegistry: ModuleSection[] = [
   },
   {
     id: "evaluasi-mutu",
-    label: "04 Evaluasi Mutu",
+    label: "04 Evaluasi",
     children: [
       findSourceNode("ami"),
       findSourceNode("surveys"),
@@ -1206,7 +1209,7 @@ export const moduleRegistry: ModuleSection[] = [
   },
   {
     id: "pengendalian-rtl",
-    label: "05 Pengendalian RTL & RTM",
+    label: "05 Pengendalian",
     children: [
       findSourceNode("rtl"),
       findSourceNode("rtm"),
@@ -1214,7 +1217,7 @@ export const moduleRegistry: ModuleSection[] = [
   },
   {
     id: "peningkatan-mutu",
-    label: "06 Peningkatan Mutu",
+    label: "06 Peningkatan",
     children: [
       peningkatanMutuNode,
       findSourceNode("nilai"),
@@ -1222,7 +1225,7 @@ export const moduleRegistry: ModuleSection[] = [
   },
   {
     id: "monitoring-pelaporan",
-    label: "07 Monitoring & Pelaporan",
+    label: "07 Pelaporan",
     children: [
       findSourceNode("dashboard"),
       findSourceNode("accreditation"),
@@ -1232,7 +1235,7 @@ export const moduleRegistry: ModuleSection[] = [
   },
   {
     id: "administrasi-sistem",
-    label: "08 Administrasi Sistem",
+    label: "08 Administrasi",
     children: [
       findSourceNode("integrations"),
       findSourceNode("imports"),

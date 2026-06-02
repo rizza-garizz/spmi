@@ -1,3 +1,6 @@
+import { cookies } from "next/headers";
+import { AUTH_TOKEN_COOKIE } from "@/lib/spmi-session-client";
+
 const isServer = typeof window === "undefined";
 const apiBaseUrl = isServer
   ? process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://127.0.0.1:4000"
@@ -27,13 +30,22 @@ type DashboardPerformanceItem = {
   fakultas?: string;
   prodi?: string;
   achievement?: number;
-  history: number[];
+  history: Array<number | { period: string; value: number }>;
 };
 
 type DashboardSummary = {
   metrics: DashboardMetric[];
   modules: DashboardModule[];
   performance: DashboardPerformanceItem[];
+  source?: {
+    type: string;
+    tables: string[];
+  };
+  institution?: {
+    name: string | null;
+    academic_year: string | null;
+    system_name: string | null;
+  };
   kpi?: {
     total_indicators: number;
     average_achievement: number;
@@ -41,9 +53,28 @@ type DashboardSummary = {
     warning: number;
     risk: number;
     executive_score: number;
+    predicate?: string;
+  };
+  accreditation?: {
+    score: number;
+    predicate: string;
+    criteria: Array<{ label: string; score: number }>;
+    insight: string;
+  };
+  cycle?: {
+    academic_year: string | null;
+    active_cycles: number;
+    phase: string | null;
+    source: string;
   };
   standardAchievement?: Array<{ group: string; total: number; achievement: number }>;
   filters?: Record<string, string>;
+  filterOptions?: {
+    faculties: Array<{ code: string; name: string }>;
+    studyPrograms: Array<{ code: string; name: string }>;
+    standards: Array<{ code: string; title: string }>;
+    years: number[];
+  };
 };
 
 type SiakadIntegrationMapItem = {
@@ -153,14 +184,63 @@ const emptyDataSyncMap: DataSyncMap = {
   warnings: [],
 };
 
+const emptyDashboardSummary: DashboardSummary = {
+  metrics: [],
+  modules: [],
+  performance: [],
+  source: {
+    type: "unavailable",
+    tables: [],
+  },
+  kpi: {
+    total_indicators: 0,
+    average_achievement: 0,
+    achieved: 0,
+    warning: 0,
+    risk: 0,
+    executive_score: 0,
+    predicate: "PERLU PEMBINAAN",
+  },
+  accreditation: {
+    score: 0,
+    predicate: "PERLU PEMBINAAN",
+    criteria: [],
+    insight: "Data dashboard belum tersedia untuk sesi ini.",
+  },
+  cycle: {
+    academic_year: null,
+    active_cycles: 0,
+    phase: null,
+    source: "SystemSetting",
+  },
+  standardAchievement: [],
+  filters: {},
+  filterOptions: {
+    faculties: [],
+    studyPrograms: [],
+    standards: [],
+    years: [],
+  },
+};
+
 async function fetchJson<T>(path: string, fallback: T): Promise<T> {
   if (!apiBaseUrl) {
     return fallback;
   }
 
   try {
+    const headers = new Headers();
+
+    if (isServer) {
+      const token = (await cookies()).get(AUTH_TOKEN_COOKIE)?.value;
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+    }
+
     const response = await fetch(`${apiBaseUrl}${path}`, {
       cache: "no-store",
+      headers,
     });
 
     if (!response.ok) {
@@ -187,6 +267,48 @@ async function fetchJson<T>(path: string, fallback: T): Promise<T> {
   } catch {
     return fallback;
   }
+}
+
+async function fetchJsonStrict<T>(path: string): Promise<T> {
+  if (!apiBaseUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL belum dikonfigurasi.");
+  }
+
+  const headers = new Headers();
+
+  if (isServer) {
+    const token = (await cookies()).get(AUTH_TOKEN_COOKIE)?.value;
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    cache: "no-store",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Dashboard API gagal: ${response.status}`);
+  }
+
+  const payload = (await response.json()) as
+    | T
+    | {
+        success?: boolean;
+        data?: T;
+      };
+
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "success" in payload &&
+    "data" in payload
+  ) {
+    return payload.data as T;
+  }
+
+  return payload as T;
 }
 
 const emptyCatalog = {
@@ -276,12 +398,7 @@ export async function getDashboardSummary(filters: Record<string, string> = {}) 
   const query = new URLSearchParams(
     Object.entries(filters).filter(([, value]) => Boolean(value))
   ).toString();
-  return fetchJson<DashboardSummary>(`/dashboard/summary${query ? `?${query}` : ""}`, {
-    metrics: [] as DashboardMetric[],
-    modules: [] as DashboardModule[],
-    performance: [] as DashboardPerformanceItem[],
-    standardAchievement: [],
-  });
+  return fetchJson<DashboardSummary>(`/dashboard/summary${query ? `?${query}` : ""}`, emptyDashboardSummary);
 }
 
 export async function getCatalogSnapshot() {

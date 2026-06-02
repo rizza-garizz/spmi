@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { clientApiRequest, parseApiPayload } from "@/lib/spmi-session-client";
 import { hasRoleAccess } from "@/lib/spmi-access";
 import { useCurrentRoles } from "@/lib/spmi-access-client";
@@ -16,27 +16,28 @@ interface OrgUnit {
 
 export function OrganizationPage() {
   const roles = useCurrentRoles();
-  const canEditUnits = hasRoleAccess(["admin_lpm"], roles);
+  const canEditUnits = hasRoleAccess(["super_admin", "admin_lpm"], roles);
   const [units, setUnits] = useState<OrgUnit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const [selectedUnit, setSelectedUnit] = useState<OrgUnit | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  const unitById = new Map(units.map((unit) => [unit.id, unit]));
-  const rootUnits = units.filter((unit) => unit.parent_id === null);
-  const childrenByParent = units.reduce<Map<number, OrgUnit[]>>((acc, unit) => {
+  const unitById = useMemo(() => new Map(units.map((unit) => [unit.id, unit])), [units]);
+  const rootUnits = useMemo(() => units.filter((unit) => unit.parent_id === null), [units]);
+  const childrenByParent = useMemo(() => units.reduce<Map<number, OrgUnit[]>>((acc, unit) => {
     if (unit.parent_id !== null) {
       const siblings = acc.get(unit.parent_id) || [];
       siblings.push(unit);
       acc.set(unit.parent_id, siblings);
     }
     return acc;
-  }, new Map());
+  }, new Map()), [units]);
 
-  const totals = units.reduce(
+  const totals = useMemo(() => units.reduce(
     (acc, unit) => {
       acc.total += 1;
       if (unit.type === "fakultas") acc.faculties += 1;
@@ -44,7 +45,7 @@ export function OrganizationPage() {
       return acc;
     },
     { total: 0, faculties: 0, programs: 0 }
-  );
+  ), [units]);
 
   const getDepth = (unit: OrgUnit) => {
     let depth = 0;
@@ -61,15 +62,44 @@ export function OrganizationPage() {
   const flattenTree = (items: OrgUnit[]): OrgUnit[] =>
     items.flatMap((unit) => [unit, ...flattenTree(childrenByParent.get(unit.id) || [])]);
 
-  const orderedUnits = flattenTree(rootUnits);
-  const filteredUnits = orderedUnits.filter((unit) => {
+  const orderedUnits = useMemo(() => flattenTree(rootUnits), [rootUnits, childrenByParent]);
+  const filteredUnits = useMemo(() => orderedUnits.filter((unit) => {
     const haystack = [unit.code, unit.siakad_code, unit.name, unit.type].join(" ").toLowerCase();
     return haystack.includes(searchTerm.toLowerCase()) && (!typeFilter || unit.type === typeFilter);
-  });
+  }), [orderedUnits, searchTerm, typeFilter]);
+  const unitTypes = useMemo(() => Array.from(new Set(units.map((unit) => unit.type))).sort(), [units]);
   const totalPages = Math.max(1, Math.ceil(filteredUnits.length / pageSize));
-  const paginatedUnits = filteredUnits.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedUnits = useMemo(() => filteredUnits.slice((currentPage - 1) * pageSize, currentPage * pageSize), [currentPage, filteredUnits]);
+  const scopeItems = useMemo(
+    () => [
+      {
+        title: "Admin LPM",
+        value: units.filter((unit) => ["lpm", "fakultas", "prodi"].includes(unit.type)).length,
+        description: "Akses koordinasi dan validasi lintas unit mutu.",
+      },
+      {
+        title: "Pimpinan Fakultas",
+        value: units.filter((unit) => unit.type === "fakultas").length,
+        description: "Akses monitoring unit fakultas dan program studi di bawahnya.",
+      },
+      {
+        title: "Program Studi",
+        value: units.filter((unit) => unit.type === "prodi").length,
+        description: "Akses data operasional dan capaian pada scope prodi.",
+      },
+    ],
+    [units]
+  );
+
+  const formatUnitType = (type: string) =>
+    type
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
 
   const exportCsv = () => {
+    if (loading || filteredUnits.length === 0) return;
+
     const rows = [
       ["Kode Internal", "Kode SIAKAD", "Nama Unit", "Tipe", "Parent"],
       ...filteredUnits.map((unit) => [
@@ -91,12 +121,22 @@ export function OrganizationPage() {
   };
 
   const fetchUnits = async () => {
+    setLoading(true);
+    setErrorMessage("");
+
     try {
       const res = await clientApiRequest("/org-units");
       const json = await res.json();
-      setUnits(parseApiPayload(json, []));
-    } catch {
+      const nextUnits = parseApiPayload<OrgUnit[]>(json, []);
+
+      if (!res.ok) {
+        throw new Error(json?.message || "Gagal memuat struktur organisasi.");
+      }
+
+      setUnits(Array.isArray(nextUnits) ? nextUnits : []);
+    } catch (error) {
       setUnits([]);
+      setErrorMessage(error instanceof Error ? error.message : "Gagal memuat struktur organisasi.");
     } finally {
       setLoading(false);
     }
@@ -105,6 +145,23 @@ export function OrganizationPage() {
   useEffect(() => {
     fetchUnits();
   }, []);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    if (loading || typeof window === "undefined") return;
+
+    const targetId = window.location.hash.replace("#", "");
+    if (!targetId) return;
+
+    requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [loading]);
 
   return (
     <>
@@ -146,13 +203,25 @@ export function OrganizationPage() {
 
       <div className="row">
         <div className="col-lg-4">
-          <div className="card">
+          <div className="card" id="struktur-unit">
             <div className="card-header">
               <h4 className="card-title">Pohon Organisasi</h4>
             </div>
             <div className="card-body">
+              {errorMessage ? (
+                <div className="alert alert-warning" role="alert">
+                  {errorMessage}
+                  <div className="mt-2">
+                    <button className="btn btn-sm btn-warning" type="button" onClick={fetchUnits}>
+                      Muat Ulang
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               {loading ? (
                 <p className="mb-0">Memuat...</p>
+              ) : orderedUnits.length === 0 ? (
+                <p className="mb-0 text-muted">Belum ada struktur unit yang tersedia.</p>
               ) : (
                 <div className="list-group">
                   {orderedUnits.map((unit) => {
@@ -170,13 +239,13 @@ export function OrganizationPage() {
           </div>
         </div>
         <div className="col-lg-8">
-          <div className="card">
+          <div className="card" id="export-organisasi">
             <div className="card-header">
               <div>
                 <h4 className="card-title mb-1">Struktur Organisasi Aktif</h4>
                 <p className="mb-0 text-muted">Master unit mengikuti sinkronisasi SIAKAD agar struktur tetap konsisten.</p>
               </div>
-              <button className="btn btn-outline-primary btn-sm" type="button" onClick={exportCsv}>
+              <button className="btn btn-outline-primary btn-sm" type="button" onClick={exportCsv} disabled={loading || filteredUnits.length === 0}>
                 <i className="la la-file-excel-o me-1"></i> Export CSV
               </button>
             </div>
@@ -193,10 +262,9 @@ export function OrganizationPage() {
                 <div className="col-md-3 mb-2 mb-md-0">
                   <select className="form-control" value={typeFilter} onChange={(event) => { setTypeFilter(event.target.value); setCurrentPage(1); }}>
                     <option value="">Semua tipe</option>
-                    <option value="universitas">Universitas</option>
-                    <option value="fakultas">Fakultas</option>
-                    <option value="prodi">Prodi</option>
-                    <option value="unit">Unit</option>
+                    {unitTypes.map((type) => (
+                      <option value={type} key={type}>{formatUnitType(type)}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="col-md-2">
@@ -226,7 +294,7 @@ export function OrganizationPage() {
                         <td style={{ paddingLeft: `${12 + getDepth(unit) * 20}px` }}>{unit.name}</td>
                         <td>
                           <span className={`badge badge-${unit.type === 'prodi' ? 'info' : 'primary'}`}>
-                            {unit.type.toUpperCase()}
+                            {formatUnitType(unit.type)}
                           </span>
                         </td>
                         <td>
@@ -287,6 +355,35 @@ export function OrganizationPage() {
               </div>
             </div>
           ) : null}
+        </div>
+      </div>
+
+      <div className="row" id="scope-data">
+        <div className="col-12">
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <h4 className="card-title mb-1">Scope Data Organisasi</h4>
+                <p className="mb-0 text-muted">Ringkasan cakupan akses berdasarkan tipe unit yang tersedia.</p>
+              </div>
+            </div>
+            <div className="card-body">
+              <div className="row">
+                {scopeItems.map((item) => (
+                  <div className="col-md-4 mb-3 mb-md-0" key={item.title}>
+                    <div className="border rounded p-3 h-100">
+                      <p className="mb-1 text-muted">{item.title}</p>
+                      <h4 className="mb-2">{item.value}</h4>
+                      <p className="mb-0 text-muted">{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mb-0 mt-3 text-muted">
+                Scope detail mengikuti role login dan pemetaan unit dari API <code>/org-units</code>. Perubahan hak akses tetap dikendalikan oleh modul administrasi role.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </>

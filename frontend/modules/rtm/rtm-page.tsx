@@ -22,7 +22,7 @@ type CatalogOrgUnit = { code: string; name: string; type: string };
 export function RtmPage() {
   const { showToast } = useToast();
   const roles = useCurrentRoles();
-  const canManageMeetings = hasRoleAccess(["admin_lpm", "dekan", "wakil_dekan"], roles);
+  const canManageMeetings = hasRoleAccess(["super_admin", "lpm", "admin_lpm", "dekan", "wakil_dekan"], roles);
   const [meetings, setMeetings] = useState<RtmMeeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -57,11 +57,18 @@ export function RtmPage() {
 
   const fetchCatalog = async () => {
     try {
-      const res = await clientApiRequest("/catalog");
-      const json = await res.json();
-      const catalog = parseApiPayload(json, { ppeppCycles: [], orgUnits: [] });
-      setCycles(Array.isArray(catalog.ppeppCycles) ? catalog.ppeppCycles : []);
-      setOrgUnits(Array.isArray(catalog.orgUnits) ? catalog.orgUnits : []);
+      const [cyclesRes, orgUnitsRes] = await Promise.all([
+        clientApiRequest("/ppepp/cycles"),
+        clientApiRequest("/org-units"),
+      ]);
+      const [cyclesJson, orgUnitsJson] = await Promise.all([
+        cyclesRes.json(),
+        orgUnitsRes.json(),
+      ]);
+      const nextCycles = parseApiPayload<CatalogCycle[]>(cyclesJson, []);
+      const nextOrgUnits = parseApiPayload<CatalogOrgUnit[]>(orgUnitsJson, []);
+      setCycles(Array.isArray(nextCycles) ? nextCycles : []);
+      setOrgUnits(Array.isArray(nextOrgUnits) ? nextOrgUnits : []);
     } catch {
       setCycles([]);
       setOrgUnits([]);

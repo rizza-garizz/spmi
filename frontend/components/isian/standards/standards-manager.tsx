@@ -169,7 +169,7 @@ export function StandardsManager({ initialItems, categories }: StandardsManagerP
                     <td><span className="badge badge-light">v{standard.version ?? "1.0"}</span></td>
                     <td>{standard.revisions?.length ?? 0} catatan</td>
                     <td>
-                      <RoleGate allowedRoles={["admin_lpm"]} fallback={<span className="text-muted">Read only</span>}>
+                      <RoleGate allowedRoles={["super_admin", "lpm", "admin_lpm"]} fallback={<span className="text-muted">Read only</span>}>
                         <button className="btn btn-xs btn-outline-secondary me-2" type="button" onClick={() => setEditing(standard)}>
                           <i className="fa fa-pencil color-muted"></i> Edit
                         </button>

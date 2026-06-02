@@ -61,7 +61,7 @@ export default async function PpeppPage() {
 
       <section className="section">
         <RoleGate
-          allowedRoles={["admin_lpm", "kaprodi", "sekprodi", "unit_kerja"]}
+          allowedRoles={["super_admin", "lpm", "admin_lpm", "kaprodi", "sekprodi", "unit_kerja", "operator"]}
           fallback={
             <div className="glass auth-card">
               <p className="hero-copy" style={{ marginTop: 0 }}>

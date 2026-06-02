@@ -5,13 +5,11 @@ import { RoleGate } from "@/components/auth/RoleGate";
 import { ProgressiveSection } from "@/components/support/progressive-section";
 
 export async function StandardsPage() {
-  const catalog = await getCatalogSnapshot();
-  let standards: Array<any> = [];
-  try {
-    standards = await getStandards();
-  } catch {
-    standards = catalog.standards;
-  }
+  const [catalog, standardsResult] = await Promise.all([
+    getCatalogSnapshot(),
+    getStandards().catch(() => null),
+  ]);
+  const standards: Array<any> = standardsResult ?? catalog.standards;
 
   const standardsData = Array.isArray(standards)
     ? standards
@@ -64,7 +62,7 @@ export async function StandardsPage() {
         </div>
       </div>
 
-      <RoleGate allowedRoles={["admin_lpm"]}>
+      <RoleGate allowedRoles={["super_admin", "lpm", "admin_lpm"]}>
         <div className="row">
           <div className="col-xl-12 col-xxl-12 col-sm-12">
             <ProgressiveSection

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/support/Toast";
+import { hasRoleAccess } from "@/lib/spmi-access";
+import { useCurrentRoles } from "@/lib/spmi-access-client";
 import { clientApiRequest, parseApiPayload } from "@/lib/spmi-session-client";
 
 interface Audit {
@@ -15,6 +17,8 @@ interface Audit {
 
 export function AmiPage() {
   const { showToast } = useToast();
+  const roles = useCurrentRoles();
+  const canWriteAmi = hasRoleAccess(["super_admin", "lpm", "admin_lpm", "auditor"], roles);
   const [audits, setAudits] = useState<Audit[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAudit, setSelectedAudit] = useState<Audit | null>(null);
@@ -173,12 +177,14 @@ export function AmiPage() {
                           </span>
                         </td>
                         <td>
-                          <button
-                            className="btn btn-xs btn-primary me-2"
-                            onClick={() => setSelectedAudit(audit)}
-                          >
-                            + Tambah Temuan
-                          </button>
+                          {canWriteAmi ? (
+                            <button
+                              className="btn btn-xs btn-primary me-2"
+                              onClick={() => setSelectedAudit(audit)}
+                            >
+                              + Tambah Temuan
+                            </button>
+                          ) : null}
                           <button className="btn btn-xs btn-outline-primary" type="button" onClick={() => handleReport(audit)}>
                             <i className="la la-file-text-o"></i> Laporan
                           </button>
@@ -210,7 +216,7 @@ export function AmiPage() {
         </div>
       </div>
 
-      {selectedAudit && (
+      {selectedAudit && canWriteAmi && (
         <div className="row">
           <div className="col-xl-12">
             <div className="hris-page-toolbar">
@@ -227,7 +233,7 @@ export function AmiPage() {
         </div>
       )}
 
-      {selectedAudit && (
+      {selectedAudit && canWriteAmi && (
         <div className="card mt-4 border-primary">
           <div className="card-body">
             <form onSubmit={handleAddFinding}>

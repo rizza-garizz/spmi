@@ -6,19 +6,19 @@ import { findModuleTrail } from "@/lib/module-registry";
 export function DynamicBreadcrumb() {
   const pathname = usePathname();
 
-  if (pathname === "/" || pathname === "/dashboard") {
+  if (pathname === "/") {
     return null;
   }
 
   const trail = findModuleTrail(pathname);
-  if (trail.length === 0) {
+  if (trail.length === 0 && pathname !== "/dashboard") {
     return null;
   }
 
   return (
     <nav className="spmi-dynamic-breadcrumb" aria-label="Jejak halaman">
       <a href="/dashboard">Dashboard</a>
-      {trail.map((node, index) => {
+      {(trail.length > 0 ? trail : [{ id: "dashboard", label: "Dashboard", href: "/dashboard", icon: "la-dashboard", description: "Dashboard", roles: [] }]).map((node, index) => {
         const isLast = index === trail.length - 1;
         return (
           <span className="spmi-breadcrumb-node" key={`${node.id}-${index}`}>
