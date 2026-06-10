@@ -27,11 +27,18 @@ Jalankan di server/VPS:
 ```bash
 git clone git@github.com:rizza-garizz/spmi.git
 cd spmi
-git checkout staging-2026-06-10
+git checkout staging-docs-2026-06-10
 cp .env.production.example .env
 nano .env
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 docker compose -f docker-compose.prod.yml --env-file .env exec backend npm run prisma:seed
+```
+
+Untuk server Ubuntu baru, bootstrap Docker dan repo bisa memakai script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/master/scripts/bootstrap-ubuntu-staging.sh -o bootstrap-ubuntu-staging.sh
+sudo bash bootstrap-ubuntu-staging.sh
 ```
 
 ## Required Env
