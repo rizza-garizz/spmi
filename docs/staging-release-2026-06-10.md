@@ -27,7 +27,7 @@ Jalankan di server/VPS:
 ```bash
 git clone git@github.com:rizza-garizz/spmi.git
 cd spmi
-git checkout staging-docs-2026-06-10
+git checkout staging-bootstrap-2026-06-11
 cp .env.production.example .env
 nano .env
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
