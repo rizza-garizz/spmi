@@ -642,6 +642,228 @@ const state = {
     documents: catalog.hris.documents.map((item, index) => ({ id: item.id || `DOC-HR-${index + 1}`, ...item })),
     spmiLinks: [...catalog.hris.spmiLinks],
   },
+  accreditation: {
+    instruments: [
+      {
+        id: "INS-001",
+        code: "BAN-PT-APT-4.0",
+        name: "APT BAN-PT 4.0",
+        agency: "BAN-PT",
+        level: "Perguruan Tinggi",
+        criteria_count: 9,
+        status: "aktif",
+      },
+      {
+        id: "INS-002",
+        code: "LAM-APS-9K",
+        name: "APS LAM 9 Kriteria",
+        agency: "LAM",
+        level: "Program Studi",
+        criteria_count: 9,
+        status: "aktif",
+      },
+    ],
+    criteria: [
+      { id: "K-001", instrument_id: "INS-002", code: "K1", title: "Visi, Misi, Tujuan, dan Strategi", weight: 8, evidence_required: 6, standard_codes: ["STD-TAM-01"] },
+      { id: "K-002", instrument_id: "INS-002", code: "K2", title: "Tata Pamong, Tata Kelola, dan Kerja Sama", weight: 10, evidence_required: 8, standard_codes: ["STD-TAM-01", "STD-TAM-04"] },
+      { id: "K-003", instrument_id: "INS-002", code: "K3", title: "Mahasiswa", weight: 10, evidence_required: 7, standard_codes: ["STD-PEND-01"] },
+      { id: "K-004", instrument_id: "INS-002", code: "K4", title: "Sumber Daya Manusia", weight: 12, evidence_required: 9, standard_codes: ["STD-PEND-04", "STD-SDM-01"] },
+      { id: "K-005", instrument_id: "INS-002", code: "K5", title: "Keuangan, Sarana, dan Prasarana", weight: 10, evidence_required: 7, standard_codes: ["STD-PEND-05"] },
+      { id: "K-006", instrument_id: "INS-002", code: "K6", title: "Pendidikan", weight: 14, evidence_required: 10, standard_codes: ["STD-PEND-01", "STD-PEND-02", "STD-PEND-03"] },
+      { id: "K-007", instrument_id: "INS-002", code: "K7", title: "Penelitian", weight: 10, evidence_required: 7, standard_codes: ["STD-LIT-01", "STD-LIT-03"] },
+      { id: "K-008", instrument_id: "INS-002", code: "K8", title: "Pengabdian kepada Masyarakat", weight: 8, evidence_required: 6, standard_codes: ["STD-PKM-01"] },
+      { id: "K-009", instrument_id: "INS-002", code: "K9", title: "Luaran dan Capaian Tridharma", weight: 18, evidence_required: 11, standard_codes: ["STD-PEND-01", "STD-LIT-03", "STD-PKM-01"] },
+    ],
+    periods: [
+      {
+        id: "AKR-PER-001",
+        name: "APS Sistem Informasi 2026",
+        type: "APS",
+        agency: "LAM",
+        instrument_id: "INS-002",
+        org_unit_code: "SI",
+        start_date: "2026-06-01",
+        due_date: "2026-10-31",
+        status: "berjalan",
+        progress: 46,
+      },
+      {
+        id: "AKR-PER-002",
+        name: "APT Universitas 2027",
+        type: "APT",
+        agency: "BAN-PT",
+        instrument_id: "INS-001",
+        org_unit_code: "UNIV",
+        start_date: "2026-08-01",
+        due_date: "2027-03-31",
+        status: "draft",
+        progress: 18,
+      },
+    ],
+    assessments: [
+      {
+        id: "AKR-ASM-001",
+        period_id: "AKR-PER-001",
+        org_unit_code: "SI",
+        lkps_progress: 42,
+        led_progress: 35,
+        evidence_progress: 58,
+        review_progress: 28,
+        readiness_status: "warning",
+        score_projection: 312,
+        predicate_projection: "BAIK SEKALI",
+        risk_level: "kuning",
+      },
+      {
+        id: "AKR-ASM-002",
+        period_id: "AKR-PER-002",
+        org_unit_code: "UNIV",
+        lkps_progress: 20,
+        led_progress: 12,
+        evidence_progress: 24,
+        review_progress: 0,
+        readiness_status: "risk",
+        score_projection: 226,
+        predicate_projection: "BAIK",
+        risk_level: "merah",
+      },
+    ],
+    teamMembers: [
+      { id: "AKR-TIM-001", period_id: "AKR-PER-001", name: "Ketua Program Studi", role: "KAPRODI", responsibility: "Koordinator penyusunan APS", email: "kaprodi@spmi.local" },
+      { id: "AKR-TIM-002", period_id: "AKR-PER-001", name: "LPM Mutu", role: "ADMIN_AKREDITASI", responsibility: "Validasi instrumen dan review akhir", email: "lpm@spmi.local" },
+      { id: "AKR-TIM-003", period_id: "AKR-PER-001", name: "Operator SPMI", role: "OPERATOR", responsibility: "Input LKPS dan dokumen bukti", email: "operator@spmi.local" },
+    ],
+    evidence: [
+      { id: "AKR-EVD-001", period_id: "AKR-PER-001", criteria_code: "K4", title: "Rekap dosen tetap dan sertifikasi pendidik", source_module: "HRIS", status: "valid", file_name: "rekap-dosen-sertifikasi.pdf", linked_lkps_entry_id: "LKPS-ENT-002", linked_led_content_id: "LED-CNT-001", notes: "Sumber HRIS kompetensi." },
+      { id: "AKR-EVD-002", period_id: "AKR-PER-001", criteria_code: "K6", title: "Dokumen standar kurikulum dan evaluasi pembelajaran", source_module: "SPMI", status: "valid", file_name: "standar-kurikulum.pdf", linked_lkps_entry_id: null, linked_led_content_id: "LED-CNT-002", notes: "Terkait standar kurikulum." },
+      { id: "AKR-EVD-003", period_id: "AKR-PER-001", criteria_code: "K2", title: "Temuan AMI dan tindak lanjut tata kelola", source_module: "AMI", status: "perlu_revisi", file_name: "rtl-ami-tata-kelola.pdf", linked_lkps_entry_id: null, linked_led_content_id: null, notes: "Butuh bukti penutupan RTL." },
+    ],
+    lkpsSections: [
+      { id: "LKPS-SEC-001", code: "T1", title: "Profil Mahasiswa", criteria_code: "K3", source_module: "SIAKAD", required_fields: ["tahun", "pendaftar", "diterima", "aktif"] },
+      { id: "LKPS-SEC-002", code: "T2", title: "Dosen Tetap Program Studi", criteria_code: "K4", source_module: "HRIS", required_fields: ["nama", "nidn", "jabatan", "pendidikan"] },
+      { id: "LKPS-SEC-003", code: "T3", title: "Kurikulum dan Mata Kuliah", criteria_code: "K6", source_module: "SIAKAD", required_fields: ["kode_mk", "nama_mk", "sks", "semester"] },
+      { id: "LKPS-SEC-004", code: "T4", title: "Luaran Tridharma", criteria_code: "K9", source_module: "SPMI", required_fields: ["jenis", "tahun", "jumlah", "tautan_bukti"] },
+    ],
+    lkpsEntries: [
+      { id: "LKPS-ENT-001", period_id: "AKR-PER-001", section_id: "LKPS-SEC-001", label: "Mahasiswa aktif 2026", value: 842, unit: "mahasiswa", status: "draft", source_module: "SIAKAD", notes: "Menunggu sinkronisasi final SIAKAD." },
+      { id: "LKPS-ENT-002", period_id: "AKR-PER-001", section_id: "LKPS-SEC-002", label: "Dosen tetap tersertifikasi", value: 18, unit: "dosen", status: "valid", source_module: "HRIS", notes: "Diambil dari HRIS kompetensi sertifikasi." },
+      { id: "LKPS-ENT-003", period_id: "AKR-PER-001", section_id: "LKPS-SEC-004", label: "Publikasi dosen 3 tahun terakhir", value: 64, unit: "luaran", status: "perlu_review", source_module: "SPMI", notes: "Perlu validasi link bukti." },
+    ],
+    ledSections: [
+      { id: "LED-SEC-001", criteria_code: "K1", title: "Analisis VMTS", guidance: "Jelaskan keterkaitan VMTS, strategi, indikator, dan evaluasi ketercapaian." },
+      { id: "LED-SEC-002", criteria_code: "K2", title: "Tata Kelola dan Kerja Sama", guidance: "Uraikan sistem tata pamong, audit, RTM, kerja sama, dan tindak lanjut." },
+      { id: "LED-SEC-003", criteria_code: "K4", title: "Sumber Daya Manusia", guidance: "Uraikan kecukupan dosen, pengembangan kompetensi, jabatan akademik, dan tendik." },
+      { id: "LED-SEC-004", criteria_code: "K6", title: "Pendidikan", guidance: "Uraikan kurikulum, pembelajaran, asesmen, dan perbaikan berkelanjutan." },
+    ],
+    ledContents: [
+      {
+        id: "LED-CNT-001",
+        period_id: "AKR-PER-001",
+        section_id: "LED-SEC-003",
+        version: 1,
+        content: "UPPS memastikan kecukupan dan kualifikasi dosen melalui pemutakhiran data HRIS, sertifikasi, serta rencana pengembangan kompetensi tahunan.",
+        status: "draft",
+        reviewer_note: "Tambahkan tren jabatan akademik dan bukti pelatihan.",
+        updated_by: "lpm@spmi.local",
+      },
+      {
+        id: "LED-CNT-002",
+        period_id: "AKR-PER-001",
+        section_id: "LED-SEC-004",
+        version: 1,
+        content: "Kurikulum dievaluasi melalui PPEPP, AMI, dan masukan pemangku kepentingan dengan tindak lanjut pada pembaruan RPS dan metode asesmen.",
+        status: "perlu_review",
+        reviewer_note: "Sinkronkan dengan tabel LKPS kurikulum.",
+        updated_by: "kaprodi@spmi.local",
+      },
+    ],
+    selfScores: [
+      {
+        id: "AKR-SCR-001",
+        period_id: "AKR-PER-001",
+        criteria_code: "K4",
+        score: 3.1,
+        target_score: 3.6,
+        status: "warning",
+        gap_note: "Jumlah dosen tersertifikasi sudah baik, tetapi bukti tren jabatan akademik perlu dilengkapi.",
+        recommendation: "Lengkapi matriks dosen, sertifikasi, jabatan akademik, dan rencana pengembangan SDM.",
+        reviewer: "lpm@spmi.local",
+      },
+      {
+        id: "AKR-SCR-002",
+        period_id: "AKR-PER-001",
+        criteria_code: "K6",
+        score: 3.3,
+        target_score: 3.7,
+        status: "warning",
+        gap_note: "Narasi pendidikan sudah ada, sinkronisasi LKPS kurikulum dan bukti RPS masih perlu diperkuat.",
+        recommendation: "Tautkan bukti kurikulum, RPS, hasil evaluasi pembelajaran, dan tindak lanjut PPEPP.",
+        reviewer: "kaprodi@spmi.local",
+      },
+      {
+        id: "AKR-SCR-003",
+        period_id: "AKR-PER-001",
+        criteria_code: "K2",
+        score: 2.6,
+        target_score: 3.5,
+        status: "risk",
+        gap_note: "Temuan AMI tata kelola masih memiliki bukti RTL yang perlu direvisi.",
+        recommendation: "Tutup bukti RTL AMI, unggah keputusan RTM, dan validasi kerja sama aktif.",
+        reviewer: "auditor@spmi.local",
+      },
+    ],
+    reviews: [
+      {
+        id: "AKR-REV-001",
+        period_id: "AKR-PER-001",
+        entity_type: "led",
+        entity_id: "LED-CNT-002",
+        reviewer: "lpm@spmi.local",
+        status: "revision_required",
+        decision: "revise",
+        note: "Narasi pendidikan perlu ditautkan lebih eksplisit dengan tabel LKPS kurikulum dan bukti RPS.",
+        due_date: "2026-07-15",
+      },
+      {
+        id: "AKR-REV-002",
+        period_id: "AKR-PER-001",
+        entity_type: "evidence",
+        entity_id: "AKR-EVD-001",
+        reviewer: "auditor@spmi.local",
+        status: "approved",
+        decision: "approve",
+        note: "Bukti HRIS dosen tersertifikasi valid untuk K4.",
+        due_date: null,
+      },
+    ],
+    exports: [
+      {
+        id: "AKR-EXP-001",
+        period_id: "AKR-PER-001",
+        type: "package_manifest",
+        file_name: "paket-akreditasi-teknik-informatika-2026.json",
+        status: "generated",
+        generated_by: "lpm@spmi.local",
+        generated_at: "2026-06-10T08:00:00.000Z",
+        package_summary: {
+          lkps_entries: 2,
+          led_contents: 2,
+          evidence: 3,
+          reviews: 2,
+          self_scores: 3,
+          readiness_items: 6,
+        },
+        readiness_items: [
+          { key: "period", label: "Periode akreditasi tersedia", status: "ready" },
+          { key: "lkps", label: "Data LKPS tersedia", status: "ready" },
+          { key: "led", label: "Draft LED tersedia", status: "ready" },
+          { key: "evidence", label: "Bukti fisik tersedia", status: "ready" },
+          { key: "reviews", label: "Review internal berjalan", status: "warning" },
+          { key: "self_scores", label: "Penilaian mandiri tersedia", status: "ready" },
+        ],
+      },
+    ],
+  },
 };
 
 function getCatalogSnapshot() {
@@ -661,7 +883,610 @@ function getCatalogSnapshot() {
     imports: state.imports,
     integrations: getIntegrations(),
     hris: state.hris,
+    accreditation: state.accreditation,
   };
+}
+
+function getAccreditationPeriodById(periodId) {
+  return state.accreditation.periods.find((item) => String(item.id) === String(periodId)) || null;
+}
+
+function calculateAccreditationProgress(assessment) {
+  if (!assessment) return 0;
+  return Math.round(
+    (
+      Number(assessment.lkps_progress || 0) +
+      Number(assessment.led_progress || 0) +
+      Number(assessment.evidence_progress || 0) +
+      Number(assessment.review_progress || 0)
+    ) / 4
+  );
+}
+
+function getAccreditationReadiness(progress) {
+  if (progress >= 80) return "ready";
+  if (progress >= 45) return "warning";
+  return "risk";
+}
+
+function enrichAccreditationEvidence(item) {
+  const lkpsEntry = state.accreditation.lkpsEntries.find((entry) => entry.id === item.linked_lkps_entry_id) || null;
+  const ledContent = state.accreditation.ledContents.find((content) => content.id === item.linked_led_content_id) || null;
+  return {
+    ...item,
+    period: getAccreditationPeriodById(item.period_id),
+    lkps_entry: lkpsEntry,
+    led_content: ledContent,
+  };
+}
+
+function getCriterionByCode(code) {
+  return state.accreditation.criteria.find((item) => item.code === code) || null;
+}
+
+function enrichAccreditationSelfScore(item) {
+  const criterion = getCriterionByCode(item.criteria_code);
+  const score = Number(item.score || 0);
+  const targetScore = Number(item.target_score || 4);
+  const gap = Number(Math.max(0, targetScore - score).toFixed(2));
+  const weightedScore = criterion ? Number(((score / 4) * Number(criterion.weight || 0)).toFixed(2)) : 0;
+
+  return {
+    ...item,
+    criterion,
+    gap,
+    weighted_score: weightedScore,
+    readiness_status: gap <= 0.2 ? "ready" : gap <= 0.7 ? "warning" : "risk",
+  };
+}
+
+function resolveAccreditationReviewEntity(entityType, entityId) {
+  if (entityType === "lkps") return state.accreditation.lkpsEntries.find((item) => item.id === entityId) || null;
+  if (entityType === "led") return state.accreditation.ledContents.find((item) => item.id === entityId) || null;
+  if (entityType === "evidence") return state.accreditation.evidence.find((item) => item.id === entityId) || null;
+  if (entityType === "self_score") return state.accreditation.selfScores.find((item) => item.id === entityId) || null;
+  return null;
+}
+
+function enrichAccreditationReview(item) {
+  return {
+    ...item,
+    period: getAccreditationPeriodById(item.period_id),
+    entity: resolveAccreditationReviewEntity(item.entity_type, item.entity_id),
+  };
+}
+
+function getAccreditationPackageReadiness(periodId) {
+  const period = getAccreditationPeriodById(periodId);
+  const lkpsEntries = state.accreditation.lkpsEntries.filter((item) => item.period_id === periodId);
+  const ledContents = state.accreditation.ledContents.filter((item) => item.period_id === periodId);
+  const evidence = state.accreditation.evidence.filter((item) => item.period_id === periodId);
+  const reviews = state.accreditation.reviews.filter((item) => item.period_id === periodId);
+  const selfScores = state.accreditation.selfScores.filter((item) => item.period_id === periodId);
+  const openReviews = reviews.filter((item) => !["approved", "closed"].includes(item.status));
+  const invalidEvidence = evidence.filter((item) => !["valid", "approved"].includes(item.status));
+
+  return [
+    { key: "period", label: "Periode akreditasi tersedia", status: period ? "ready" : "risk", count: period ? 1 : 0 },
+    { key: "lkps", label: "Data LKPS tersedia", status: lkpsEntries.length ? "ready" : "risk", count: lkpsEntries.length },
+    { key: "led", label: "Draft LED tersedia", status: ledContents.length ? "ready" : "risk", count: ledContents.length },
+    {
+      key: "evidence",
+      label: "Bukti fisik valid",
+      status: evidence.length === 0 ? "risk" : invalidEvidence.length ? "warning" : "ready",
+      count: evidence.length,
+      open: invalidEvidence.length,
+    },
+    {
+      key: "reviews",
+      label: "Review internal selesai",
+      status: reviews.length === 0 ? "risk" : openReviews.length ? "warning" : "ready",
+      count: reviews.length,
+      open: openReviews.length,
+    },
+    { key: "self_scores", label: "Penilaian mandiri tersedia", status: selfScores.length ? "ready" : "risk", count: selfScores.length },
+  ];
+}
+
+function enrichAccreditationExport(item) {
+  return {
+    ...item,
+    period: getAccreditationPeriodById(item.period_id),
+  };
+}
+
+function calculateAccreditationScoreProjection(periodId) {
+  const rows = state.accreditation.selfScores.filter((item) => item.period_id === periodId).map(enrichAccreditationSelfScore);
+  const totalWeight = state.accreditation.criteria.reduce((sum, item) => sum + Number(item.weight || 0), 0) || 100;
+  const coveredWeight = rows.reduce((sum, item) => sum + Number(item.criterion?.weight || 0), 0);
+  const weightedScore = rows.reduce((sum, item) => sum + item.weighted_score, 0);
+  const normalized = coveredWeight ? (weightedScore / coveredWeight) * totalWeight : 0;
+  const scoreProjection = Math.round(normalized * 4);
+
+  return {
+    score_projection: scoreProjection,
+    predicate_projection: scoreProjection >= 361 ? "UNGGUL" : scoreProjection >= 301 ? "BAIK SEKALI" : scoreProjection >= 200 ? "BAIK" : "PERLU PEMBINAAN",
+    criteria_scored: rows.length,
+    average_score: rows.length ? Number((rows.reduce((sum, item) => sum + Number(item.score || 0), 0) / rows.length).toFixed(2)) : 0,
+    weighted_achievement: Number(normalized.toFixed(2)),
+  };
+}
+
+function getAccreditationSummary() {
+  const { periods, instruments, criteria, assessments, teamMembers, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, reviews, exports } = state.accreditation;
+  const activePeriods = periods.filter((item) => ["draft", "berjalan", "review"].includes(item.status));
+  const assessmentRows = assessments.map((assessment) => {
+    const period = getAccreditationPeriodById(assessment.period_id);
+    const progress = calculateAccreditationProgress(assessment);
+    const orgUnit = getOrgUnitReference(assessment.org_unit_code);
+    const scoring = calculateAccreditationScoreProjection(assessment.period_id);
+
+    return {
+      ...assessment,
+      progress,
+      readiness_status: assessment.readiness_status || getAccreditationReadiness(progress),
+      score_projection: scoring.score_projection || assessment.score_projection,
+      predicate_projection: scoring.predicate_projection || assessment.predicate_projection,
+      scoring,
+      period,
+      org_unit: orgUnit,
+      evidence_count: evidence.filter((item) => item.period_id === assessment.period_id).length,
+      team_count: teamMembers.filter((item) => item.period_id === assessment.period_id).length,
+    };
+  });
+  const averageReadiness = assessmentRows.length
+    ? Math.round(assessmentRows.reduce((sum, item) => sum + item.progress, 0) / assessmentRows.length)
+    : 0;
+
+  return {
+    generated_at: new Date().toISOString(),
+    metrics: [
+      { label: "Periode aktif", value: activePeriods.length },
+      { label: "Instrumen", value: instruments.length },
+      { label: "Kriteria", value: criteria.length },
+      { label: "Eviden awal", value: evidence.length },
+      { label: "LKPS entries", value: lkpsEntries.length },
+      { label: "LED drafts", value: ledContents.length },
+      { label: "Self scores", value: selfScores.length },
+      { label: "Review terbuka", value: reviews.filter((item) => item.status !== "approved").length },
+      { label: "Paket export", value: exports.length },
+    ],
+    readiness: {
+      average_progress: averageReadiness,
+      status: getAccreditationReadiness(averageReadiness),
+      ready: assessmentRows.filter((item) => item.readiness_status === "ready").length,
+      warning: assessmentRows.filter((item) => item.readiness_status === "warning").length,
+      risk: assessmentRows.filter((item) => item.readiness_status === "risk").length,
+    },
+    periods,
+    instruments,
+    criteria,
+    assessments: assessmentRows,
+    teamMembers,
+    evidence: evidence.map(enrichAccreditationEvidence),
+    lkpsSections,
+    lkpsEntries: lkpsEntries.map((entry) => ({
+      ...entry,
+      section: lkpsSections.find((item) => item.id === entry.section_id) || null,
+      period: getAccreditationPeriodById(entry.period_id),
+    })),
+    ledSections,
+    ledContents: ledContents.map((content) => ({
+      ...content,
+      section: ledSections.find((item) => item.id === content.section_id) || null,
+      period: getAccreditationPeriodById(content.period_id),
+    })),
+    selfScores: selfScores.map(enrichAccreditationSelfScore),
+    reviews: reviews.map(enrichAccreditationReview),
+    exports: exports.map(enrichAccreditationExport),
+    scoring: periods.map((period) => ({
+      period_id: period.id,
+      period_name: period.name,
+      ...calculateAccreditationScoreProjection(period.id),
+    })),
+    integrations: [
+      { source: "SIAKAD", data: ["mahasiswa", "lulusan", "kurikulum", "mata kuliah"], status: "ready_for_mapping" },
+      { source: "HRIS", data: ["dosen", "tendik", "jabatan", "sertifikasi", "pendidikan"], status: "ready" },
+      { source: "SPMI", data: ["standar", "PPEPP", "dokumen mutu"], status: "ready" },
+      { source: "AMI/RTM", data: ["temuan", "RTL", "keputusan manajemen"], status: "ready" },
+    ],
+  };
+}
+
+function getAccreditationPeriods() {
+  return state.accreditation.periods.map((period) => ({
+    ...period,
+    instrument: state.accreditation.instruments.find((item) => item.id === period.instrument_id) || null,
+    org_unit: getOrgUnitReference(period.org_unit_code),
+    team_count: state.accreditation.teamMembers.filter((item) => item.period_id === period.id).length,
+  }));
+}
+
+function addAccreditationPeriod(data, user = null) {
+  const duplicate = findDuplicateBy(state.accreditation.periods, data, [["name", "org_unit_code"]]);
+  if (duplicate) {
+    throw createConflict("Periode akreditasi dengan nama dan unit yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
+
+  const item = {
+    id: buildSequenceCode("AKR-PER", state.accreditation.periods, "id", 3),
+    name: data.name || "Periode Akreditasi Baru",
+    type: data.type || "APS",
+    agency: data.agency || "BAN-PT",
+    instrument_id: data.instrument_id || data.instrumentId || state.accreditation.instruments[0]?.id || null,
+    org_unit_code: data.org_unit_code || data.orgUnitCode || null,
+    start_date: data.start_date || data.startDate || new Date().toISOString().slice(0, 10),
+    due_date: data.due_date || data.dueDate || null,
+    status: data.status || "draft",
+    progress: Number(data.progress || 0),
+  };
+
+  state.accreditation.periods.unshift(item);
+  recordMutationAudit("accreditation.period", "created", item, null, user, { status_code: 201 });
+  return item;
+}
+
+function getAccreditationInstruments() {
+  return state.accreditation.instruments;
+}
+
+function addAccreditationInstrument(data, user = null) {
+  const duplicate = findDuplicateBy(state.accreditation.instruments, data, [["code"]]);
+  if (duplicate) {
+    throw createConflict("Kode instrumen akreditasi sudah ada.", { duplicate_id: duplicate.id });
+  }
+
+  const item = {
+    id: buildSequenceCode("INS", state.accreditation.instruments, "id", 3),
+    code: data.code || buildSequenceCode("INS-KODE", state.accreditation.instruments, "code", 3),
+    name: data.name || "Instrumen Akreditasi Baru",
+    agency: data.agency || "BAN-PT",
+    level: data.level || "Program Studi",
+    criteria_count: Number(data.criteria_count || data.criteriaCount || 0),
+    status: data.status || "aktif",
+  };
+
+  state.accreditation.instruments.unshift(item);
+  recordMutationAudit("accreditation.instrument", "created", item, null, user, { status_code: 201 });
+  return item;
+}
+
+function getAccreditationCriteria() {
+  return state.accreditation.criteria;
+}
+
+function addAccreditationCriterion(data, user = null) {
+  const payload = {
+    ...data,
+    instrument_id: data.instrument_id || data.instrumentId || state.accreditation.instruments[0]?.id || null,
+  };
+  const duplicate = findDuplicateBy(state.accreditation.criteria, payload, [["instrument_id", "code"]]);
+  if (duplicate) {
+    throw createConflict("Kriteria untuk instrumen dan kode yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
+
+  const item = {
+    id: buildSequenceCode("K", state.accreditation.criteria, "id", 3),
+    instrument_id: payload.instrument_id,
+    code: data.code || `K${state.accreditation.criteria.length + 1}`,
+    title: data.title || "Kriteria Baru",
+    weight: Number(data.weight || 0),
+    evidence_required: Number(data.evidence_required || data.evidenceRequired || 0),
+    standard_codes: Array.isArray(data.standard_codes) ? data.standard_codes : Array.isArray(data.standardCodes) ? data.standardCodes : [],
+  };
+
+  state.accreditation.criteria.push(item);
+  recordMutationAudit("accreditation.criterion", "created", item, null, user, { status_code: 201 });
+  return item;
+}
+
+function getAccreditationAssessments() {
+  return state.accreditation.assessments;
+}
+
+function addAccreditationAssessment(data, user = null) {
+  const item = {
+    id: buildSequenceCode("AKR-ASM", state.accreditation.assessments, "id", 3),
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    org_unit_code: data.org_unit_code || data.orgUnitCode || null,
+    lkps_progress: Number(data.lkps_progress || data.lkpsProgress || 0),
+    led_progress: Number(data.led_progress || data.ledProgress || 0),
+    evidence_progress: Number(data.evidence_progress || data.evidenceProgress || 0),
+    review_progress: Number(data.review_progress || data.reviewProgress || 0),
+    readiness_status: data.readiness_status || data.readinessStatus || "risk",
+    score_projection: Number(data.score_projection || data.scoreProjection || 0),
+    predicate_projection: data.predicate_projection || data.predicateProjection || "PERLU PEMBINAAN",
+    risk_level: data.risk_level || data.riskLevel || "merah",
+  };
+
+  state.accreditation.assessments.unshift(item);
+  recordMutationAudit("accreditation.assessment", "created", item, null, user, { status_code: 201 });
+  return item;
+}
+
+function getAccreditationTeamMembers() {
+  return state.accreditation.teamMembers;
+}
+
+function addAccreditationTeamMember(data, user = null) {
+  const duplicate = findDuplicateBy(state.accreditation.teamMembers, data, [["period_id", "email"]]);
+  if (duplicate) {
+    throw createConflict("Anggota tim akreditasi dengan periode dan email yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
+
+  const item = {
+    id: buildSequenceCode("AKR-TIM", state.accreditation.teamMembers, "id", 3),
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    name: data.name || "Anggota Tim",
+    role: data.role || "TIM_PENYUSUN",
+    responsibility: data.responsibility || data.tanggung_jawab || "Penyusunan dokumen akreditasi",
+    email: data.email || null,
+  };
+
+  state.accreditation.teamMembers.unshift(item);
+  recordMutationAudit("accreditation.team", "created", item, null, user, { status_code: 201 });
+  return item;
+}
+
+function getAccreditationEvidence() {
+  return state.accreditation.evidence.map(enrichAccreditationEvidence);
+}
+
+function addAccreditationEvidence(data, user = null) {
+  const payload = {
+    ...data,
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+  };
+  const duplicate = findDuplicateBy(state.accreditation.evidence, payload, [["period_id", "criteria_code", "title"]]);
+  if (duplicate) {
+    throw createConflict("Bukti fisik dengan periode, kriteria, dan judul yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
+
+  const item = {
+    id: buildSequenceCode("AKR-EVD", state.accreditation.evidence, "id", 3),
+    period_id: payload.period_id,
+    criteria_code: data.criteria_code || data.criteriaCode || state.accreditation.criteria[0]?.code || null,
+    title: data.title || "Bukti Akreditasi Baru",
+    source_module: data.source_module || data.sourceModule || "Manual",
+    status: data.status || "draft",
+    file_name: data.file_name || data.fileName || null,
+    file_url: data.file_url || data.fileUrl || null,
+    linked_lkps_entry_id: data.linked_lkps_entry_id || data.linkedLkpsEntryId || null,
+    linked_led_content_id: data.linked_led_content_id || data.linkedLedContentId || null,
+    notes: data.notes || "",
+  };
+
+  state.accreditation.evidence.unshift(item);
+  recordMutationAudit("accreditation.evidence", "created", item, null, user, { status_code: 201 });
+  return enrichAccreditationEvidence(item);
+}
+
+function getAccreditationLkps() {
+  return {
+    sections: state.accreditation.lkpsSections,
+    entries: state.accreditation.lkpsEntries.map((entry) => ({
+      ...entry,
+      section: state.accreditation.lkpsSections.find((item) => item.id === entry.section_id) || null,
+      period: getAccreditationPeriodById(entry.period_id),
+    })),
+  };
+}
+
+function addAccreditationLkpsEntry(data, user = null) {
+  const payload = {
+    ...data,
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    section_id: data.section_id || data.sectionId || state.accreditation.lkpsSections[0]?.id || null,
+  };
+  const duplicate = findDuplicateBy(state.accreditation.lkpsEntries, payload, [["period_id", "section_id", "label"]]);
+  if (duplicate) {
+    throw createConflict("Entry LKPS dengan periode, section, dan label yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
+
+  const section = state.accreditation.lkpsSections.find((item) => item.id === payload.section_id);
+  const item = {
+    id: buildSequenceCode("LKPS-ENT", state.accreditation.lkpsEntries, "id", 3),
+    period_id: payload.period_id,
+    section_id: payload.section_id,
+    label: data.label || "Entry LKPS Baru",
+    value: Number(data.value || 0),
+    unit: data.unit || "record",
+    status: data.status || "draft",
+    source_module: data.source_module || data.sourceModule || section?.source_module || "manual",
+    notes: data.notes || "",
+  };
+
+  state.accreditation.lkpsEntries.unshift(item);
+  recordMutationAudit("accreditation.lkps", "created", item, null, user, { status_code: 201 });
+  return item;
+}
+
+function getAccreditationLed() {
+  return {
+    sections: state.accreditation.ledSections,
+    contents: state.accreditation.ledContents.map((content) => ({
+      ...content,
+      section: state.accreditation.ledSections.find((item) => item.id === content.section_id) || null,
+      period: getAccreditationPeriodById(content.period_id),
+    })),
+  };
+}
+
+function addAccreditationLedContent(data, user = null) {
+  const payload = {
+    ...data,
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    section_id: data.section_id || data.sectionId || state.accreditation.ledSections[0]?.id || null,
+  };
+  const previousVersions = state.accreditation.ledContents.filter(
+    (item) => item.period_id === payload.period_id && item.section_id === payload.section_id
+  );
+  const item = {
+    id: buildSequenceCode("LED-CNT", state.accreditation.ledContents, "id", 3),
+    period_id: payload.period_id,
+    section_id: payload.section_id,
+    version: previousVersions.length ? Math.max(...previousVersions.map((entry) => Number(entry.version || 1))) + 1 : 1,
+    content: data.content || "",
+    status: data.status || "draft",
+    reviewer_note: data.reviewer_note || data.reviewerNote || "",
+    updated_by: user?.email || user?.username || data.updated_by || "system",
+  };
+
+  state.accreditation.ledContents.unshift(item);
+  recordMutationAudit("accreditation.led", "created", item, null, user, { status_code: 201 });
+  return item;
+}
+
+function getAccreditationSelfScores() {
+  return {
+    scores: state.accreditation.selfScores.map(enrichAccreditationSelfScore),
+    scoring: state.accreditation.periods.map((period) => ({
+      period_id: period.id,
+      period_name: period.name,
+      ...calculateAccreditationScoreProjection(period.id),
+    })),
+  };
+}
+
+function addAccreditationSelfScore(data, user = null) {
+  const payload = {
+    ...data,
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    criteria_code: data.criteria_code || data.criteriaCode || state.accreditation.criteria[0]?.code || null,
+  };
+  const duplicate = findDuplicateBy(state.accreditation.selfScores, payload, [["period_id", "criteria_code"]]);
+  if (duplicate) {
+    throw createConflict("Skor mandiri untuk periode dan kriteria yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
+
+  const score = Math.max(0, Math.min(4, Number(data.score || 0)));
+  const targetScore = Math.max(0, Math.min(4, Number(data.target_score || data.targetScore || 4)));
+  const gap = targetScore - score;
+  const item = {
+    id: buildSequenceCode("AKR-SCR", state.accreditation.selfScores, "id", 3),
+    period_id: payload.period_id,
+    criteria_code: payload.criteria_code,
+    score,
+    target_score: targetScore,
+    status: data.status || (gap <= 0.2 ? "ready" : gap <= 0.7 ? "warning" : "risk"),
+    gap_note: data.gap_note || data.gapNote || "",
+    recommendation: data.recommendation || "",
+    reviewer: data.reviewer || user?.email || user?.username || "system",
+  };
+
+  state.accreditation.selfScores.unshift(item);
+  recordMutationAudit("accreditation.self_score", "created", item, null, user, { status_code: 201 });
+  return enrichAccreditationSelfScore(item);
+}
+
+function getAccreditationReviews() {
+  return state.accreditation.reviews.map(enrichAccreditationReview);
+}
+
+function addAccreditationReview(data, user = null) {
+  const item = {
+    id: buildSequenceCode("AKR-REV", state.accreditation.reviews, "id", 3),
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    entity_type: data.entity_type || data.entityType || "led",
+    entity_id: data.entity_id || data.entityId || null,
+    reviewer: data.reviewer || user?.email || user?.username || "reviewer",
+    status: data.status || "in_review",
+    decision: data.decision || "review",
+    note: data.note || "",
+    due_date: data.due_date || data.dueDate || null,
+  };
+
+  state.accreditation.reviews.unshift(item);
+
+  const period = getAccreditationPeriodById(item.period_id);
+  if (period && period.status === "berjalan") {
+    period.status = "review";
+  }
+
+  recordMutationAudit("accreditation.review", "created", item, null, user, { status_code: 201 });
+  return enrichAccreditationReview(item);
+}
+
+function updateAccreditationPeriodStatus(periodId, data, user = null) {
+  const period = getAccreditationPeriodById(periodId);
+  if (!period) return null;
+
+  const previous = { ...period };
+  const status = data.status || period.status;
+  period.status = status;
+  period.progress = Number(data.progress ?? period.progress ?? 0);
+  period.final_note = data.final_note || data.finalNote || period.final_note || "";
+  period.updated_at = new Date().toISOString();
+
+  if (status === "final" || status === "selesai") {
+    const assessment = state.accreditation.assessments.find((item) => item.period_id === period.id);
+    if (assessment) {
+      assessment.review_progress = 100;
+      assessment.readiness_status = status === "selesai" ? "ready" : assessment.readiness_status;
+    }
+  }
+
+  recordMutationAudit("accreditation.period", "status_updated", period, previous, user);
+  return period;
+}
+
+function getAccreditationExports() {
+  return state.accreditation.exports.map(enrichAccreditationExport);
+}
+
+function getAccreditationExportById(exportId) {
+  const item = state.accreditation.exports.find((entry) => String(entry.id) === String(exportId));
+  return item ? enrichAccreditationExport(item) : null;
+}
+
+function generateAccreditationExport(data, user = null) {
+  const periodId = data.period_id || data.periodId || state.accreditation.periods[0]?.id || null;
+  const period = getAccreditationPeriodById(periodId);
+  if (!period) {
+    throw createNotFound("Periode akreditasi tidak ditemukan.");
+  }
+
+  const type = data.type || "package_manifest";
+  const lkpsEntries = state.accreditation.lkpsEntries.filter((item) => item.period_id === periodId);
+  const ledContents = state.accreditation.ledContents.filter((item) => item.period_id === periodId);
+  const evidence = state.accreditation.evidence.filter((item) => item.period_id === periodId);
+  const reviews = state.accreditation.reviews.filter((item) => item.period_id === periodId);
+  const selfScores = state.accreditation.selfScores.filter((item) => item.period_id === periodId);
+  const readinessItems = getAccreditationPackageReadiness(periodId);
+  const safeName = String(period.name || "akreditasi").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  const extension = type === "zip" ? "zip" : type === "pdf" ? "pdf" : "json";
+  const now = new Date().toISOString();
+  const item = {
+    id: buildSequenceCode("AKR-EXP", state.accreditation.exports, "id", 3),
+    period_id: periodId,
+    type,
+    file_name: data.file_name || data.fileName || `${safeName || "paket-akreditasi"}-${Date.now()}.${extension}`,
+    status: readinessItems.some((entry) => entry.status === "risk") ? "needs_attention" : "generated",
+    generated_by: user?.email || user?.username || "system",
+    generated_at: now,
+    package_summary: {
+      period: period.name,
+      lkps_entries: lkpsEntries.length,
+      led_contents: ledContents.length,
+      evidence: evidence.length,
+      reviews: reviews.length,
+      self_scores: selfScores.length,
+      readiness_items: readinessItems.length,
+    },
+    readiness_items: readinessItems,
+    manifest: {
+      period,
+      lkps_entries: lkpsEntries,
+      led_contents: ledContents,
+      evidence: evidence.map(enrichAccreditationEvidence),
+      reviews: reviews.map(enrichAccreditationReview),
+      self_scores: selfScores.map(enrichAccreditationSelfScore),
+    },
+  };
+
+  state.accreditation.exports.unshift(item);
+  recordMutationAudit("accreditation.export", "generated", item, null, user, { status_code: 201 });
+  return enrichAccreditationExport(item);
 }
 
 function getHrisSummary() {
@@ -1060,6 +1885,13 @@ function buildSequenceCode(prefix, collection, field = "code", width = 3) {
 function createConflict(message, metadata = {}) {
   const error = new Error(message);
   error.statusCode = 409;
+  error.metadata = metadata;
+  return error;
+}
+
+function createNotFound(message, metadata = {}) {
+  const error = new Error(message);
+  error.statusCode = 404;
   error.metadata = metadata;
   return error;
 }
@@ -2719,6 +3551,31 @@ module.exports = {
   getDataSyncMap,
   getHrisSummary,
   getHrisEmployeeProfile,
+  getAccreditationSummary,
+  getAccreditationPeriods,
+  addAccreditationPeriod,
+  getAccreditationInstruments,
+  addAccreditationInstrument,
+  getAccreditationCriteria,
+  addAccreditationCriterion,
+  getAccreditationAssessments,
+  addAccreditationAssessment,
+  getAccreditationTeamMembers,
+  addAccreditationTeamMember,
+  getAccreditationEvidence,
+  addAccreditationEvidence,
+  getAccreditationLkps,
+  addAccreditationLkpsEntry,
+  getAccreditationLed,
+  addAccreditationLedContent,
+  getAccreditationSelfScores,
+  addAccreditationSelfScore,
+  getAccreditationReviews,
+  addAccreditationReview,
+  updateAccreditationPeriodStatus,
+  getAccreditationExports,
+  getAccreditationExportById,
+  generateAccreditationExport,
   getIntegrations,
   getIntegrationReadiness,
   getIntegrationLogs,

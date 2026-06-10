@@ -45,13 +45,14 @@ type MegaParent = {
 const roleAll: AppRole[] = ["super_admin", "lpm", "admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi", "unit_kerja", "operator"];
 const roleQuality: AppRole[] = ["super_admin", "lpm", "admin_lpm", "auditor", "dekan", "wakil_dekan", "kaprodi", "sekprodi"];
 const roleOperator: AppRole[] = ["super_admin", "lpm", "admin_lpm", "kaprodi", "sekprodi", "unit_kerja", "operator"];
+const roleLeadership: AppRole[] = ["super_admin", "lpm", "admin_lpm", "dekan", "wakil_dekan"];
 const roleAdmin: AppRole[] = ["super_admin", "admin_lpm"];
 
 const megaParents: MegaParent[] = [
   {
     id: "master-data",
-    label: "MASTER DATA & SUMBER DATA",
-    description: "Pengelolaan sumber data utama sistem mutu.",
+    label: "01 MASTER DATA",
+    description: "Validasi struktur kampus, SDM, dan sumber data sebelum proses mutu dimulai.",
     icon: "la-database",
     children: [
       {
@@ -82,13 +83,12 @@ const megaParents: MegaParent[] = [
           { id: "hris-integrasi-spmi", label: "Koneksi SPMI", description: "Pemetaan HRIS ke standar, AMI, dan akreditasi.", href: "/hris/integrasi-spmi", icon: "la-link", roles: ["super_admin", "lpm", "admin_lpm", "dekan", "wakil_dekan"] },
         ],
       },
-      { id: "access-info", label: "Access Info", description: "Informasi role, cakupan akses, dan panduan sesi.", href: "/access-info", icon: "la-user-shield", roles: roleAll },
     ],
   },
   {
     id: "penetapan-standar",
-    label: "PENETAPAN STANDAR",
-    description: "Pengelolaan standar mutu dan dokumen mutu.",
+    label: "02 PENETAPAN",
+    description: "Penetapan standar mutu, dokumen kebijakan, versi, dan metadata resmi.",
     icon: "la-clipboard-check",
     children: [
       {
@@ -122,10 +122,23 @@ const megaParents: MegaParent[] = [
   },
   {
     id: "pelaksanaan-capaian",
-    label: "PELAKSANAAN & CAPAIAN",
-    description: "Pemantauan indikator, IKU, IKT, dan capaian pelaksanaan.",
+    label: "03 PELAKSANAAN",
+    description: "Jalankan PPEPP dan input capaian indikator yang melekat pada standar.",
     icon: "la-play-circle",
     children: [
+      {
+        id: "ppepp",
+        label: "PPEPP Tracker",
+        description: "Siklus, tahapan, evidence, dan capaian PPEPP.",
+        href: "/ppepp",
+        icon: "la-sync",
+        roles: roleAll,
+        children: [
+          { id: "ppepp-cycles", label: "Daftar Siklus", description: "Monitoring siklus PPEPP lintas unit.", href: "/ppepp#daftar-siklus", icon: "la-sync", roles: roleAll },
+          { id: "ppepp-create", label: "Buat Siklus", description: "Membuat siklus PPEPP berdasarkan unit dan tahun akademik.", href: "/ppepp#buat-siklus", icon: "la-plus-circle", roles: roleOperator },
+          { id: "ppepp-evidence", label: "Evidence PPEPP", description: "Upload bukti setiap tahap PPEPP.", href: "/ppepp#evidence-ppepp", icon: "la-paperclip", roles: roleOperator },
+        ],
+      },
       { id: "indicators", label: "Indikator", description: "Kelola indikator mutu dan target capaian.", href: "/indicators", icon: "la-chart-line", roles: roleAll },
       { id: "iku", label: "IKU", description: "Monitoring indikator kinerja utama.", href: "/indicators#iku", icon: "la-tachometer-alt", roles: roleAll },
       { id: "ikt", label: "IKT", description: "Monitoring indikator kinerja tambahan.", href: "/indicators#ikt", icon: "la-chart-bar", roles: roleAll },
@@ -134,8 +147,8 @@ const megaParents: MegaParent[] = [
   },
   {
     id: "evaluasi",
-    label: "EVALUASI",
-    description: "Audit, evaluasi diri, dan survei untuk mengukur mutu.",
+    label: "04 EVALUASI",
+    description: "Lakukan AMI, survei, pengukuran, dan temuan berbasis evidence.",
     icon: "la-search",
     children: [
       {
@@ -158,60 +171,128 @@ const megaParents: MegaParent[] = [
   },
   {
     id: "pengendalian",
-    label: "PENGENDALIAN",
-    description: "Pengendalian temuan, RTL, dan monitoring perbaikan.",
+    label: "05 PENGENDALIAN",
+    description: "Kelola RTM, RTL, verifikasi perbaikan, dan keputusan manajemen.",
     icon: "la-sliders-h",
     children: [
-      { id: "rtl", label: "RTL", description: "Kelola rencana tindak lanjut lintas unit.", href: "/rtl", icon: "la-tasks", roles: roleAll },
+      {
+        id: "rtm",
+        label: "RTM",
+        description: "Rapat tinjauan manajemen dan keputusan strategis.",
+        href: "/rtm",
+        icon: "la-users-cog",
+        roles: roleQuality,
+        children: [
+          { id: "rtm-agenda", label: "Agenda RTM", description: "Daftar rapat, status, dan keputusan RTM.", href: "/rtm#agenda-rtm", icon: "la-calendar", roles: roleQuality },
+          { id: "rtm-create", label: "Jadwalkan RTM", description: "Membuat agenda RTM baru berbasis siklus dan unit.", href: "/rtm#jadwalkan-rtm", icon: "la-plus-circle", roles: roleLeadership },
+          { id: "rtm-rtl-detail", label: "Detail RTL", description: "Melihat tindak lanjut dari keputusan RTM.", href: "/rtm#detail-rtl", icon: "la-eye", roles: roleQuality },
+        ],
+      },
+      {
+        id: "rtl",
+        label: "RTL Monitoring",
+        description: "Kelola rencana tindak lanjut lintas unit.",
+        href: "/rtl",
+        icon: "la-tasks",
+        roles: roleAll,
+        children: [
+          { id: "rtl-monitoring", label: "Monitoring RTL", description: "Pantau status, PIC, deadline, dan progres RTL.", href: "/rtl#monitoring-rtl", icon: "la-clipboard-check", roles: roleAll },
+          { id: "rtl-progress", label: "Update Progress", description: "Memperbarui progres, catatan, dan status tindak lanjut.", href: "/rtl#update-progress", icon: "la-edit", roles: roleOperator },
+        ],
+      },
       { id: "temuan", label: "Temuan", description: "Tinjau temuan audit dan sumber pengendalian.", href: "/ami#temuan", icon: "la-exclamation-circle", roles: roleQuality },
-      { id: "monitoring-rtl", label: "Monitoring RTL", description: "Pantau status, PIC, deadline, dan progres RTL.", href: "/rtl#monitoring-rtl", icon: "la-clipboard-check", roles: roleAll },
     ],
   },
   {
     id: "peningkatan",
-    label: "PENINGKATAN",
-    description: "Program peningkatan mutu, RTM, dan action plan.",
+    label: "06 PENINGKATAN",
+    description: "Tutup siklus melalui prioritas peningkatan, revisi standar, dan action plan berikutnya.",
     icon: "la-level-up-alt",
     children: [
-      { id: "rtm", label: "RTM", description: "Rapat tinjauan manajemen dan keputusan strategis.", href: "/rtm", icon: "la-users-cog", roles: roleQuality },
       { id: "program-peningkatan", label: "Program Peningkatan", description: "Prioritas peningkatan dari hasil evaluasi dan pengendalian.", href: "/nilai#prioritas-kerja", icon: "la-rocket", roles: roleAll },
+      { id: "revisi-standar", label: "Revisi Standar", description: "Revisi standar berdasarkan hasil RTM, AMI, dan RTL.", href: "/standards#riwayat-revisi", icon: "la-code-branch", roles: roleQuality },
       { id: "action-plan", label: "Action Plan", description: "Rencana aksi peningkatan dan siklus berikutnya.", href: "/rtl#action-plan", icon: "la-route", roles: roleOperator },
     ],
   },
   {
     id: "pelaporan",
-    label: "PELAPORAN",
-    description: "Dashboard, PPEPP, akreditasi, dan analitik pimpinan.",
+    label: "07 MONITORING & PELAPORAN",
+    description: "Pimpinan memantau KPI, rekap mutu, akreditasi, dan kesiapan go-live.",
     icon: "la-chart-pie",
     children: [
       { id: "dashboard", label: "Dashboard", description: "KPI, grafik, counter, dan ringkasan eksekutif.", href: "/dashboard", icon: "la-dashboard", roles: roleAll },
-      { id: "ppepp", label: "PPEPP", description: "Siklus, tahapan, evidence, dan capaian PPEPP.", href: "/ppepp", icon: "la-sync", roles: roleAll },
-      { id: "accreditation", label: "Akreditasi", description: "Status akreditasi, sertifikat, dan masa berlaku.", href: "/accreditation", icon: "la-award", roles: roleQuality },
+      { id: "nilai", label: "Nilai & Rekap", description: "Rekap capaian, skor, dan ringkasan evaluasi mutu.", href: "/nilai", icon: "la-bar-chart", roles: roleOperator },
+      {
+        id: "accreditation",
+        label: "Akreditasi",
+        description: "Dashboard, periode, instrumen, kriteria, tim, dan kesiapan akreditasi.",
+        href: "/accreditation",
+        icon: "la-award",
+        roles: roleQuality,
+        children: [
+          { id: "accreditation-dashboard", label: "Dashboard Akreditasi", description: "Progress LKPS, LED, bukti, review, dan risiko.", href: "/accreditation#dashboard-akreditasi", icon: "la-chart-pie", roles: roleQuality },
+          { id: "accreditation-period", label: "Periode Akreditasi", description: "Setup APS/APT, lembaga, instrumen, unit, dan deadline.", href: "/accreditation#periode-akreditasi", icon: "la-calendar-check", roles: roleQuality },
+          { id: "accreditation-instrument", label: "Instrumen & Kriteria", description: "Master BAN-PT/LAM, 9 kriteria, bobot, dan mapping standar.", href: "/accreditation#instrumen-kriteria", icon: "la-clipboard-list", roles: roleQuality },
+          { id: "accreditation-lkps", label: "LKPS", description: "Input data kuantitatif dari SIAKAD, HRIS, SPMI, dan manual.", href: "/accreditation#lkps-akreditasi", icon: "la-table", roles: roleQuality },
+          { id: "accreditation-led", label: "LED", description: "Draft narasi evaluasi diri per kriteria dengan versi dan catatan.", href: "/accreditation#led-akreditasi", icon: "la-edit", roles: roleQuality },
+          { id: "accreditation-self-assessment", label: "Penilaian Mandiri", description: "Skor kriteria, gap, rekomendasi, dan proyeksi predikat.", href: "/accreditation#self-assessment-akreditasi", icon: "la-star-half-alt", roles: roleQuality },
+          { id: "accreditation-review", label: "Review & Approval", description: "Review internal, keputusan revisi/approve, dan finalisasi periode.", href: "/accreditation#review-akreditasi", icon: "la-comments", roles: roleQuality },
+          { id: "accreditation-team", label: "Tim Akreditasi", description: "Admin, kaprodi, penyusun, reviewer, dan operator.", href: "/accreditation#tim-akreditasi", icon: "la-users", roles: roleQuality },
+          { id: "accreditation-integration", label: "Integrasi & Bukti", description: "Mapping SIAKAD, HRIS, SPMI, AMI, RTM, dan bukti fisik.", href: "/accreditation#integrasi-akreditasi", icon: "la-link", roles: roleQuality },
+        ],
+      },
       { id: "analytics", label: "Analitik", description: "Analisis performa, tren, dan kesiapan mutu.", href: "/dashboard#analitik", icon: "la-chart-area", roles: roleAll },
+      { id: "go-live", label: "Go-Live Readiness", description: "UAT, backup, monitoring, dan kesiapan pilot sistem.", href: "/go-live", icon: "la-rocket", roles: roleLeadership },
+      { id: "news", label: "Berita & Aktivitas", description: "Informasi terbaru, kegiatan, dan pembaruan SPMI.", href: "/news", icon: "la-newspaper", roles: roleAll },
     ],
   },
   {
     id: "administrasi",
-    label: "ADMINISTRASI",
-    description: "User, role, audit trail, dan pengaturan sistem.",
+    label: "08 ADMINISTRASI",
+    description: "Kelola integrasi, import, setting, akses, dan operasional sistem.",
     icon: "la-cog",
     children: [
-      { id: "users", label: "User", description: "Kelola pengguna dan sesi akses sistem.", href: "/settings#user", icon: "la-user", roles: roleAdmin },
-      { id: "roles", label: "Role", description: "Kelola role, scope, dan hak akses.", href: "/settings#role", icon: "la-user-lock", roles: roleAdmin },
-      { id: "audit-trail", label: "Audit Trail", description: "Pantau aktivitas login, CRUD, approval, dan reject.", href: "/settings#audit-trail", icon: "la-history", roles: roleAdmin },
+      {
+        id: "integrations",
+        label: "Integrasi",
+        description: "Peta koneksi, readiness check, dan log sinkronisasi.",
+        href: "/integrations",
+        icon: "la-plug",
+        roles: roleAdmin,
+        children: [
+          { id: "integrations-map", label: "System Map", description: "Peta koneksi SIAKAD, SIMPEG, repository, PDDIKTI, dan SSO.", href: "/integrations#system-map", icon: "la-project-diagram", roles: roleAdmin },
+          { id: "integrations-check", label: "Readiness Check", description: "Cek sinkronisasi, duplicate data, dan error API.", href: "/integrations#readiness-check", icon: "la-heartbeat", roles: roleAdmin },
+          { id: "integrations-log", label: "Integration Logs", description: "Log integrasi dan riwayat sinkronisasi.", href: "/integrations#integration-logs", icon: "la-history", roles: roleAdmin },
+        ],
+      },
+      {
+        id: "imports",
+        label: "Import Data",
+        description: "Import LKPT, LKPS, KKM, dan migrasi AOA.",
+        href: "/imports",
+        icon: "la-file-import",
+        roles: roleAdmin,
+        children: [
+          { id: "imports-upload", label: "Upload Import", description: "Upload file LKPT, LKPS, KKM, atau dataset pendukung.", href: "/imports#upload-import", icon: "la-upload", roles: roleAdmin },
+          { id: "imports-preview", label: "AOA Preview", description: "Preview validasi data sebelum commit migrasi.", href: "/imports#aoa-preview", icon: "la-eye", roles: roleAdmin },
+          { id: "imports-commit", label: "AOA Commit", description: "Commit data import yang sudah valid.", href: "/imports#aoa-commit", icon: "la-check-circle", roles: roleAdmin },
+        ],
+      },
       {
         id: "settings",
         label: "Pengaturan Sistem",
-        description: "Konfigurasi sistem, integrasi, dan operasional.",
+        description: "Konfigurasi role, user, audit trail, dan operasional.",
         href: "/settings",
         icon: "la-tools",
         roles: roleAdmin,
         children: [
           { id: "settings-general", label: "Konfigurasi Umum", description: "Identitas institusi dan tahun akademik.", href: "/settings#konfigurasi-umum", icon: "la-sliders-h", roles: roleAdmin },
-          { id: "settings-integration", label: "Integrasi", description: "Status koneksi dan sinkronisasi data.", href: "/integrations", icon: "la-plug", roles: roleAdmin },
-          { id: "settings-import", label: "Import Data", description: "Import dan validasi data operasional.", href: "/imports", icon: "la-file-import", roles: roleAdmin },
+          { id: "settings-users", label: "User", description: "Kelola pengguna dan sesi akses sistem.", href: "/settings#user", icon: "la-user", roles: roleAdmin },
+          { id: "settings-roles", label: "Role Access", description: "Kelola role, scope, dan hak akses.", href: "/settings#role", icon: "la-user-lock", roles: roleAdmin },
+          { id: "settings-audit-trail", label: "Audit Trail", description: "Pantau aktivitas login, CRUD, approval, dan reject.", href: "/settings#audit-trail", icon: "la-history", roles: roleAdmin },
         ],
       },
+      { id: "access-info", label: "Access Info", description: "Informasi role, cakupan akses, dan panduan sesi.", href: "/access-info", icon: "la-user-shield", roles: roleAll },
     ],
   },
 ];

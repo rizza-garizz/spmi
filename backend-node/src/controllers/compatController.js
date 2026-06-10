@@ -8,6 +8,31 @@ const {
   getDataSyncMap,
   getHrisSummary,
   getHrisEmployeeProfile,
+  getAccreditationSummary,
+  getAccreditationPeriods,
+  addAccreditationPeriod,
+  getAccreditationInstruments,
+  addAccreditationInstrument,
+  getAccreditationCriteria,
+  addAccreditationCriterion,
+  getAccreditationAssessments,
+  addAccreditationAssessment,
+  getAccreditationTeamMembers,
+  addAccreditationTeamMember,
+  getAccreditationEvidence,
+  addAccreditationEvidence,
+  getAccreditationLkps,
+  addAccreditationLkpsEntry,
+  getAccreditationLed,
+  addAccreditationLedContent,
+  getAccreditationSelfScores,
+  addAccreditationSelfScore,
+  getAccreditationReviews,
+  addAccreditationReview,
+  updateAccreditationPeriodStatus,
+  getAccreditationExports,
+  getAccreditationExportById,
+  generateAccreditationExport,
   getIntegrations,
   getIntegrationReadiness,
   getIntegrationLogs,
@@ -1019,6 +1044,163 @@ function deleteHrisDocumentRecord(req, res) {
   return success(res, document, "Dokumen HRIS berhasil dihapus di mode lokal.");
 }
 
+function accreditationSummary(_req, res) {
+  return success(res, getAccreditationSummary(), "Ringkasan modul akreditasi");
+}
+
+function accreditationPeriods(_req, res) {
+  return success(res, getAccreditationPeriods(), "Daftar periode akreditasi");
+}
+
+function createAccreditationPeriod(req, res) {
+  try {
+    return success(res, addAccreditationPeriod(req.body || {}, req.user), "Periode akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Periode akreditasi gagal dibuat.");
+  }
+}
+
+function accreditationInstruments(_req, res) {
+  return success(res, getAccreditationInstruments(), "Daftar instrumen akreditasi");
+}
+
+function createAccreditationInstrument(req, res) {
+  try {
+    return success(res, addAccreditationInstrument(req.body || {}, req.user), "Instrumen akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Instrumen akreditasi gagal dibuat.");
+  }
+}
+
+function accreditationCriteria(_req, res) {
+  return success(res, getAccreditationCriteria(), "Daftar kriteria akreditasi");
+}
+
+function createAccreditationCriterion(req, res) {
+  try {
+    return success(res, addAccreditationCriterion(req.body || {}, req.user), "Kriteria akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Kriteria akreditasi gagal dibuat.");
+  }
+}
+
+function accreditationAssessments(_req, res) {
+  return success(res, getAccreditationAssessments(), "Daftar assessment akreditasi");
+}
+
+function createAccreditationAssessment(req, res) {
+  try {
+    return success(res, addAccreditationAssessment(req.body || {}, req.user), "Assessment akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Assessment akreditasi gagal dibuat.");
+  }
+}
+
+function accreditationTeamMembers(_req, res) {
+  return success(res, getAccreditationTeamMembers(), "Daftar tim akreditasi");
+}
+
+function createAccreditationTeamMember(req, res) {
+  try {
+    return success(res, addAccreditationTeamMember(req.body || {}, req.user), "Anggota tim akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Anggota tim akreditasi gagal dibuat.");
+  }
+}
+
+function accreditationEvidence(_req, res) {
+  return success(res, getAccreditationEvidence(), "Daftar bukti fisik akreditasi");
+}
+
+function createAccreditationEvidence(req, res) {
+  try {
+    const payload = {
+      ...(req.body || {}),
+      file_name: req.file?.originalname || req.body?.file_name || req.body?.fileName || null,
+      file_url: req.file?.path || req.body?.file_url || req.body?.fileUrl || null,
+    };
+    return success(res, addAccreditationEvidence(payload, req.user), "Bukti fisik akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Bukti fisik akreditasi gagal dibuat.");
+  }
+}
+
+function accreditationLkps(_req, res) {
+  return success(res, getAccreditationLkps(), "Data LKPS akreditasi");
+}
+
+function createAccreditationLkpsEntry(req, res) {
+  try {
+    return success(res, addAccreditationLkpsEntry(req.body || {}, req.user), "Entry LKPS berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Entry LKPS gagal dibuat.");
+  }
+}
+
+function accreditationLed(_req, res) {
+  return success(res, getAccreditationLed(), "Data LED akreditasi");
+}
+
+function createAccreditationLedContent(req, res) {
+  try {
+    return success(res, addAccreditationLedContent(req.body || {}, req.user), "Konten LED berhasil disimpan.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Konten LED gagal disimpan.");
+  }
+}
+
+function accreditationSelfScores(_req, res) {
+  return success(res, getAccreditationSelfScores(), "Data penilaian mandiri akreditasi");
+}
+
+function createAccreditationSelfScore(req, res) {
+  try {
+    return success(res, addAccreditationSelfScore(req.body || {}, req.user), "Skor penilaian mandiri berhasil disimpan.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Skor penilaian mandiri gagal disimpan.");
+  }
+}
+
+function accreditationReviews(_req, res) {
+  return success(res, getAccreditationReviews(), "Daftar review internal akreditasi");
+}
+
+function createAccreditationReview(req, res) {
+  try {
+    return success(res, addAccreditationReview(req.body || {}, req.user), "Review internal akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Review internal akreditasi gagal dibuat.");
+  }
+}
+
+function updateAccreditationPeriodStatusRecord(req, res) {
+  const period = updateAccreditationPeriodStatus(req.params.id, req.body || {}, req.user);
+  if (!period) return failure(res, "Periode akreditasi tidak ditemukan.", 404);
+  return success(res, period, "Status periode akreditasi berhasil diperbarui.");
+}
+
+function accreditationExports(_req, res) {
+  return success(res, getAccreditationExports(), "Daftar paket export akreditasi");
+}
+
+function createAccreditationExport(req, res) {
+  try {
+    return success(res, generateAccreditationExport(req.body || {}, req.user), "Paket export akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Paket export akreditasi gagal dibuat.");
+  }
+}
+
+function downloadAccreditationExport(req, res) {
+  const item = getAccreditationExportById(req.params.id);
+  if (!item) return failure(res, "Paket export akreditasi tidak ditemukan.", 404);
+
+  const fileName = item.file_name || `${item.id}.json`;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${fileName.replace(/"/g, "")}"`);
+  return res.status(200).send(JSON.stringify(item.manifest || item, null, 2));
+}
+
 function surveys(_req, res) {
   return success(res, getCatalogSnapshot().surveys.filter((item) => !item.deleted_at && item.status !== "deleted"), "Daftar survei");
 }
@@ -1146,6 +1328,31 @@ module.exports = {
   createHrisDocument,
   updateHrisDocumentRecord,
   deleteHrisDocumentRecord,
+  accreditationSummary,
+  accreditationPeriods,
+  createAccreditationPeriod,
+  accreditationInstruments,
+  createAccreditationInstrument,
+  accreditationCriteria,
+  createAccreditationCriterion,
+  accreditationAssessments,
+  createAccreditationAssessment,
+  accreditationTeamMembers,
+  createAccreditationTeamMember,
+  accreditationEvidence,
+  createAccreditationEvidence,
+  accreditationLkps,
+  createAccreditationLkpsEntry,
+  accreditationLed,
+  createAccreditationLedContent,
+  accreditationSelfScores,
+  createAccreditationSelfScore,
+  accreditationReviews,
+  createAccreditationReview,
+  updateAccreditationPeriodStatusRecord,
+  accreditationExports,
+  createAccreditationExport,
+  downloadAccreditationExport,
   surveys,
   createSurvey,
   updateSurveyRecord,

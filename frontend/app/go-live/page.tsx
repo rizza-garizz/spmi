@@ -44,7 +44,7 @@ export default function GoLivePage() {
         </div>
       </div>
 
-      <div className="row">
+      <div className="row" id="uat-checklist">
         {[
           ["Go-Live Score", "93.1", "bg-success"],
           ["Functional", "97%", "bg-primary"],
@@ -67,7 +67,7 @@ export default function GoLivePage() {
         ))}
       </div>
 
-      <div className="row">
+      <div className="row" id="operational-readiness">
         <div className="col-xl-6">
           <div className="card">
             <div className="card-header">

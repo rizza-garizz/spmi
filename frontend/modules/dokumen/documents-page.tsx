@@ -397,7 +397,7 @@ export function DocumentsPage() {
         ) : null}
 
         {/* Tabel List */}
-        <div className={canUpload && showUploadForm ? "col-xl-8 col-lg-7" : "col-xl-12 col-lg-12"}>
+        <div className={canUpload && showUploadForm ? "col-xl-8 col-lg-7" : "col-xl-12 col-lg-12"} id="repository">
           <div className="card">
             <div className="card-header">
               <h4 className="card-title">Daftar Repository</h4>
@@ -501,6 +501,8 @@ export function DocumentsPage() {
           </div>
         </div>
       </div>
+      <div id="upload-dokumen" aria-hidden="true"></div>
+      <div id="versi-dokumen" aria-hidden="true"></div>
     </>
   );
 }

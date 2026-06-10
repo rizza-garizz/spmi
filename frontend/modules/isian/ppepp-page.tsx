@@ -25,7 +25,7 @@ export default async function PpeppPage() {
           </p>
         </div>
       </section>
-      <section className="section">
+      <section className="section" id="daftar-siklus">
         <div className="section-head">
           <div>
             <h2>Siklus Berjalan</h2>
@@ -48,7 +48,7 @@ export default async function PpeppPage() {
         />
       </section>
 
-      <section className="section">
+      <section className="section" id="evidence-ppepp">
         <div className="section-head">
           <div>
             <h2>Monitoring PPEPP Lengkap</h2>
@@ -59,7 +59,7 @@ export default async function PpeppPage() {
         <PpeppCycleMonitor cycles={cycles} />
       </section>
 
-      <section className="section">
+      <section className="section" id="buat-siklus">
         <RoleGate
           allowedRoles={["super_admin", "lpm", "admin_lpm", "kaprodi", "sekprodi", "unit_kerja", "operator"]}
           fallback={

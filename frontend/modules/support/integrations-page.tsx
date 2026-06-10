@@ -47,7 +47,7 @@ export async function IntegrationsPage() {
           </p>
         </div>
       </section>
-      <section className="section">
+      <section className="section" id="readiness-check">
         <div className="section-head">
           <div>
             <h2>Readiness Integrasi</h2>
@@ -72,7 +72,7 @@ export async function IntegrationsPage() {
           ))}
         </div>
       </section>
-      <section className="section">
+      <section className="section" id="integration-logs">
         <div className="section-head">
           <div>
             <h2>Sinkron Data Antar Modul</h2>
@@ -127,7 +127,7 @@ export async function IntegrationsPage() {
           </table>
         </div>
       </section>
-      <section className="section">
+      <section className="section" id="system-map">
         <div className="section-head">
           <div>
             <h2>Peta SIAKAD ke SPMI</h2>

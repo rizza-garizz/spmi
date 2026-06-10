@@ -877,20 +877,83 @@ const rawModuleRegistry: ModuleSection[] = [
         status: "active",
         children: [
           {
-            id: "accreditation-status",
-            label: "Status Akreditasi",
-            href: "/accreditation#status-akreditasi",
-            icon: "la-award",
-            description: "Status, peringkat, masa berlaku, dan instrumen.",
+            id: "accreditation-dashboard",
+            label: "Dashboard Akreditasi",
+            href: "/accreditation#dashboard-akreditasi",
+            icon: "la-chart-pie",
+            description: "Progress LKPS, LED, bukti, review, dan risiko.",
             roles: qualityRoles,
             status: "active",
           },
           {
-            id: "accreditation-certificate",
-            label: "Sertifikat Akreditasi",
-            href: "/accreditation#sertifikat-akreditasi",
-            icon: "la-file-certificate",
-            description: "Akses dokumen sertifikat akreditasi unit.",
+            id: "accreditation-period",
+            label: "Periode Akreditasi",
+            href: "/accreditation#periode-akreditasi",
+            icon: "la-calendar-check",
+            description: "Setup periode APS/APT, lembaga, instrumen, unit, dan deadline.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
+            id: "accreditation-instrument",
+            label: "Instrumen & Kriteria",
+            href: "/accreditation#instrumen-kriteria",
+            icon: "la-clipboard-list",
+            description: "Master instrumen, 9 kriteria, bobot, dan mapping standar SPMI.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
+            id: "accreditation-lkps",
+            label: "LKPS",
+            href: "/accreditation#lkps-akreditasi",
+            icon: "la-table",
+            description: "Input data kuantitatif dari SIAKAD, HRIS, SPMI, dan manual.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
+            id: "accreditation-led",
+            label: "LED",
+            href: "/accreditation#led-akreditasi",
+            icon: "la-edit",
+            description: "Draft narasi evaluasi diri per kriteria dengan versi dan catatan reviewer.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
+            id: "accreditation-self-assessment",
+            label: "Penilaian Mandiri",
+            href: "/accreditation#self-assessment-akreditasi",
+            icon: "la-star-half-alt",
+            description: "Skor kriteria, gap, rekomendasi, dan proyeksi predikat.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
+            id: "accreditation-review",
+            label: "Review & Approval",
+            href: "/accreditation#review-akreditasi",
+            icon: "la-comments",
+            description: "Review internal, keputusan revisi/approve, dan finalisasi periode.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
+            id: "accreditation-team",
+            label: "Tim Akreditasi",
+            href: "/accreditation#tim-akreditasi",
+            icon: "la-users",
+            description: "Admin, kaprodi, penyusun, reviewer, dan operator akreditasi.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
+            id: "accreditation-integration",
+            label: "Integrasi & Bukti",
+            href: "/accreditation#integrasi-akreditasi",
+            icon: "la-link",
+            description: "Mapping SIAKAD, HRIS, SPMI, AMI, RTM, dan bukti fisik.",
             roles: qualityRoles,
             status: "active",
           },
@@ -1086,9 +1149,9 @@ function createProcessNode(id: string, label: string, href: string, icon: string
 export const businessProcessFlow = [
   {
     step: "01",
-    label: "Master Data & Sumber Data",
+    label: "Master Data",
     href: "/modules/master-data",
-    description: "Validasi struktur kampus, SDM, periode, role, dan sumber data sebelum proses mutu dimulai.",
+    description: "Validasi struktur kampus, SDM, dan sumber data sebelum proses mutu dimulai.",
   },
   {
     step: "02",
@@ -1112,7 +1175,7 @@ export const businessProcessFlow = [
     step: "05",
     label: "Pengendalian",
     href: "/modules/pengendalian-rtl",
-    description: "Kelola RTL, verifikasi perbaikan, dan RTM sebagai pengendalian manajemen.",
+    description: "Kelola RTM, RTL, verifikasi perbaikan, dan keputusan manajemen.",
   },
   {
     step: "06",
@@ -1128,9 +1191,9 @@ export const businessProcessFlow = [
   },
   {
     step: "08",
-    label: "Administrasi Sistem",
+    label: "Administrasi",
     href: "/modules/administrasi-sistem",
-    description: "Kelola integrasi, import, setting, akses, dan pengumuman sistem.",
+    description: "Kelola integrasi, import, setting, akses, dan operasional sistem.",
   },
 ];
 
@@ -1180,7 +1243,6 @@ export const moduleRegistry: ModuleSection[] = [
     children: [
       findSourceNode("organization"),
       findSourceNode("hris"),
-      findSourceNode("access-info"),
     ],
   },
   {
@@ -1195,8 +1257,8 @@ export const moduleRegistry: ModuleSection[] = [
     id: "pelaksanaan-capaian",
     label: "03 Pelaksanaan",
     children: [
-      findSourceNode("indicators"),
       findSourceNode("ppepp"),
+      findSourceNode("indicators"),
     ],
   },
   {
@@ -1211,8 +1273,9 @@ export const moduleRegistry: ModuleSection[] = [
     id: "pengendalian-rtl",
     label: "05 Pengendalian",
     children: [
-      findSourceNode("rtl"),
       findSourceNode("rtm"),
+      findSourceNode("rtl"),
+      findSourceNode("ami").children?.find((node) => node.id === "ami-findings") ?? findSourceNode("ami"),
     ],
   },
   {
@@ -1220,14 +1283,14 @@ export const moduleRegistry: ModuleSection[] = [
     label: "06 Peningkatan",
     children: [
       peningkatanMutuNode,
-      findSourceNode("nilai"),
     ],
   },
   {
     id: "monitoring-pelaporan",
-    label: "07 Pelaporan",
+    label: "07 Monitoring & Pelaporan",
     children: [
       findSourceNode("dashboard"),
+      findSourceNode("nilai"),
       findSourceNode("accreditation"),
       findSourceNode("go-live"),
       findSourceNode("news"),
@@ -1240,6 +1303,7 @@ export const moduleRegistry: ModuleSection[] = [
       findSourceNode("integrations"),
       findSourceNode("imports"),
       findSourceNode("settings"),
+      findSourceNode("access-info"),
     ],
   },
 ];

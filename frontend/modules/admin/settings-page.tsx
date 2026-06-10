@@ -22,6 +22,25 @@ export async function AccessOverview({ eyebrow, title, description }: AccessOver
     });
   });
 
+  function summarizeRoutes(paths: string[]) {
+    const moduleNames = Array.from(
+      new Set(
+        paths.map((path) => {
+          const cleanPath = path.split("#")[0].replace(/^\//, "");
+          return cleanPath || "dashboard";
+        })
+      )
+    );
+
+    const visibleModules = moduleNames.slice(0, 8);
+    const remaining = moduleNames.length - visibleModules.length;
+
+    return [
+      `Akses ${moduleNames.length} modul utama.`,
+      remaining > 0 ? `${visibleModules.join(" • ")} • +${remaining} modul lain` : visibleModules.join(" • "),
+    ];
+  }
+
   return (
     <main className="shell">
       <section className="hero">
@@ -32,7 +51,7 @@ export async function AccessOverview({ eyebrow, title, description }: AccessOver
         </div>
       </section>
 
-      <section className="section">
+      <section className="section" id="role">
         <div className="section-head">
           <div>
             <h2>Role Utama</h2>
@@ -50,7 +69,7 @@ export async function AccessOverview({ eyebrow, title, description }: AccessOver
         />
       </section>
 
-      <section className="section">
+      <section className="section" id="role-access">
         <div className="section-head">
           <div>
             <h2>Cakupan Modul</h2>
@@ -67,18 +86,13 @@ export async function AccessOverview({ eyebrow, title, description }: AccessOver
             return {
               key: `${role.name}-routes`,
               title: getRoleLabel(role.name),
-              lines: accessibleRoutes.length > 0
-                ? [
-                    `Akses ${accessibleRoutes.length} area utama.`,
-                    accessibleRoutes.map((path) => path.replace("/", "") || "dashboard").join(" • "),
-                  ]
-                : ["Belum ada modul yang terpetakan untuk role ini."],
+              lines: accessibleRoutes.length > 0 ? summarizeRoutes(accessibleRoutes) : ["Belum ada modul yang terpetakan untuk role ini."],
             };
           })}
         />
       </section>
 
-      <section className="section">
+      <section className="section" id="seed-users">
         <div className="section-head">
           <div>
             <h2>User Seed</h2>
@@ -98,6 +112,9 @@ export async function AccessOverview({ eyebrow, title, description }: AccessOver
           }))}
         />
       </section>
+      <div id="user" aria-hidden="true"></div>
+      <div id="audit-trail" aria-hidden="true"></div>
+      <div id="konfigurasi-umum" aria-hidden="true"></div>
     </main>
   );
 }

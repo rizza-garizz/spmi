@@ -191,7 +191,7 @@ export function RtmPage() {
       )}
 
       {showAddForm && canManageMeetings && (
-        <div className="row">
+        <div className="row" id="jadwalkan-rtm">
           <div className="col-12">
             <div className="card">
               <div className="card-header"><h4 className="card-title">Inisialisasi Rapat</h4></div>
@@ -251,7 +251,7 @@ export function RtmPage() {
         </div>
       )}
 
-      <div className="row">
+      <div className="row" id="agenda-rtm">
         <div className="col-lg-12">
           <div className="card">
             <div className="card-header border-0 pb-0">
@@ -336,7 +336,7 @@ export function RtmPage() {
       </div>
 
       {selectedMeeting ? (
-        <div className="row">
+        <div className="row" id="detail-rtl">
           <div className="col-lg-12">
             <div className="card border-primary">
               <div className="card-header d-flex justify-content-between align-items-center">

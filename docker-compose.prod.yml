@@ -1,0 +1,127 @@
+services:
+  traefik:
+    image: traefik:v3.1
+    container_name: spmi-traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    networks:
+      - web
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: spmi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend-node
+      dockerfile: Dockerfile.prod
+    container_name: spmi-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_MODE: database
+      NODE_ENV: production
+      PORT: 4000
+      APP_URL: https://${SPMI_API_DOMAIN}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      UPLOAD_DIR: uploads
+      CORS_ORIGINS: https://${SPMI_FRONTEND_DOMAIN}
+      ENABLE_API_DOCS: ${ENABLE_API_DOCS:-false}
+      PASSWORD_MIN_LENGTH: ${PASSWORD_MIN_LENGTH:-8}
+      AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-20}
+      MUTATION_RATE_LIMIT_MAX: ${MUTATION_RATE_LIMIT_MAX:-120}
+      SIAKAD_SYNC_ENABLED: ${SIAKAD_SYNC_ENABLED:-false}
+      SIAKAD_BASE_URL: ${SIAKAD_BASE_URL:-}
+      SIAKAD_AUTH_TYPE: ${SIAKAD_AUTH_TYPE:-bearer}
+      SIAKAD_API_TOKEN: ${SIAKAD_API_TOKEN:-}
+      SIAKAD_ORG_UNITS_PATH: ${SIAKAD_ORG_UNITS_PATH:-/org-units}
+      SIAKAD_TIMEOUT_MS: ${SIAKAD_TIMEOUT_MS:-10000}
+      SIAKAD_SYNC_MODE: ${SIAKAD_SYNC_MODE:-manual}
+    volumes:
+      - backend_uploads:/app/uploads
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.spmi-api.rule=Host(`${SPMI_API_DOMAIN}`)
+      - traefik.http.routers.spmi-api.entrypoints=websecure
+      - traefik.http.routers.spmi-api.tls.certresolver=letsencrypt
+      - traefik.http.services.spmi-api.loadbalancer.server.port=4000
+    networks:
+      - web
+      - internal
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: https://${SPMI_API_DOMAIN}
+    container_name: spmi-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_API_URL: https://${SPMI_API_DOMAIN}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.spmi-frontend.rule=Host(`${SPMI_FRONTEND_DOMAIN}`)
+      - traefik.http.routers.spmi-frontend.entrypoints=websecure
+      - traefik.http.routers.spmi-frontend.tls.certresolver=letsencrypt
+      - traefik.http.services.spmi-frontend.loadbalancer.server.port=3000
+    networks:
+      - web
+
+networks:
+  web:
+    name: spmi-web
+  internal:
+    name: spmi-internal
+    internal: true
+
+volumes:
+  traefik_letsencrypt:
+  postgres_data:
+  backend_uploads:

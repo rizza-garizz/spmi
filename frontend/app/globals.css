@@ -6974,32 +6974,31 @@ button:disabled,
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 56px;
+  min-height: 52px;
   padding: 0;
-  border-radius: 18px;
+  border-radius: 14px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
-  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.045);
   cursor: pointer;
   transition:
-    background 300ms ease,
-    border-color 300ms ease,
-    box-shadow 300ms ease,
-    transform 300ms ease;
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .spmi-parent-nav-row:hover,
 .spmi-parent-nav-row:focus-within,
 .spmi-parent-nav-row.is-open {
-  border-color: rgba(16, 185, 129, 0.22);
-  background: #ecfdf5;
-  box-shadow: 0 14px 28px rgba(16, 185, 129, 0.12);
+  border-color: #dbe7f1;
+  background: #f8fafc;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.055);
 }
 
-.spmi-parent-nav-row.is-current:not(.is-open):not(:hover):not(:focus-within) {
+.spmi-parent-nav-row.is-current {
   border-color: #d1fae5;
   background: #ffffff;
-  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 7px 18px rgba(16, 185, 129, 0.08);
 }
 
 .spmi-parent-nav-row.is-current::before {
@@ -7014,8 +7013,12 @@ button:disabled,
   transform: translateY(-50%);
 }
 
-.spmi-parent-nav-row.is-current:not(.is-open):not(:hover):not(:focus-within) .spmi-parent-nav-toggle {
+.spmi-parent-nav-row.is-current .spmi-parent-nav-toggle {
   color: #10b981;
+}
+
+.spmi-parent-nav-row.is-current .spmi-parent-nav-link {
+  color: #047857 !important;
 }
 
 .dlabnav .metismenu .spmi-parent-nav-link {
@@ -7037,7 +7040,7 @@ button:disabled,
 .dlabnav .metismenu .spmi-parent-nav-link:hover,
 .dlabnav .metismenu .spmi-parent-nav-link:focus {
   transform: none !important;
-  color: #047857 !important;
+  color: #0f172a !important;
 }
 
 .spmi-parent-nav-toggle {
@@ -7057,12 +7060,12 @@ button:disabled,
 .spmi-parent-nav-toggle:hover,
 .spmi-parent-nav-toggle:focus-visible {
   background: #ffffff;
-  color: #047857;
-  outline: 3px solid rgba(16, 185, 129, 0.18);
+  color: #334155;
+  outline: 3px solid rgba(148, 163, 184, 0.18);
 }
 
 .spmi-parent-nav-toggle i {
-  transition: transform 300ms ease;
+  transition: transform 140ms ease;
 }
 
 .spmi-parent-nav-item.is-expanded .spmi-parent-nav-toggle i {
@@ -7075,18 +7078,18 @@ button:disabled,
   left: calc(100% + 14px);
   z-index: 1400;
   min-width: 320px;
-  padding: 20px;
+  padding: 16px;
   border: 1px solid #e5e7eb;
-  border-radius: 18px;
+  border-radius: 14px;
   background: #ffffff;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.10);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.09);
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-8px);
+  transform: translateX(-4px);
   transition:
-    opacity 200ms ease,
-    transform 200ms ease,
-    visibility 200ms ease;
+    opacity 140ms ease,
+    transform 140ms ease,
+    visibility 140ms ease;
   visibility: hidden;
 }
 
@@ -7149,9 +7152,8 @@ button:disabled,
   text-align: left;
   cursor: pointer;
   transition:
-    background 300ms ease,
-    color 300ms ease,
-    transform 300ms ease !important;
+    background 140ms ease,
+    color 140ms ease !important;
 }
 
 .dlabnav .metismenu .spmi-mega-child i {
@@ -7185,15 +7187,23 @@ button:disabled,
 }
 
 .dlabnav .metismenu .spmi-mega-child:hover,
-.dlabnav .metismenu .spmi-mega-child:focus,
-.dlabnav .metismenu .spmi-mega-child.is-active {
-  background: #f0fdf4 !important;
-  color: #16a34a !important;
-  transform: translateX(2px) !important;
+.dlabnav .metismenu .spmi-mega-child:focus {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  transform: none !important;
 }
 
 .dlabnav .metismenu .spmi-mega-child:hover i,
-.dlabnav .metismenu .spmi-mega-child:focus i,
+.dlabnav .metismenu .spmi-mega-child:focus i {
+  color: #64748b !important;
+}
+
+.dlabnav .metismenu .spmi-mega-child.is-active {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  transform: none !important;
+}
+
 .dlabnav .metismenu .spmi-mega-child.is-active i {
   color: #16a34a !important;
 }
@@ -7207,8 +7217,8 @@ button:disabled,
 
 .spmi-mega-child-wrap:hover .spmi-mega-child-arrow,
 .spmi-mega-child-wrap:focus-within .spmi-mega-child-arrow {
-  color: #16a34a !important;
-  transform: translateX(2px);
+  color: #64748b !important;
+  transform: none;
 }
 
 .spmi-mega-flyout {

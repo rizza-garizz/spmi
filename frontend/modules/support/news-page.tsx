@@ -16,7 +16,7 @@ export async function NewsPage() {
         </div>
       </section>
 
-      <section className="section">
+      <section className="section" id="pembaruan-sistem">
         <div className="section-head">
           <div>
             <h2>Kegiatan SPMI</h2>

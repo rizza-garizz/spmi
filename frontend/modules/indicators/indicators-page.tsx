@@ -307,7 +307,7 @@ export function IndicatorsPage() {
 
       {/* Form Tambah Indikator */}
       {showAddForm && canEditIndicators && (
-        <div className="row mb-4">
+        <div className="row mb-4" id="tambah-indikator">
           <div className="col-xl-12">
             <div className="card">
               <div className="card-header">
@@ -414,7 +414,7 @@ export function IndicatorsPage() {
       )}
 
       {/* Tabel Daftar Indikator */}
-      <div className="row">
+      <div className="row" id="daftar-indikator">
         <div className="col-xl-12">
           <div className="card">
             <div className="card-header">
@@ -545,7 +545,7 @@ export function IndicatorsPage() {
 
       {/* Form Input Capaian (muncul di bawah tabel saat tombol "Input" diklik) */}
       {showValueForm !== null && canEditIndicators && (
-        <div className="row">
+        <div className="row" id="input-capaian">
           <div className="col-xl-8">
             <div className="card border-primary">
               <div className="card-header bg-primary">
@@ -590,6 +590,9 @@ export function IndicatorsPage() {
           </div>
         </div>
       )}
+      <div id="iku" aria-hidden="true"></div>
+      <div id="ikt" aria-hidden="true"></div>
+      <div id="sasaran-mutu" aria-hidden="true"></div>
     </>
   );
 }

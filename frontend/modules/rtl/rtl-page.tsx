@@ -176,7 +176,7 @@ export function RtlPage() {
         </div>
       </div>
 
-      <div className="row">
+      <div className="row" id="monitoring-rtl">
         <div className="col-lg-12">
           <div className="card">
             <div className="card-header">
@@ -349,6 +349,8 @@ export function RtlPage() {
           </div>
         </div>
       </div>
+      <div id="update-progress" aria-hidden="true"></div>
+      <div id="action-plan" aria-hidden="true"></div>
     </>
   );
 }

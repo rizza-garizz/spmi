@@ -25,7 +25,7 @@ export default async function ImportsPage() {
         </div>
       </section>
 
-      <section className="section">
+      <section className="section" id="upload-import">
         <ProgressiveSection
           eyebrow="Data Ingest"
           title="Upload Import"
@@ -36,7 +36,7 @@ export default async function ImportsPage() {
         </ProgressiveSection>
       </section>
 
-      <section className="section">
+      <section className="section" id="aoa-preview">
         <ProgressiveSection
           eyebrow="Safe Migration"
           title="Migrasi AOA"
@@ -47,7 +47,7 @@ export default async function ImportsPage() {
         </ProgressiveSection>
       </section>
 
-      <section className="section">
+      <section className="section" id="aoa-commit">
         <div className="section-head">
           <div>
             <h2>Ringkasan Mutu</h2>

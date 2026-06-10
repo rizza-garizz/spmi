@@ -120,7 +120,7 @@ export function AmiPage() {
         </div>
       </div>
 
-      <div className="row">
+      <div className="row" id="jadwal-audit">
         <div className="col-lg-12">
           <div className="card">
             <div className="card-header">
@@ -234,7 +234,7 @@ export function AmiPage() {
       )}
 
       {selectedAudit && canWriteAmi && (
-        <div className="card mt-4 border-primary">
+        <div className="card mt-4 border-primary" id="temuan">
           <div className="card-body">
             <form onSubmit={handleAddFinding}>
               <div className="row">
@@ -277,6 +277,8 @@ export function AmiPage() {
           </div>
         </div>
       )}
+      <div id="instrumen" aria-hidden="true"></div>
+      <div id="laporan" aria-hidden="true"></div>
     </>
   );
 }

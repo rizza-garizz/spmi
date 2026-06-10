@@ -41,6 +41,19 @@ enum LifecycleStatus {
   ditutup
 }
 
+enum AccreditationStatus {
+  draft
+  berjalan
+  review
+  final
+  selesai
+}
+
+enum AccreditationScopeType {
+  APT
+  APS
+}
+
 enum AuditStatus {
   draft
   terjadwal
@@ -102,6 +115,8 @@ model User {
   imports        ImportJob[]
   syncLogs       IntegrationSyncLog[]
   roleAssignments UserRole[]
+  accreditationPeriods AccreditationPeriod[] @relation("AccreditationCreatedBy")
+  accreditationTeamMembers AccreditationTeamMember[]
 }
 
 model Institution {
@@ -117,6 +132,8 @@ model Institution {
   orgUnits      OrgUnit[]
   standards     MutuStandard[]
   settings      SystemSetting[]
+  accreditationInstruments AccreditationInstrument[]
+  accreditationPeriods AccreditationPeriod[]
 }
 
 model OrgUnit {
@@ -125,7 +142,12 @@ model OrgUnit {
   parentId      String?
   name          String
   code          String
+  siakadCode    String?
   type          String
+  source        String       @default("manual")
+  syncStatus    String       @default("manual")
+  lastSyncedAt  DateTime?
+  metadata      Json?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   deletedAt     DateTime?
@@ -137,8 +159,12 @@ model OrgUnit {
   audits        AmiAudit[]   @relation("AuditAuditee")
   documents     SpmiDocument[]
   scopedRoles   UserRole[]    @relation("UserRoleScope")
+  accreditationPeriods AccreditationPeriod[]
+  accreditationAssessments AccreditationAssessment[]
 
   @@unique([institutionId, code])
+  @@index([institutionId, siakadCode])
+  @@index([institutionId, source, syncStatus])
 }
 
 model UserRole {
@@ -341,6 +367,323 @@ model IntegrationSyncLog {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   user         User?             @relation(fields: [createdById], references: [id])
+}
+
+model SiakadSyncBatch {
+  id             String                 @id @default(cuid())
+  service        String                 @default("siakad")
+  entity         String
+  source         String
+  status         String                 @default("preview")
+  summary        Json?
+  conflictCount  Int                    @default(0)
+  createdByEmail String?
+  committedAt    DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  orgUnitRows    SiakadOrgUnitStaging[]
+
+  @@index([service, entity, createdAt])
+  @@index([status, createdAt])
+}
+
+model SiakadOrgUnitStaging {
+  id            String          @id @default(cuid())
+  batchId       String
+  code          String
+  siakadCode    String?
+  name          String
+  type          String
+  parentCode    String?
+  action        String
+  status        String          @default("ready")
+  conflictType  String?
+  conflictNote  String?
+  incoming      Json
+  current       Json?
+  createdAt     DateTime        @default(now())
+  batch         SiakadSyncBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@index([code])
+  @@index([status, conflictType])
+}
+
+model AccreditationInstrument {
+  id            String                   @id @default(cuid())
+  institutionId String
+  code          String
+  name          String
+  agency        String
+  level         String
+  status        String                   @default("aktif")
+  criteriaCount Int                      @default(0)
+  metadata      Json?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  deletedAt     DateTime?
+  institution   Institution              @relation(fields: [institutionId], references: [id])
+  criteria      AccreditationCriterion[]
+  periods       AccreditationPeriod[]
+
+  @@unique([institutionId, code])
+  @@index([institutionId, agency, status])
+}
+
+model AccreditationCriterion {
+  id               String                  @id @default(cuid())
+  instrumentId     String
+  code             String
+  title            String
+  description      String?
+  weight           Float                   @default(0)
+  evidenceRequired Int                     @default(0)
+  standardCodes    Json?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  deletedAt        DateTime?
+  instrument       AccreditationInstrument @relation(fields: [instrumentId], references: [id])
+  evidence         AccreditationEvidence[]
+  scores           AccreditationSelfScore[]
+  lkpsSections     AccreditationLkpsSection[]
+  ledSections      AccreditationLedSection[]
+
+  @@unique([instrumentId, code])
+  @@index([instrumentId])
+}
+
+model AccreditationPeriod {
+  id             String                    @id @default(cuid())
+  institutionId  String
+  instrumentId   String
+  orgUnitId      String?
+  createdById    String?
+  name           String
+  scopeType      AccreditationScopeType
+  agency         String
+  startDate      DateTime
+  dueDate        DateTime?
+  status         AccreditationStatus       @default(draft)
+  progress       Int                       @default(0)
+  metadata       Json?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  deletedAt      DateTime?
+  institution    Institution               @relation(fields: [institutionId], references: [id])
+  instrument     AccreditationInstrument   @relation(fields: [instrumentId], references: [id])
+  orgUnit        OrgUnit?                  @relation(fields: [orgUnitId], references: [id])
+  createdBy      User?                     @relation("AccreditationCreatedBy", fields: [createdById], references: [id])
+  assessments    AccreditationAssessment[]
+  teamMembers    AccreditationTeamMember[]
+  evidence       AccreditationEvidence[]
+  lkpsEntries    AccreditationLkpsEntry[]
+  ledContents    AccreditationLedContent[]
+  selfScores     AccreditationSelfScore[]
+  reviews        AccreditationReview[]
+  exports        AccreditationExport[]
+
+  @@index([institutionId, status, dueDate])
+  @@index([orgUnitId, status])
+}
+
+model AccreditationAssessment {
+  id                  String              @id @default(cuid())
+  periodId            String
+  orgUnitId           String?
+  lkpsProgress        Int                 @default(0)
+  ledProgress         Int                 @default(0)
+  evidenceProgress    Int                 @default(0)
+  reviewProgress      Int                 @default(0)
+  readinessStatus     String              @default("risk")
+  scoreProjection     Float               @default(0)
+  predicateProjection String?
+  riskLevel           String              @default("merah")
+  metadata            Json?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  deletedAt           DateTime?
+  period              AccreditationPeriod @relation(fields: [periodId], references: [id])
+  orgUnit             OrgUnit?            @relation(fields: [orgUnitId], references: [id])
+
+  @@index([periodId])
+  @@index([orgUnitId, readinessStatus])
+}
+
+model AccreditationTeamMember {
+  id             String              @id @default(cuid())
+  periodId       String
+  userId         String?
+  name           String
+  role           String
+  responsibility String?
+  email          String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+  period         AccreditationPeriod @relation(fields: [periodId], references: [id])
+  user           User?               @relation(fields: [userId], references: [id])
+
+  @@unique([periodId, email])
+  @@index([periodId, role])
+}
+
+model AccreditationEvidence {
+  id            String                  @id @default(cuid())
+  periodId      String
+  criterionId   String?
+  lkpsEntryId   String?
+  ledContentId  String?
+  title         String
+  sourceModule  String?
+  documentId    String?
+  fileName      String?
+  fileUrl       String?
+  notes         String?
+  status        String                  @default("draft")
+  metadata      Json?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  deletedAt     DateTime?
+  period        AccreditationPeriod     @relation(fields: [periodId], references: [id])
+  criterion     AccreditationCriterion? @relation(fields: [criterionId], references: [id])
+
+  @@index([periodId, status])
+  @@index([criterionId])
+  @@index([lkpsEntryId])
+  @@index([ledContentId])
+}
+
+model AccreditationLkpsSection {
+  id             String                 @id @default(cuid())
+  criterionId    String?
+  code           String
+  title          String
+  sourceModule   String?
+  requiredFields Json?
+  metadata       Json?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  deletedAt      DateTime?
+  criterion      AccreditationCriterion? @relation(fields: [criterionId], references: [id])
+  entries        AccreditationLkpsEntry[]
+
+  @@unique([code])
+  @@index([criterionId])
+}
+
+model AccreditationLkpsEntry {
+  id           String                   @id @default(cuid())
+  periodId     String
+  sectionId    String
+  label        String
+  value        Float                    @default(0)
+  unit         String?
+  status       String                   @default("draft")
+  sourceModule String?
+  notes        String?
+  metadata     Json?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  deletedAt    DateTime?
+  period       AccreditationPeriod      @relation(fields: [periodId], references: [id])
+  section      AccreditationLkpsSection @relation(fields: [sectionId], references: [id])
+
+  @@unique([periodId, sectionId, label])
+  @@index([periodId, status])
+  @@index([sectionId])
+}
+
+model AccreditationLedSection {
+  id          String                  @id @default(cuid())
+  criterionId String?
+  title       String
+  guidance    String?
+  metadata    Json?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  deletedAt   DateTime?
+  criterion   AccreditationCriterion? @relation(fields: [criterionId], references: [id])
+  contents    AccreditationLedContent[]
+
+  @@index([criterionId])
+}
+
+model AccreditationLedContent {
+  id           String                  @id @default(cuid())
+  periodId     String
+  sectionId    String
+  version      Int                     @default(1)
+  content      String
+  status       String                  @default("draft")
+  reviewerNote String?
+  updatedBy    String?
+  metadata     Json?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  deletedAt    DateTime?
+  period       AccreditationPeriod     @relation(fields: [periodId], references: [id])
+  section      AccreditationLedSection @relation(fields: [sectionId], references: [id])
+
+  @@index([periodId, sectionId, version])
+  @@index([status])
+}
+
+model AccreditationSelfScore {
+  id             String                 @id @default(cuid())
+  periodId       String
+  criterionId    String
+  score          Float
+  targetScore    Float                  @default(4)
+  status         String                 @default("draft")
+  gapNote        String?
+  recommendation String?
+  reviewer       String?
+  note           String?
+  metadata       Json?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  deletedAt      DateTime?
+  period         AccreditationPeriod    @relation(fields: [periodId], references: [id])
+  criterion      AccreditationCriterion @relation(fields: [criterionId], references: [id])
+
+  @@unique([periodId, criterionId])
+  @@index([criterionId])
+  @@index([status])
+}
+
+model AccreditationReview {
+  id         String              @id @default(cuid())
+  periodId   String
+  entityType String?
+  entityId   String?
+  reviewer   String
+  status     String              @default("draft")
+  decision   String?
+  note       String?
+  dueDate    DateTime?
+  metadata   Json?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  deletedAt  DateTime?
+  period     AccreditationPeriod @relation(fields: [periodId], references: [id])
+
+  @@index([periodId, status])
+  @@index([entityType, entityId])
+}
+
+model AccreditationExport {
+  id        String              @id @default(cuid())
+  periodId  String
+  type      String
+  fileName  String
+  status    String              @default("generated")
+  metadata  Json?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  deletedAt DateTime?
+  period    AccreditationPeriod @relation(fields: [periodId], references: [id])
+
+  @@index([periodId, type, createdAt])
 }
 
 model SystemSetting {

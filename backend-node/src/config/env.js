@@ -15,6 +15,7 @@ const apiDocsEnabled = process.env.ENABLE_API_DOCS === "true" || nodeEnv !== "pr
 const passwordMinLength = Number(process.env.PASSWORD_MIN_LENGTH || 8);
 const authRateLimitMax = Number(process.env.AUTH_RATE_LIMIT_MAX || 20);
 const mutationRateLimitMax = Number(process.env.MUTATION_RATE_LIMIT_MAX || 120);
+const siakadTimeoutMs = Number(process.env.SIAKAD_TIMEOUT_MS || 10000);
 
 if (nodeEnv === "production") {
   if (appMode !== "database") {
@@ -46,4 +47,13 @@ module.exports = {
   passwordMinLength,
   authRateLimitMax,
   mutationRateLimitMax,
+  siakad: {
+    enabled: process.env.SIAKAD_SYNC_ENABLED === "true",
+    baseUrl: (process.env.SIAKAD_BASE_URL || "").replace(/\/$/, ""),
+    authType: process.env.SIAKAD_AUTH_TYPE || "bearer",
+    apiToken: process.env.SIAKAD_API_TOKEN || "",
+    orgUnitsPath: process.env.SIAKAD_ORG_UNITS_PATH || "/org-units",
+    timeoutMs: Number.isFinite(siakadTimeoutMs) ? siakadTimeoutMs : 10000,
+    syncMode: process.env.SIAKAD_SYNC_MODE || "manual",
+  },
 };

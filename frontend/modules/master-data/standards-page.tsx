@@ -56,14 +56,14 @@ export async function StandardsPage() {
         ))}
       </div>
 
-      <div className="row">
+      <div className="row" id="daftar-standar">
         <div className="col-lg-12">
           <StandardsManager initialItems={standardsData} categories={standardCategories} />
         </div>
       </div>
 
       <RoleGate allowedRoles={["super_admin", "lpm", "admin_lpm"]}>
-        <div className="row">
+        <div className="row" id="tambah-standar">
           <div className="col-xl-12 col-xxl-12 col-sm-12">
             <ProgressiveSection
               eyebrow="Master Data"
@@ -83,6 +83,9 @@ export async function StandardsPage() {
           </div>
         </div>
       </RoleGate>
+      <div id="riwayat-revisi" aria-hidden="true"></div>
+      <div id="approval" aria-hidden="true"></div>
+      <div id="export-standar" aria-hidden="true"></div>
     </>
   );
 }

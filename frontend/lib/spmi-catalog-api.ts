@@ -184,6 +184,61 @@ const emptyDataSyncMap: DataSyncMap = {
   warnings: [],
 };
 
+const fallbackRoles = [
+  {
+    name: "super_admin",
+    scope: "Seluruh menu, konfigurasi sistem, integrasi, import, role, dan akses lintas unit.",
+  },
+  {
+    name: "lpm",
+    scope: "Pengelolaan proses mutu, standar, dokumen, AMI, PPEPP, RTM, akreditasi, dan approval LPM.",
+  },
+  {
+    name: "admin_lpm",
+    scope: "Role legacy untuk kompatibilitas akun lama.",
+  },
+  {
+    name: "auditor",
+    scope: "AMI, temuan, rekomendasi, evaluasi, dan laporan audit.",
+  },
+  {
+    name: "dekan",
+    scope: "Monitoring mutu tingkat fakultas, akreditasi, RTM, dan pengawalan keputusan strategis.",
+  },
+  {
+    name: "wakil_dekan",
+    scope: "Monitoring mutu fakultas dan koordinasi tindak lanjut sesuai bidang pimpinan fakultas.",
+  },
+  {
+    name: "kaprodi",
+    scope: "Operasional mutu program studi, dokumen prodi, indikator, PPEPP, dan RTL.",
+  },
+  {
+    name: "sekprodi",
+    scope: "Dukungan operasional prodi melalui input data, pembaruan dokumen, dan monitoring harian.",
+  },
+  {
+    name: "unit_kerja",
+    scope: "Input implementasi, dokumen, indikator, dan tindak lanjut unit kerja.",
+  },
+  {
+    name: "operator",
+    scope: "Input operasional tanpa akses pengaturan sistem atau approval pimpinan.",
+  },
+];
+
+const fallbackSeedUsers = [
+  { name: "SPMI Admin", email: "admin@spmi.local", role: "super_admin" },
+  { name: "LPM Mutu", email: "lpm@spmi.local", role: "lpm" },
+  { name: "Internal Auditor", email: "auditor@spmi.local", role: "auditor" },
+  { name: "Dekan Fakultas", email: "dekan@spmi.local", role: "dekan" },
+  { name: "Wakil Dekan", email: "wadek@spmi.local", role: "wakil_dekan" },
+  { name: "Ketua Program Studi", email: "kaprodi@spmi.local", role: "kaprodi" },
+  { name: "Sekretaris Program Studi", email: "sekprodi@spmi.local", role: "sekprodi" },
+  { name: "Unit Operator", email: "unit@spmi.local", role: "unit_kerja" },
+  { name: "Operator SPMI", email: "operator@spmi.local", role: "operator" },
+];
+
 const emptyDashboardSummary: DashboardSummary = {
   metrics: [],
   modules: [],
@@ -379,10 +434,10 @@ const emptyCatalog = {
   ppeppSteps: [] as Array<{ code: string; name: string; description: string; deliverable: string }>,
   documentGroups: [] as string[],
   qualityChecklist: [] as Array<{ key: string; label: string; description: string }>,
-  roles: [] as Array<{ name: string; scope: string }>,
+  roles: fallbackRoles,
   orgUnits: [] as Array<{ code: string; parent_code?: string; name: string; type: string }>,
   surveyTargets: [] as Array<{ value: string; label: string }>,
-  seedUsers: [] as Array<{ name: string; email: string; role: string }>,
+  seedUsers: fallbackSeedUsers,
   news: [] as Array<{ id: number | string; category: string; title: string; excerpt: string; date: string; author: string }>,
   hris: {
     metrics: [],

@@ -1634,6 +1634,195 @@ test("POST /imports allows admin role only", async () => {
   assert.equal(deniedPayload.success, false);
 });
 
+test("accreditation core exposes summary and creates setup records", async () => {
+  const adminToken = await loginAs("admin@spmi.local");
+  const authHeaders = {
+    Authorization: `Bearer ${adminToken}`,
+    "Content-Type": "application/json",
+  };
+
+  const summaryResponse = await fetch(`${baseUrl}/accreditation/summary`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const summaryPayload = await summaryResponse.json();
+
+  assert.equal(summaryResponse.status, 200);
+  assert.equal(summaryPayload.success, true);
+  assert.equal(summaryPayload.data.metrics.some((item) => item.label === "Kriteria"), true);
+  assert.equal(summaryPayload.data.criteria.length >= 9, true);
+
+  const periodResponse = await fetch(`${baseUrl}/accreditation/periods`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      name: "APS Test Smoke 2026",
+      type: "APS",
+      agency: "LAM",
+      instrument_id: "INS-002",
+      org_unit_code: "SI",
+      start_date: "2026-07-01",
+      due_date: "2026-12-31",
+    }),
+  });
+  const periodPayload = await periodResponse.json();
+
+  assert.equal(periodResponse.status, 201);
+  assert.equal(periodPayload.data.status, "draft");
+
+  const teamResponse = await fetch(`${baseUrl}/accreditation/team-members`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      name: "Reviewer Smoke",
+      role: "REVIEWER",
+      email: "reviewer.smoke@spmi.local",
+      responsibility: "Review internal dokumen akreditasi.",
+    }),
+  });
+  const teamPayload = await teamResponse.json();
+
+  assert.equal(teamResponse.status, 201);
+  assert.equal(teamPayload.data.period_id, periodPayload.data.id);
+
+  const lkpsResponse = await fetch(`${baseUrl}/accreditation/lkps/entries`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      section_id: "LKPS-SEC-001",
+      label: "Mahasiswa aktif smoke",
+      value: 123,
+      unit: "mahasiswa",
+      source_module: "SIAKAD",
+      status: "draft",
+    }),
+  });
+  const lkpsPayload = await lkpsResponse.json();
+
+  assert.equal(lkpsResponse.status, 201);
+  assert.equal(lkpsPayload.data.source_module, "SIAKAD");
+
+  const ledResponse = await fetch(`${baseUrl}/accreditation/led/contents`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      section_id: "LED-SEC-004",
+      content: "Narasi LED smoke test untuk pendidikan.",
+      status: "draft",
+      reviewer_note: "Perlu lampiran LKPS.",
+    }),
+  });
+  const ledPayload = await ledResponse.json();
+
+  assert.equal(ledResponse.status, 201);
+  assert.equal(ledPayload.data.version, 1);
+
+  const evidenceResponse = await fetch(`${baseUrl}/accreditation/evidence`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      criteria_code: "K6",
+      title: "Bukti smoke LKPS LED",
+      source_module: "SPMI",
+      status: "valid",
+      file_name: "bukti-smoke.pdf",
+      linked_lkps_entry_id: lkpsPayload.data.id,
+      linked_led_content_id: ledPayload.data.id,
+      notes: "Evidence smoke test.",
+    }),
+  });
+  const evidencePayload = await evidenceResponse.json();
+
+  assert.equal(evidenceResponse.status, 201);
+  assert.equal(evidencePayload.data.lkps_entry.id, lkpsPayload.data.id);
+  assert.equal(evidencePayload.data.led_content.id, ledPayload.data.id);
+
+  const scoreResponse = await fetch(`${baseUrl}/accreditation/self-scores`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      criteria_code: "K1",
+      score: 3.25,
+      target_score: 3.75,
+      status: "warning",
+      gap_note: "VMTS perlu bukti monitoring strategi.",
+      recommendation: "Tambahkan matriks strategi, indikator, dan evaluasi ketercapaian.",
+      reviewer: "reviewer.smoke@spmi.local",
+    }),
+  });
+  const scorePayload = await scoreResponse.json();
+
+  assert.equal(scoreResponse.status, 201);
+  assert.equal(scorePayload.data.gap, 0.5);
+  assert.equal(scorePayload.data.criteria_code, "K1");
+
+  const reviewResponse = await fetch(`${baseUrl}/accreditation/reviews`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      entity_type: "led",
+      entity_id: ledPayload.data.id,
+      reviewer: "reviewer.smoke@spmi.local",
+      status: "revision_required",
+      decision: "revise",
+      note: "LED perlu revisi smoke.",
+      due_date: "2026-12-20",
+    }),
+  });
+  const reviewPayload = await reviewResponse.json();
+
+  assert.equal(reviewResponse.status, 201);
+  assert.equal(reviewPayload.data.status, "revision_required");
+  assert.equal(reviewPayload.data.entity.id, ledPayload.data.id);
+
+  const statusResponse = await fetch(`${baseUrl}/accreditation/periods/${periodPayload.data.id}/status`, {
+    method: "PATCH",
+    headers: authHeaders,
+    body: JSON.stringify({
+      status: "final",
+      progress: 95,
+      final_note: "Final smoke.",
+    }),
+  });
+  const statusPayload = await statusResponse.json();
+
+  assert.equal(statusResponse.status, 200);
+  assert.equal(statusPayload.data.status, "final");
+  assert.equal(statusPayload.data.progress, 95);
+
+  const exportResponse = await fetch(`${baseUrl}/accreditation/exports`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      type: "package_manifest",
+    }),
+  });
+  const exportPayload = await exportResponse.json();
+
+  assert.equal(exportResponse.status, 201);
+  assert.equal(exportPayload.data.type, "package_manifest");
+  assert.equal(exportPayload.data.package_summary.lkps_entries, 1);
+  assert.equal(exportPayload.data.package_summary.led_contents, 1);
+  assert.equal(exportPayload.data.package_summary.evidence, 1);
+  assert.equal(exportPayload.data.readiness_items.some((item) => item.key === "reviews"), true);
+
+  const downloadResponse = await fetch(`${baseUrl}/accreditation/exports/${exportPayload.data.id}/download`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const manifestPayload = await downloadResponse.json();
+
+  assert.equal(downloadResponse.status, 200);
+  assert.equal(downloadResponse.headers.get("content-type").includes("application/json"), true);
+  assert.equal(manifestPayload.period.id, periodPayload.data.id);
+  assert.equal(manifestPayload.lkps_entries.length, 1);
+});
+
 test("integration readiness covers SIAKAD SIMPEG finance repository PDDIKTI and SSO with logs", async () => {
   const adminToken = await loginAs("admin@spmi.local");
 

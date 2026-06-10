@@ -87,7 +87,7 @@ export async function DashboardPage({ searchParams }: DashboardPageProps) {
       </div>
 
       {/* Strategic Insights - UNGGUL Focus */}
-      <div className="row">
+      <div className="row" id="kpi-mutu">
         <div className="col-xl-3 col-lg-6 col-sm-6">
           <div className="widget-stat card bg-danger">
             <div className="card-body p-4">
@@ -142,7 +142,7 @@ export async function DashboardPage({ searchParams }: DashboardPageProps) {
         </div>
       </div>
 
-      <form className="card mb-4" action="/dashboard">
+      <form className="card mb-4" action="/dashboard" id="filter-eksekutif">
         <div className="card-body">
           <div className="row align-items-end">
             <div className="col-xl-2 col-md-4">
@@ -176,13 +176,15 @@ export async function DashboardPage({ searchParams }: DashboardPageProps) {
             <div className="col-xl-3 col-md-6 d-flex gap-2 mt-3 mt-xl-0">
               <button className="btn btn-primary" type="submit"><i className="la la-filter me-1"></i> Terapkan</button>
               <Link href="/dashboard" className="btn btn-light">Reset</Link>
-              <DashboardExportActions rows={exportRows} institutionName={institutionName} kpi={kpi} />
+              <span id="export-kpi">
+                <DashboardExportActions rows={exportRows} institutionName={institutionName} kpi={kpi} />
+              </span>
             </div>
           </div>
         </div>
       </form>
 
-      <div className="row">
+      <div className="row" id="analitik">
         <div className="col-xl-8 col-xxl-8 col-lg-8">
           <DashboardAccreditationCard accreditation={accreditation} />
         </div>

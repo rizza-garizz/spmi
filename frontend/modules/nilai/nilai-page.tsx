@@ -35,7 +35,7 @@ export async function NilaiPage() {
         </div>
       </div>
 
-      <div className="row">
+      <div className="row" id="rekap-mutu">
         {/* Ringkasan Utama */}
         <div className="col-xl-12">
           <h4 className="mb-4">Ringkasan Utama <span className="badge badge-info ms-2">{process.env.NEXT_PUBLIC_API_URL ? "Live source" : "Data cadangan"}</span></h4>
@@ -57,7 +57,7 @@ export async function NilaiPage() {
         ))}
       </div>
 
-      <div className="row">
+      <div className="row" id="evaluasi-diri">
         {/* Matriks Penilaian - Diadopsi dari Legacy */}
         <div className="col-xl-12 col-xxl-12 col-lg-12">
           <div className="card">
@@ -109,7 +109,7 @@ export async function NilaiPage() {
         </div>
       </div>
 
-      <div className="row">
+      <div className="row" id="prioritas-kerja">
         {/* Skor dan Status */}
         <div className="col-xl-4 col-xxl-4 col-lg-4">
           <div className="card">
