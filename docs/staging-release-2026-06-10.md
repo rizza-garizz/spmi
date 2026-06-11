@@ -31,6 +31,7 @@ git checkout master
 cp .env.production.example .env
 nano .env
 ./scripts/preflight-staging.sh
+./scripts/backup-staging.sh
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 docker compose -f docker-compose.prod.yml --env-file .env exec backend npm run prisma:seed
 ```
@@ -48,6 +49,15 @@ Setelah mengisi `.env`, jalankan preflight sebelum deploy:
 cd /opt/spmi
 sudo ./scripts/preflight-staging.sh
 ```
+
+Sebelum deploy ulang atau UAT penting, ambil backup staging:
+
+```bash
+cd /opt/spmi
+sudo ./scripts/backup-staging.sh
+```
+
+Backup berisi dump PostgreSQL format custom dan arsip `uploads` dari container backend.
 
 ## GitHub Actions Deploy
 
