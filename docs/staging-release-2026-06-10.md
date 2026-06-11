@@ -65,6 +65,13 @@ cd /opt/spmi
 sudo RUN_BACKUP=true RUN_SEED=false HEALTH_URL=https://api-domain/health ./scripts/deploy-staging.sh
 ```
 
+Status/diagnostic setelah deploy:
+
+```bash
+cd /opt/spmi
+sudo HEALTH_URL=https://api-domain/health ./scripts/status-staging.sh
+```
+
 Restore staging harus dilakukan manual dengan konfirmasi eksplisit:
 
 ```bash
