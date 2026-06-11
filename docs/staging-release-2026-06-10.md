@@ -59,6 +59,15 @@ sudo ./scripts/backup-staging.sh
 
 Backup berisi dump PostgreSQL format custom dan arsip `uploads` dari container backend.
 
+Restore staging harus dilakukan manual dengan konfirmasi eksplisit:
+
+```bash
+cd /opt/spmi
+sudo CONFIRM_RESTORE=YES ./scripts/restore-staging.sh backups/20260611T120000Z
+```
+
+Restore akan menjalankan `pg_restore --clean --if-exists --no-owner` dan mengganti isi `uploads` dari arsip backup.
+
 ## GitHub Actions Deploy
 
 Setelah bootstrap server dan `.env` staging siap, deploy bisa dijalankan dari GitHub Actions:
