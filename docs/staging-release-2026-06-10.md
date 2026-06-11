@@ -30,6 +30,7 @@ cd spmi
 git checkout master
 cp .env.production.example .env
 nano .env
+./scripts/preflight-staging.sh
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 docker compose -f docker-compose.prod.yml --env-file .env exec backend npm run prisma:seed
 ```
@@ -39,6 +40,13 @@ Untuk server Ubuntu baru, bootstrap Docker dan repo bisa memakai script:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/master/scripts/bootstrap-ubuntu-staging.sh -o bootstrap-ubuntu-staging.sh
 sudo bash bootstrap-ubuntu-staging.sh
+```
+
+Setelah mengisi `.env`, jalankan preflight sebelum deploy:
+
+```bash
+cd /opt/spmi
+sudo ./scripts/preflight-staging.sh
 ```
 
 ## GitHub Actions Deploy
