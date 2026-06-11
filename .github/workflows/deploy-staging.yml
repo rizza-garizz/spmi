@@ -19,6 +19,11 @@ on:
         required: true
         type: boolean
         default: false
+      run_backup:
+        description: "Run staging backup before deploy"
+        required: true
+        type: boolean
+        default: true
       health_url:
         description: "Optional API health URL to verify after deploy"
         required: false
@@ -59,12 +64,13 @@ jobs:
           RELEASE_REF: ${{ inputs.release_ref }}
           APP_DIR: ${{ inputs.app_dir }}
           RUN_SEED: ${{ inputs.run_seed }}
+          RUN_BACKUP: ${{ inputs.run_backup }}
         run: |
           test -n "$STAGING_HOST"
           test -n "$STAGING_USER"
 
           ssh -i ~/.ssh/staging_key -p "${STAGING_PORT:-22}" "$STAGING_USER@$STAGING_HOST" \
-            "RELEASE_REF='$RELEASE_REF' APP_DIR='$APP_DIR' RUN_SEED='$RUN_SEED' bash -s" <<'REMOTE'
+            "RELEASE_REF='$RELEASE_REF' APP_DIR='$APP_DIR' RUN_SEED='$RUN_SEED' RUN_BACKUP='$RUN_BACKUP' bash -s" <<'REMOTE'
           set -euo pipefail
 
           cd "$APP_DIR"
@@ -74,6 +80,10 @@ jobs:
           if [[ ! -f .env ]]; then
             echo ".env not found in $APP_DIR"
             exit 1
+          fi
+
+          if [[ "$RUN_BACKUP" == "true" ]]; then
+            ./scripts/backup-staging.sh
           fi
 
           docker compose -f docker-compose.prod.yml --env-file .env up -d --build

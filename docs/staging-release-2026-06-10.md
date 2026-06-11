@@ -76,6 +76,15 @@ Setelah bootstrap server dan `.env` staging siap, deploy bisa dijalankan dari Gi
 Actions -> Deploy Staging -> Run workflow
 ```
 
+Input penting:
+
+```text
+release_ref = master
+run_backup = true
+run_seed = false
+health_url = https://api-domain/health
+```
+
 Repository secrets yang wajib diisi:
 
 ```text
