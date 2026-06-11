@@ -27,7 +27,7 @@ Jalankan di server/VPS:
 ```bash
 git clone git@github.com:rizza-garizz/spmi.git
 cd spmi
-git checkout staging-ci-2026-06-11
+git checkout master
 cp .env.production.example .env
 nano .env
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
@@ -39,6 +39,40 @@ Untuk server Ubuntu baru, bootstrap Docker dan repo bisa memakai script:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/master/scripts/bootstrap-ubuntu-staging.sh -o bootstrap-ubuntu-staging.sh
 sudo bash bootstrap-ubuntu-staging.sh
+```
+
+## GitHub Actions Deploy
+
+Setelah bootstrap server dan `.env` staging siap, deploy bisa dijalankan dari GitHub Actions:
+
+```text
+Actions -> Deploy Staging -> Run workflow
+```
+
+Repository secrets yang wajib diisi:
+
+```text
+STAGING_HOST
+STAGING_USER
+STAGING_SSH_KEY
+```
+
+Opsional:
+
+```text
+STAGING_PORT
+```
+
+Default release workflow:
+
+```text
+master
+```
+
+Untuk deploy versi beku, isi input `release_ref` dengan tag staging, misalnya:
+
+```text
+staging-ready-2026-06-11
 ```
 
 ## Required Env

@@ -1,0 +1,76 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_ref:
+        description: "Git branch, tag, or commit to deploy"
+        required: true
+        default: "master"
+      app_dir:
+        description: "Application directory on the staging server"
+        required: true
+        default: "/opt/spmi"
+      run_seed:
+        description: "Run backend seed after deploy"
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    name: Deploy to staging server
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Configure SSH key
+        env:
+          STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+        run: |
+          test -n "$STAGING_SSH_KEY"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$STAGING_SSH_KEY" > ~/.ssh/staging_key
+          chmod 600 ~/.ssh/staging_key
+
+      - name: Trust staging host
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_PORT: ${{ secrets.STAGING_PORT }}
+        run: |
+          test -n "$STAGING_HOST"
+          ssh-keyscan -p "${STAGING_PORT:-22}" "$STAGING_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy release
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_PORT: ${{ secrets.STAGING_PORT }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          RELEASE_REF: ${{ inputs.release_ref }}
+          APP_DIR: ${{ inputs.app_dir }}
+          RUN_SEED: ${{ inputs.run_seed }}
+        run: |
+          test -n "$STAGING_HOST"
+          test -n "$STAGING_USER"
+
+          ssh -i ~/.ssh/staging_key -p "${STAGING_PORT:-22}" "$STAGING_USER@$STAGING_HOST" \
+            "RELEASE_REF='$RELEASE_REF' APP_DIR='$APP_DIR' RUN_SEED='$RUN_SEED' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd "$APP_DIR"
+          git fetch --all --tags
+          git checkout "$RELEASE_REF"
+
+          if [[ ! -f .env ]]; then
+            echo ".env not found in $APP_DIR"
+            exit 1
+          fi
+
+          docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+
+          if [[ "$RUN_SEED" == "true" ]]; then
+            docker compose -f docker-compose.prod.yml --env-file .env exec -T backend npm run prisma:seed
+          fi
+
+          docker compose -f docker-compose.prod.yml --env-file .env ps
+          REMOTE
