@@ -69,6 +69,12 @@ Default release workflow:
 master
 ```
 
+Isi `health_url` agar workflow memverifikasi API setelah deploy:
+
+```text
+https://api-domain/health
+```
+
 Untuk deploy versi beku, isi input `release_ref` dengan tag staging, misalnya:
 
 ```text

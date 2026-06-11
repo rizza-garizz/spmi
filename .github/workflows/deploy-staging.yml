@@ -16,6 +16,10 @@ on:
         required: true
         type: boolean
         default: false
+      health_url:
+        description: "Optional API health URL to verify after deploy"
+        required: false
+        default: ""
 
 jobs:
   deploy:
@@ -74,3 +78,20 @@ jobs:
 
           docker compose -f docker-compose.prod.yml --env-file .env ps
           REMOTE
+
+      - name: Verify API health
+        if: ${{ inputs.health_url != '' }}
+        env:
+          HEALTH_URL: ${{ inputs.health_url }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS "$HEALTH_URL"; then
+              exit 0
+            fi
+
+            echo "Health check failed, retrying in 10s... ($attempt/5)"
+            sleep 10
+          done
+
+          echo "Health check failed after retries: $HEALTH_URL"
+          exit 1
