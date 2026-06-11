@@ -733,6 +733,11 @@ const state = {
       { id: "AKR-TIM-002", period_id: "AKR-PER-001", name: "LPM Mutu", role: "ADMIN_AKREDITASI", responsibility: "Validasi instrumen dan review akhir", email: "lpm@spmi.local" },
       { id: "AKR-TIM-003", period_id: "AKR-PER-001", name: "Operator SPMI", role: "OPERATOR", responsibility: "Input LKPS dan dokumen bukti", email: "operator@spmi.local" },
     ],
+    tasks: [
+      { id: "AKR-TSK-001", period_id: "AKR-PER-001", title: "Validasi tabel LKPS mahasiswa dan lulusan", category: "LKPS", assignee: "operator@spmi.local", priority: "high", status: "in_progress", due_date: "2026-07-05", progress: 60, notes: "Menunggu sinkronisasi data lulusan dari SIAKAD." },
+      { id: "AKR-TSK-002", period_id: "AKR-PER-001", title: "Lengkapi narasi LED K6 Pendidikan", category: "LED", assignee: "kaprodi@spmi.local", priority: "high", status: "blocked", due_date: "2026-07-10", progress: 35, notes: "Butuh bukti evaluasi RPS dan tindak lanjut PPEPP." },
+      { id: "AKR-TSK-003", period_id: "AKR-PER-001", title: "Review bukti HRIS dosen tersertifikasi", category: "BUKTI", assignee: "lpm@spmi.local", priority: "medium", status: "done", due_date: "2026-06-28", progress: 100, notes: "Bukti valid untuk K4." },
+    ],
     evidence: [
       { id: "AKR-EVD-001", period_id: "AKR-PER-001", criteria_code: "K4", title: "Rekap dosen tetap dan sertifikasi pendidik", source_module: "HRIS", status: "valid", file_name: "rekap-dosen-sertifikasi.pdf", linked_lkps_entry_id: "LKPS-ENT-002", linked_led_content_id: "LED-CNT-001", notes: "Sumber HRIS kompetensi." },
       { id: "AKR-EVD-002", period_id: "AKR-PER-001", criteria_code: "K6", title: "Dokumen standar kurikulum dan evaluasi pembelajaran", source_module: "SPMI", status: "valid", file_name: "standar-kurikulum.pdf", linked_lkps_entry_id: null, linked_led_content_id: "LED-CNT-002", notes: "Terkait standar kurikulum." },
@@ -1012,8 +1017,21 @@ function calculateAccreditationScoreProjection(periodId) {
   };
 }
 
+function enrichAccreditationTask(item) {
+  const dueAt = item.due_date ? new Date(item.due_date).getTime() : null;
+  const done = ["done", "approved", "closed"].includes(String(item.status || "").toLowerCase());
+  const overdue = Boolean(dueAt && dueAt < Date.now() && !done);
+
+  return {
+    ...item,
+    period: getAccreditationPeriodById(item.period_id),
+    overdue,
+    readiness_status: overdue ? "risk" : item.status === "blocked" ? "warning" : done ? "ready" : "warning",
+  };
+}
+
 function getAccreditationSummary() {
-  const { periods, instruments, criteria, assessments, teamMembers, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, reviews, exports } = state.accreditation;
+  const { periods, instruments, criteria, assessments, teamMembers, tasks, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, reviews, exports } = state.accreditation;
   const activePeriods = periods.filter((item) => ["draft", "berjalan", "review"].includes(item.status));
   const assessmentRows = assessments.map((assessment) => {
     const period = getAccreditationPeriodById(assessment.period_id);
@@ -1048,6 +1066,7 @@ function getAccreditationSummary() {
       { label: "LKPS entries", value: lkpsEntries.length },
       { label: "LED drafts", value: ledContents.length },
       { label: "Self scores", value: selfScores.length },
+      { label: "Task terbuka", value: tasks.filter((item) => item.status !== "done").length },
       { label: "Review terbuka", value: reviews.filter((item) => item.status !== "approved").length },
       { label: "Paket export", value: exports.length },
     ],
@@ -1063,6 +1082,7 @@ function getAccreditationSummary() {
     criteria,
     assessments: assessmentRows,
     teamMembers,
+    tasks: tasks.map(enrichAccreditationTask),
     evidence: evidence.map(enrichAccreditationEvidence),
     lkpsSections,
     lkpsEntries: lkpsEntries.map((entry) => ({
@@ -1226,6 +1246,29 @@ function addAccreditationTeamMember(data, user = null) {
   state.accreditation.teamMembers.unshift(item);
   recordMutationAudit("accreditation.team", "created", item, null, user, { status_code: 201 });
   return item;
+}
+
+function getAccreditationTasks() {
+  return state.accreditation.tasks.map(enrichAccreditationTask);
+}
+
+function addAccreditationTask(data, user = null) {
+  const item = {
+    id: buildSequenceCode("AKR-TSK", state.accreditation.tasks, "id", 3),
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    title: data.title || "Task akreditasi",
+    category: data.category || "UMUM",
+    assignee: data.assignee || user?.email || user?.username || "team-akreditasi",
+    priority: data.priority || "medium",
+    status: data.status || "todo",
+    due_date: data.due_date || data.dueDate || null,
+    progress: Math.max(0, Math.min(100, Number(data.progress || 0))),
+    notes: data.notes || data.note || "",
+  };
+
+  state.accreditation.tasks.unshift(item);
+  recordMutationAudit("accreditation.task", "created", item, null, user, { status_code: 201 });
+  return enrichAccreditationTask(item);
 }
 
 function getAccreditationEvidence() {
@@ -3562,6 +3605,8 @@ module.exports = {
   addAccreditationAssessment,
   getAccreditationTeamMembers,
   addAccreditationTeamMember,
+  getAccreditationTasks,
+  addAccreditationTask,
   getAccreditationEvidence,
   addAccreditationEvidence,
   getAccreditationLkps,

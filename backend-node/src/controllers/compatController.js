@@ -19,6 +19,8 @@ const {
   addAccreditationAssessment,
   getAccreditationTeamMembers,
   addAccreditationTeamMember,
+  getAccreditationTasks,
+  addAccreditationTask,
   getAccreditationEvidence,
   addAccreditationEvidence,
   getAccreditationLkps,
@@ -1108,6 +1110,18 @@ function createAccreditationTeamMember(req, res) {
   }
 }
 
+function accreditationTasks(_req, res) {
+  return success(res, getAccreditationTasks(), "Daftar task akreditasi");
+}
+
+function createAccreditationTask(req, res) {
+  try {
+    return success(res, addAccreditationTask(req.body || {}, req.user), "Task akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Task akreditasi gagal dibuat.");
+  }
+}
+
 function accreditationEvidence(_req, res) {
   return success(res, getAccreditationEvidence(), "Daftar bukti fisik akreditasi");
 }
@@ -1339,6 +1353,8 @@ module.exports = {
   createAccreditationAssessment,
   accreditationTeamMembers,
   createAccreditationTeamMember,
+  accreditationTasks,
+  createAccreditationTask,
   accreditationEvidence,
   createAccreditationEvidence,
   accreditationLkps,

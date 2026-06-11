@@ -475,6 +475,7 @@ model AccreditationPeriod {
   createdBy      User?                     @relation("AccreditationCreatedBy", fields: [createdById], references: [id])
   assessments    AccreditationAssessment[]
   teamMembers    AccreditationTeamMember[]
+  tasks          AccreditationTask[]
   evidence       AccreditationEvidence[]
   lkpsEntries    AccreditationLkpsEntry[]
   ledContents    AccreditationLedContent[]
@@ -525,6 +526,28 @@ model AccreditationTeamMember {
 
   @@unique([periodId, email])
   @@index([periodId, role])
+}
+
+model AccreditationTask {
+  id        String              @id @default(cuid())
+  periodId  String
+  title     String
+  category  String              @default("UMUM")
+  assignee  String?
+  priority  String              @default("medium")
+  status    String              @default("todo")
+  dueDate   DateTime?
+  progress  Int                 @default(0)
+  notes     String?
+  metadata  Json?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  deletedAt DateTime?
+  period    AccreditationPeriod @relation(fields: [periodId], references: [id])
+
+  @@index([periodId, status])
+  @@index([assignee, dueDate])
+  @@index([category, priority])
 }
 
 model AccreditationEvidence {

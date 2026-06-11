@@ -163,6 +163,8 @@ router.get("/accreditation/assessments", verifyToken, requireRole(...ROLE_ACCRED
 router.post("/accreditation/assessments", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.createAccreditationAssessment);
 router.get("/accreditation/team-members", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationTeamMembers);
 router.post("/accreditation/team-members", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.createAccreditationTeamMember);
+router.get("/accreditation/tasks", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationTasks);
+router.post("/accreditation/tasks", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.createAccreditationTask);
 router.get("/accreditation/evidence", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationEvidence);
 router.post("/accreditation/evidence", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), upload.single("file"), compatController.createAccreditationEvidence);
 router.get("/accreditation/lkps", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationLkps);

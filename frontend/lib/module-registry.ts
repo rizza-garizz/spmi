@@ -940,6 +940,15 @@ const rawModuleRegistry: ModuleSection[] = [
             status: "active",
           },
           {
+            id: "accreditation-task",
+            label: "Task Akreditasi",
+            href: "/accreditation#task-akreditasi",
+            icon: "la-tasks",
+            description: "Monitoring PIC, deadline, prioritas, progress, dan kendala task akreditasi.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
             id: "accreditation-team",
             label: "Tim Akreditasi",
             href: "/accreditation#tim-akreditasi",

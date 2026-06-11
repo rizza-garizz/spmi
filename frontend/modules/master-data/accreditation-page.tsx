@@ -70,6 +70,22 @@ type AccreditationTeamMember = {
   email: string | null;
 };
 
+type AccreditationTask = {
+  id: string;
+  period_id: string;
+  title: string;
+  category: string;
+  assignee: string;
+  priority: string;
+  status: string;
+  due_date: string | null;
+  progress: number;
+  notes: string;
+  overdue?: boolean;
+  readiness_status?: string;
+  period?: AccreditationPeriod | null;
+};
+
 type AccreditationEvidence = {
   id: string;
   period_id: string;
@@ -210,6 +226,7 @@ type AccreditationSummary = {
   criteria: AccreditationCriterion[];
   assessments: AccreditationAssessment[];
   teamMembers: AccreditationTeamMember[];
+  tasks: AccreditationTask[];
   evidence: AccreditationEvidence[];
   lkpsSections: AccreditationLkpsSection[];
   lkpsEntries: AccreditationLkpsEntry[];
@@ -237,6 +254,7 @@ const emptySummary: AccreditationSummary = {
   criteria: [],
   assessments: [],
   teamMembers: [],
+  tasks: [],
   evidence: [],
   lkpsSections: [],
   lkpsEntries: [],
@@ -251,8 +269,8 @@ const emptySummary: AccreditationSummary = {
 
 function statusBadge(status: string) {
   const normalized = status.toLowerCase();
-  if (["ready", "valid", "selesai", "final", "aktif", "approved", "generated"].includes(normalized)) return "badge-success";
-  if (["warning", "kuning", "berjalan", "review", "perlu_revisi", "revision_required", "in_review", "needs_attention"].includes(normalized)) return "badge-warning";
+  if (["ready", "valid", "selesai", "final", "aktif", "approved", "generated", "done"].includes(normalized)) return "badge-success";
+  if (["warning", "kuning", "berjalan", "review", "perlu_revisi", "revision_required", "in_review", "needs_attention", "todo", "in_progress", "blocked"].includes(normalized)) return "badge-warning";
   return "badge-danger";
 }
 
@@ -367,6 +385,27 @@ export function AccreditationPage() {
         responsibility: form.get("responsibility"),
       },
       "Anggota tim akreditasi berhasil ditambahkan."
+    );
+    event.currentTarget.reset();
+  }
+
+  function createTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    postJson(
+      "/accreditation/tasks",
+      {
+        period_id: form.get("period_id"),
+        title: form.get("title"),
+        category: form.get("category"),
+        assignee: form.get("assignee"),
+        priority: form.get("priority"),
+        status: form.get("status"),
+        due_date: form.get("due_date"),
+        progress: form.get("progress"),
+        notes: form.get("notes"),
+      },
+      "Task akreditasi berhasil ditambahkan."
     );
     event.currentTarget.reset();
   }
@@ -1194,6 +1233,129 @@ export function AccreditationPage() {
                           <strong>{item.decision}</strong>
                           <br />
                           <small>{item.note}</small>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row" id="task-akreditasi">
+        <div className="col-xl-5">
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title">Task Akreditasi</h4>
+            </div>
+            <div className="card-body">
+              <form onSubmit={createTask}>
+                <div className="form-group">
+                  <label>Periode</label>
+                  <select className="form-control" name="period_id" defaultValue={firstPeriodId}>
+                    {summary.periods.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Judul Task</label>
+                  <input className="form-control" name="title" placeholder="Validasi LKPS / revisi LED / unggah bukti" required />
+                </div>
+                <div className="form-row">
+                  <div className="form-group col-md-6">
+                    <label>Kategori</label>
+                    <select className="form-control" name="category" defaultValue="LKPS">
+                      <option value="LKPS">LKPS</option>
+                      <option value="LED">LED</option>
+                      <option value="BUKTI">Bukti</option>
+                      <option value="REVIEW">Review</option>
+                      <option value="FINALISASI">Finalisasi</option>
+                    </select>
+                  </div>
+                  <div className="form-group col-md-6">
+                    <label>PIC</label>
+                    <input className="form-control" name="assignee" placeholder="pic@spmi.local" required />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group col-md-4">
+                    <label>Prioritas</label>
+                    <select className="form-control" name="priority" defaultValue="medium">
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                  </div>
+                  <div className="form-group col-md-4">
+                    <label>Status</label>
+                    <select className="form-control" name="status" defaultValue="todo">
+                      <option value="todo">Todo</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="blocked">Blocked</option>
+                      <option value="done">Done</option>
+                    </select>
+                  </div>
+                  <div className="form-group col-md-4">
+                    <label>Progress</label>
+                    <input className="form-control" name="progress" type="number" min="0" max="100" defaultValue="0" />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Deadline</label>
+                  <input className="form-control" name="due_date" type="date" />
+                </div>
+                <div className="form-group">
+                  <label>Catatan</label>
+                  <textarea className="form-control" name="notes" rows={3} placeholder="Dependensi, kendala, atau bukti yang dibutuhkan..."></textarea>
+                </div>
+                <button className="btn btn-outline-primary" type="submit" disabled={saving}>
+                  <i className="la la-tasks mr-1"></i> Tambah Task
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-xl-7">
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title">Monitoring Task</h4>
+            </div>
+            <div className="card-body">
+              <div className="table-responsive">
+                <table className="table table-sm table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Task</th>
+                      <th>PIC</th>
+                      <th>Deadline</th>
+                      <th>Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.tasks.length === 0 ? (
+                      <tr><td colSpan={4} className="text-center">Task akreditasi belum tersedia.</td></tr>
+                    ) : summary.tasks.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <strong>{item.title}</strong>
+                          <br />
+                          <small>{item.category} | {item.priority}</small>
+                        </td>
+                        <td>
+                          {item.assignee}
+                          <br />
+                          <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                          {item.overdue ? <span className="badge badge-danger ml-1">overdue</span> : null}
+                        </td>
+                        <td>{formatDate(item.due_date)}</td>
+                        <td style={{ minWidth: 140 }}>
+                          <div className="progress" style={{ height: 8 }}>
+                            <div className={`progress-bar bg-${item.readiness_status === "ready" ? "success" : item.readiness_status === "risk" ? "danger" : "warning"}`} style={{ width: progressWidth(item.progress) }}></div>
+                          </div>
+                          <small>{item.progress}%</small>
+                          {item.notes ? <p className="mb-0"><small>{item.notes}</small></p> : null}
                         </td>
                       </tr>
                     ))}

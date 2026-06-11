@@ -1685,6 +1685,27 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(teamResponse.status, 201);
   assert.equal(teamPayload.data.period_id, periodPayload.data.id);
 
+  const taskResponse = await fetch(`${baseUrl}/accreditation/tasks`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      title: "Validasi task smoke akreditasi",
+      category: "LKPS",
+      assignee: "reviewer.smoke@spmi.local",
+      priority: "high",
+      status: "in_progress",
+      due_date: "2026-12-15",
+      progress: 45,
+      notes: "Task smoke untuk monitoring akreditasi.",
+    }),
+  });
+  const taskPayload = await taskResponse.json();
+
+  assert.equal(taskResponse.status, 201);
+  assert.equal(taskPayload.data.progress, 45);
+  assert.equal(taskPayload.data.period_id, periodPayload.data.id);
+
   const lkpsResponse = await fetch(`${baseUrl}/accreditation/lkps/entries`, {
     method: "POST",
     headers: authHeaders,
