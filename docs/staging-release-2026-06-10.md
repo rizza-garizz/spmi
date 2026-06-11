@@ -32,8 +32,7 @@ cp .env.production.example .env
 nano .env
 ./scripts/preflight-staging.sh
 ./scripts/backup-staging.sh
-docker compose -f docker-compose.prod.yml --env-file .env up -d --build
-docker compose -f docker-compose.prod.yml --env-file .env exec backend npm run prisma:seed
+HEALTH_URL=https://api-domain/health ./scripts/deploy-staging.sh
 ```
 
 Untuk server Ubuntu baru, bootstrap Docker dan repo bisa memakai script:
@@ -58,6 +57,13 @@ sudo ./scripts/backup-staging.sh
 ```
 
 Backup berisi dump PostgreSQL format custom dan arsip `uploads` dari container backend.
+
+Deploy manual terpusat:
+
+```bash
+cd /opt/spmi
+sudo RUN_BACKUP=true RUN_SEED=false HEALTH_URL=https://api-domain/health ./scripts/deploy-staging.sh
+```
 
 Restore staging harus dilakukan manual dengan konfirmasi eksplisit:
 

@@ -65,12 +65,13 @@ jobs:
           APP_DIR: ${{ inputs.app_dir }}
           RUN_SEED: ${{ inputs.run_seed }}
           RUN_BACKUP: ${{ inputs.run_backup }}
+          HEALTH_URL: ${{ inputs.health_url }}
         run: |
           test -n "$STAGING_HOST"
           test -n "$STAGING_USER"
 
           ssh -i ~/.ssh/staging_key -p "${STAGING_PORT:-22}" "$STAGING_USER@$STAGING_HOST" \
-            "RELEASE_REF='$RELEASE_REF' APP_DIR='$APP_DIR' RUN_SEED='$RUN_SEED' RUN_BACKUP='$RUN_BACKUP' bash -s" <<'REMOTE'
+            "RELEASE_REF='$RELEASE_REF' APP_DIR='$APP_DIR' RUN_SEED='$RUN_SEED' RUN_BACKUP='$RUN_BACKUP' HEALTH_URL='$HEALTH_URL' bash -s" <<'REMOTE'
           set -euo pipefail
 
           cd "$APP_DIR"
@@ -82,32 +83,5 @@ jobs:
             exit 1
           fi
 
-          if [[ "$RUN_BACKUP" == "true" ]]; then
-            ./scripts/backup-staging.sh
-          fi
-
-          docker compose -f docker-compose.prod.yml --env-file .env up -d --build
-
-          if [[ "$RUN_SEED" == "true" ]]; then
-            docker compose -f docker-compose.prod.yml --env-file .env exec -T backend npm run prisma:seed
-          fi
-
-          docker compose -f docker-compose.prod.yml --env-file .env ps
+          ./scripts/deploy-staging.sh
           REMOTE
-
-      - name: Verify API health
-        if: ${{ inputs.health_url != '' }}
-        env:
-          HEALTH_URL: ${{ inputs.health_url }}
-        run: |
-          for attempt in 1 2 3 4 5; do
-            if curl -fsS "$HEALTH_URL"; then
-              exit 0
-            fi
-
-            echo "Health check failed, retrying in 10s... ($attempt/5)"
-            sleep 10
-          done
-
-          echo "Health check failed after retries: $HEALTH_URL"
-          exit 1
