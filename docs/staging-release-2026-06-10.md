@@ -63,6 +63,14 @@ Opsional:
 STAGING_PORT
 ```
 
+Disarankan aktifkan environment protection di GitHub:
+
+```text
+Settings -> Environments -> staging
+```
+
+Tambahkan reviewer untuk approval deploy staging jika server sudah dipakai tim.
+
 Default release workflow:
 
 ```text
