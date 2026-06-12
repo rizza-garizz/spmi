@@ -931,6 +931,15 @@ const rawModuleRegistry: ModuleSection[] = [
             status: "active",
           },
           {
+            id: "accreditation-action-plan",
+            label: "Rencana Perbaikan",
+            href: "/accreditation#rencana-perbaikan-akreditasi",
+            icon: "la-tools",
+            description: "Eksekusi gap akreditasi, PIC, target selesai, output, dan progress.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
             id: "accreditation-review",
             label: "Review & Approval",
             href: "/accreditation#review-akreditasi",

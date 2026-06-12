@@ -177,6 +177,8 @@ router.get("/accreditation/led", verifyToken, requireRole(...ROLE_ACCREDITATION_
 router.post("/accreditation/led/contents", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.createAccreditationLedContent);
 router.get("/accreditation/self-scores", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationSelfScores);
 router.post("/accreditation/self-scores", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.createAccreditationSelfScore);
+router.get("/accreditation/action-plans", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationActionPlans);
+router.post("/accreditation/action-plans", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.createAccreditationActionPlan);
 router.get("/accreditation/reviews", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationReviews);
 router.post("/accreditation/reviews", verifyToken, requireRole(...ROLE_ACCREDITATION_REVIEW), compatController.createAccreditationReview);
 router.patch("/accreditation/periods/:id/status", verifyToken, requireRole(...ROLE_ACCREDITATION_REVIEW), compatController.updateAccreditationPeriodStatusRecord);

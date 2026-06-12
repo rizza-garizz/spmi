@@ -482,6 +482,7 @@ model AccreditationPeriod {
   lkpsEntries    AccreditationLkpsEntry[]
   ledContents    AccreditationLedContent[]
   selfScores     AccreditationSelfScore[]
+  actionPlans    AccreditationActionPlan[]
   reviews        AccreditationReview[]
   exports        AccreditationExport[]
 
@@ -721,6 +722,32 @@ model AccreditationSelfScore {
   @@unique([periodId, criterionId])
   @@index([criterionId])
   @@index([status])
+}
+
+model AccreditationActionPlan {
+  id             String              @id @default(cuid())
+  periodId       String
+  criteriaCode   String?
+  title          String
+  source         String              @default("self_score")
+  owner          String?
+  priority       String              @default("medium")
+  status         String              @default("todo")
+  targetDate     DateTime?
+  progress       Int                 @default(0)
+  action         String?
+  expectedOutput String?
+  notes          String?
+  metadata       Json?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+  period         AccreditationPeriod @relation(fields: [periodId], references: [id])
+
+  @@index([periodId, status])
+  @@index([criteriaCode, status])
+  @@index([owner, targetDate])
+  @@index([priority, targetDate])
 }
 
 model AccreditationReview {

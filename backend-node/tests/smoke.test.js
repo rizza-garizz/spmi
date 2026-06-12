@@ -1826,6 +1826,31 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(scorePayload.data.gap, 0.5);
   assert.equal(scorePayload.data.criteria_code, "K1");
 
+  const actionPlanResponse = await fetch(`${baseUrl}/accreditation/action-plans`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      criteria_code: "K1",
+      title: "Rencana smoke tutup gap VMTS",
+      source: "self_score",
+      owner: "reviewer.smoke@spmi.local",
+      priority: "high",
+      status: "in_progress",
+      target_date: "2026-12-22",
+      progress: 35,
+      action: "Lengkapi matriks strategi dan bukti monitoring VMTS.",
+      expected_output: "Bukti K1 siap review internal.",
+      notes: "Action plan smoke akreditasi.",
+    }),
+  });
+  const actionPlanPayload = await actionPlanResponse.json();
+
+  assert.equal(actionPlanResponse.status, 201);
+  assert.equal(actionPlanPayload.data.period_id, periodPayload.data.id);
+  assert.equal(actionPlanPayload.data.criteria_code, "K1");
+  assert.equal(actionPlanPayload.data.progress, 35);
+
   const reviewResponse = await fetch(`${baseUrl}/accreditation/reviews`, {
     method: "POST",
     headers: authHeaders,

@@ -33,6 +33,8 @@ const {
   addAccreditationLedContent,
   getAccreditationSelfScores,
   addAccreditationSelfScore,
+  getAccreditationActionPlans,
+  addAccreditationActionPlan,
   getAccreditationReviews,
   addAccreditationReview,
   updateAccreditationPeriodStatus,
@@ -1203,6 +1205,18 @@ function createAccreditationSelfScore(req, res) {
   }
 }
 
+function accreditationActionPlans(_req, res) {
+  return success(res, getAccreditationActionPlans(), "Daftar rencana perbaikan akreditasi");
+}
+
+function createAccreditationActionPlan(req, res) {
+  try {
+    return success(res, addAccreditationActionPlan(req.body || {}, req.user), "Rencana perbaikan akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Rencana perbaikan akreditasi gagal dibuat.");
+  }
+}
+
 function accreditationReviews(_req, res) {
   return success(res, getAccreditationReviews(), "Daftar review internal akreditasi");
 }
@@ -1395,6 +1409,8 @@ module.exports = {
   createAccreditationLedContent,
   accreditationSelfScores,
   createAccreditationSelfScore,
+  accreditationActionPlans,
+  createAccreditationActionPlan,
   accreditationReviews,
   createAccreditationReview,
   updateAccreditationPeriodStatusRecord,

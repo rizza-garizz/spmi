@@ -827,6 +827,53 @@ const state = {
         reviewer: "auditor@spmi.local",
       },
     ],
+    actionPlans: [
+      {
+        id: "AKR-ACT-001",
+        period_id: "AKR-PER-001",
+        criteria_code: "K4",
+        title: "Lengkapi matriks jabatan akademik dosen",
+        source: "self_score",
+        owner: "lpm@spmi.local",
+        priority: "high",
+        status: "in_progress",
+        target_date: "2026-07-22",
+        progress: 55,
+        action: "Konsolidasi data HRIS dosen, sertifikasi, jabatan akademik, dan bukti pengembangan SDM.",
+        expected_output: "Matriks SDM K4 lengkap dan tervalidasi reviewer.",
+        notes: "Menutup gap skor K4 dari penilaian mandiri.",
+      },
+      {
+        id: "AKR-ACT-002",
+        period_id: "AKR-PER-001",
+        criteria_code: "K6",
+        title: "Sinkronkan LKPS kurikulum dengan narasi LED",
+        source: "led",
+        owner: "kaprodi@spmi.local",
+        priority: "high",
+        status: "todo",
+        target_date: "2026-07-28",
+        progress: 20,
+        action: "Tautkan RPS, evaluasi pembelajaran, hasil PPEPP, dan tindak lanjut kurikulum ke LED K6.",
+        expected_output: "Narasi LED K6 konsisten dengan tabel LKPS dan bukti kurikulum.",
+        notes: "Terkait risiko narasi LED belum sinkron.",
+      },
+      {
+        id: "AKR-ACT-003",
+        period_id: "AKR-PER-001",
+        criteria_code: "K2",
+        title: "Tutup bukti RTL AMI tata kelola",
+        source: "ami",
+        owner: "auditor@spmi.local",
+        priority: "medium",
+        status: "blocked",
+        target_date: "2026-08-02",
+        progress: 35,
+        action: "Kumpulkan bukti keputusan RTM, status tindak lanjut AMI, dan validasi kerja sama aktif.",
+        expected_output: "Bukti RTL AMI K2 valid untuk paket submit akreditasi.",
+        notes: "Menunggu unggahan bukti dari unit.",
+      },
+    ],
     reviews: [
       {
         id: "AKR-REV-001",
@@ -955,6 +1002,22 @@ function enrichAccreditationSelfScore(item) {
   };
 }
 
+function enrichAccreditationActionPlan(item) {
+  const targetAt = item.target_date ? new Date(item.target_date).getTime() : null;
+  const done = ["done", "closed", "completed"].includes(String(item.status || "").toLowerCase());
+  const overdue = Boolean(targetAt && targetAt < Date.now() && !done);
+  const progress = Math.max(0, Math.min(100, Number(item.progress || 0)));
+
+  return {
+    ...item,
+    period: getAccreditationPeriodById(item.period_id),
+    criterion: getCriterionByCode(item.criteria_code),
+    progress,
+    overdue,
+    readiness_status: done ? "ready" : overdue || item.status === "blocked" ? "risk" : progress >= 70 ? "warning" : "warning",
+  };
+}
+
 function resolveAccreditationReviewEntity(entityType, entityId) {
   if (entityType === "lkps") return state.accreditation.lkpsEntries.find((item) => item.id === entityId) || null;
   if (entityType === "led") return state.accreditation.ledContents.find((item) => item.id === entityId) || null;
@@ -978,8 +1041,10 @@ function getAccreditationPackageReadiness(periodId) {
   const evidence = state.accreditation.evidence.filter((item) => item.period_id === periodId);
   const reviews = state.accreditation.reviews.filter((item) => item.period_id === periodId);
   const selfScores = state.accreditation.selfScores.filter((item) => item.period_id === periodId);
+  const actionPlans = state.accreditation.actionPlans.filter((item) => item.period_id === periodId);
   const openReviews = reviews.filter((item) => !["approved", "closed"].includes(item.status));
   const invalidEvidence = evidence.filter((item) => !["valid", "approved"].includes(item.status));
+  const openActionPlans = actionPlans.filter((item) => !["done", "closed", "completed"].includes(item.status));
 
   return [
     { key: "period", label: "Periode akreditasi tersedia", status: period ? "ready" : "risk", count: period ? 1 : 0 },
@@ -1000,6 +1065,13 @@ function getAccreditationPackageReadiness(periodId) {
       open: openReviews.length,
     },
     { key: "self_scores", label: "Penilaian mandiri tersedia", status: selfScores.length ? "ready" : "risk", count: selfScores.length },
+    {
+      key: "action_plans",
+      label: "Rencana perbaikan gap berjalan",
+      status: actionPlans.length === 0 ? "risk" : openActionPlans.length ? "warning" : "ready",
+      count: actionPlans.length,
+      open: openActionPlans.length,
+    },
   ];
 }
 
@@ -1074,7 +1146,7 @@ function enrichAccreditationRisk(item) {
 }
 
 function getAccreditationSummary() {
-  const { periods, instruments, criteria, assessments, teamMembers, tasks, milestones, risks, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, reviews, exports } = state.accreditation;
+  const { periods, instruments, criteria, assessments, teamMembers, tasks, milestones, risks, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, actionPlans, reviews, exports } = state.accreditation;
   const activePeriods = periods.filter((item) => ["draft", "berjalan", "review"].includes(item.status));
   const assessmentRows = assessments.map((assessment) => {
     const period = getAccreditationPeriodById(assessment.period_id);
@@ -1109,6 +1181,7 @@ function getAccreditationSummary() {
       { label: "LKPS entries", value: lkpsEntries.length },
       { label: "LED drafts", value: ledContents.length },
       { label: "Self scores", value: selfScores.length },
+      { label: "Rencana perbaikan", value: actionPlans.filter((item) => !["done", "closed", "completed"].includes(item.status)).length },
       { label: "Task terbuka", value: tasks.filter((item) => item.status !== "done").length },
       { label: "Milestone aktif", value: milestones.filter((item) => !["done", "selesai", "closed"].includes(item.status)).length },
       { label: "Risiko aktif", value: risks.filter((item) => !["closed", "resolved", "done"].includes(item.status)).length },
@@ -1144,6 +1217,7 @@ function getAccreditationSummary() {
       period: getAccreditationPeriodById(content.period_id),
     })),
     selfScores: selfScores.map(enrichAccreditationSelfScore),
+    actionPlans: actionPlans.map(enrichAccreditationActionPlan),
     reviews: reviews.map(enrichAccreditationReview),
     exports: exports.map(enrichAccreditationExport),
     scoring: periods.map((period) => ({
@@ -1518,6 +1592,32 @@ function addAccreditationSelfScore(data, user = null) {
   state.accreditation.selfScores.unshift(item);
   recordMutationAudit("accreditation.self_score", "created", item, null, user, { status_code: 201 });
   return enrichAccreditationSelfScore(item);
+}
+
+function getAccreditationActionPlans() {
+  return state.accreditation.actionPlans.map(enrichAccreditationActionPlan);
+}
+
+function addAccreditationActionPlan(data, user = null) {
+  const item = {
+    id: buildSequenceCode("AKR-ACT", state.accreditation.actionPlans, "id", 3),
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    criteria_code: data.criteria_code || data.criteriaCode || state.accreditation.criteria[0]?.code || null,
+    title: data.title || "Rencana perbaikan akreditasi",
+    source: data.source || "self_score",
+    owner: data.owner || user?.email || user?.username || "lpm@spmi.local",
+    priority: data.priority || "medium",
+    status: data.status || "todo",
+    target_date: data.target_date || data.targetDate || null,
+    progress: Math.max(0, Math.min(100, Number(data.progress || 0))),
+    action: data.action || "",
+    expected_output: data.expected_output || data.expectedOutput || "",
+    notes: data.notes || data.note || "",
+  };
+
+  state.accreditation.actionPlans.unshift(item);
+  recordMutationAudit("accreditation.action_plan", "created", item, null, user, { status_code: 201 });
+  return enrichAccreditationActionPlan(item);
 }
 
 function getAccreditationReviews() {
@@ -3717,6 +3817,8 @@ module.exports = {
   addAccreditationLedContent,
   getAccreditationSelfScores,
   addAccreditationSelfScore,
+  getAccreditationActionPlans,
+  addAccreditationActionPlan,
   getAccreditationReviews,
   addAccreditationReview,
   updateAccreditationPeriodStatus,

@@ -194,6 +194,26 @@ type AccreditationSelfScore = {
   criterion?: AccreditationCriterion | null;
 };
 
+type AccreditationActionPlan = {
+  id: string;
+  period_id: string;
+  criteria_code: string;
+  title: string;
+  source: string;
+  owner: string;
+  priority: string;
+  status: string;
+  target_date: string | null;
+  progress: number;
+  action: string;
+  expected_output: string;
+  notes: string;
+  overdue?: boolean;
+  readiness_status?: string;
+  period?: AccreditationPeriod | null;
+  criterion?: AccreditationCriterion | null;
+};
+
 type AccreditationScoringSummary = {
   period_id: string;
   period_name: string;
@@ -270,6 +290,7 @@ type AccreditationSummary = {
   ledSections: AccreditationLedSection[];
   ledContents: AccreditationLedContent[];
   selfScores: AccreditationSelfScore[];
+  actionPlans: AccreditationActionPlan[];
   scoring: AccreditationScoringSummary[];
   reviews: AccreditationReview[];
   exports: AccreditationExport[];
@@ -300,6 +321,7 @@ const emptySummary: AccreditationSummary = {
   ledSections: [],
   ledContents: [],
   selfScores: [],
+  actionPlans: [],
   scoring: [],
   reviews: [],
   exports: [],
@@ -589,6 +611,30 @@ export function AccreditationPage() {
         reviewer: form.get("reviewer"),
       },
       "Skor penilaian mandiri berhasil disimpan."
+    );
+    event.currentTarget.reset();
+  }
+
+  function createActionPlan(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    postJson(
+      "/accreditation/action-plans",
+      {
+        period_id: form.get("period_id"),
+        criteria_code: form.get("criteria_code"),
+        title: form.get("title"),
+        source: form.get("source"),
+        owner: form.get("owner"),
+        priority: form.get("priority"),
+        status: form.get("status"),
+        target_date: form.get("target_date"),
+        progress: form.get("progress"),
+        action: form.get("action"),
+        expected_output: form.get("expected_output"),
+        notes: form.get("notes"),
+      },
+      "Rencana perbaikan akreditasi berhasil ditambahkan."
     );
     event.currentTarget.reset();
   }
@@ -1176,6 +1222,131 @@ export function AccreditationPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row" id="rencana-perbaikan-akreditasi">
+        <div className="col-xl-5">
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title">Rencana Perbaikan Akreditasi</h4>
+            </div>
+            <div className="card-body">
+              <form onSubmit={createActionPlan}>
+                <div className="form-row">
+                  <div className="form-group col-md-6">
+                    <label>Periode</label>
+                    <select className="form-control" name="period_id" defaultValue={firstPeriodId}>
+                      {summary.periods.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group col-md-6">
+                    <label>Kriteria</label>
+                    <select className="form-control" name="criteria_code" defaultValue={summary.selfScores[0]?.criteria_code || summary.criteria[0]?.code || ""}>
+                      {summary.criteria.map((item) => <option value={item.code} key={item.id}>{item.code} - {item.title}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Judul Perbaikan</label>
+                  <input className="form-control" name="title" placeholder="Tutup gap K2 / lengkapi bukti K4 / sinkronkan LED K6" required />
+                </div>
+                <div className="form-row">
+                  <div className="form-group col-md-4">
+                    <label>Sumber</label>
+                    <select className="form-control" name="source" defaultValue="self_score">
+                      <option value="self_score">Self Score</option>
+                      <option value="review">Review</option>
+                      <option value="risk">Risk</option>
+                      <option value="ami">AMI</option>
+                      <option value="led">LED</option>
+                    </select>
+                  </div>
+                  <div className="form-group col-md-4">
+                    <label>Prioritas</label>
+                    <select className="form-control" name="priority" defaultValue="high">
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                  </div>
+                  <div className="form-group col-md-4">
+                    <label>Status</label>
+                    <select className="form-control" name="status" defaultValue="todo">
+                      <option value="todo">Todo</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="blocked">Blocked</option>
+                      <option value="done">Done</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group col-md-4">
+                    <label>PIC</label>
+                    <input className="form-control" name="owner" placeholder="pic@spmi.local" required />
+                  </div>
+                  <div className="form-group col-md-4">
+                    <label>Target Selesai</label>
+                    <input className="form-control" name="target_date" type="date" />
+                  </div>
+                  <div className="form-group col-md-4">
+                    <label>Progress</label>
+                    <input className="form-control" name="progress" type="number" min="0" max="100" defaultValue="0" />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Aksi Perbaikan</label>
+                  <textarea className="form-control" name="action" rows={3} placeholder="Langkah perbaikan yang harus dikerjakan..." required></textarea>
+                </div>
+                <div className="form-group">
+                  <label>Output yang Diharapkan</label>
+                  <textarea className="form-control" name="expected_output" rows={2} placeholder="Bukti, dokumen, data, atau narasi yang harus siap..." required></textarea>
+                </div>
+                <div className="form-group">
+                  <label>Catatan</label>
+                  <textarea className="form-control" name="notes" rows={2} placeholder="Dependensi ke SIAKAD, HRIS, SPMI, AMI, atau unit..."></textarea>
+                </div>
+                <button className="btn btn-outline-primary" type="submit" disabled={saving}>
+                  <i className="la la-tools mr-1"></i> Tambah Rencana
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-xl-7">
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title">Eksekusi Gap Perbaikan</h4>
+            </div>
+            <div className="card-body">
+              {summary.actionPlans.length === 0 ? (
+                <p className="text-muted">Rencana perbaikan akreditasi belum tersedia.</p>
+              ) : summary.actionPlans.map((item) => (
+                <div className="border-bottom py-3" key={item.id}>
+                  <div className="d-flex justify-content-between">
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p className="mb-1">{item.action}</p>
+                      <small>{item.criteria_code || "-"} | {item.owner} | target {formatDate(item.target_date)}</small>
+                    </div>
+                    <div className="text-right">
+                      <span className={`badge ${statusBadge(item.priority)}`}>{item.priority}</span>
+                      <span className={`badge ${statusBadge(item.status)} ml-1`}>{item.status}</span>
+                      {item.overdue ? <span className="badge badge-danger ml-1">overdue</span> : null}
+                    </div>
+                  </div>
+                  <div className="progress mt-2" style={{ height: 8 }}>
+                    <div className={`progress-bar bg-${item.readiness_status === "ready" ? "success" : item.readiness_status === "risk" ? "danger" : "warning"}`} style={{ width: progressWidth(item.progress) }}></div>
+                  </div>
+                  <div className="d-flex justify-content-between mt-1">
+                    <small>{item.progress}%</small>
+                    <small>{item.expected_output || item.notes || "-"}</small>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
