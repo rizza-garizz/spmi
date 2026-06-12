@@ -23,6 +23,8 @@ const {
   addAccreditationTask,
   getAccreditationMilestones,
   addAccreditationMilestone,
+  getAccreditationRisks,
+  addAccreditationRisk,
   getAccreditationEvidence,
   addAccreditationEvidence,
   getAccreditationLkps,
@@ -1136,6 +1138,18 @@ function createAccreditationMilestone(req, res) {
   }
 }
 
+function accreditationRisks(_req, res) {
+  return success(res, getAccreditationRisks(), "Daftar risiko akreditasi");
+}
+
+function createAccreditationRisk(req, res) {
+  try {
+    return success(res, addAccreditationRisk(req.body || {}, req.user), "Risiko akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Risiko akreditasi gagal dibuat.");
+  }
+}
+
 function accreditationEvidence(_req, res) {
   return success(res, getAccreditationEvidence(), "Daftar bukti fisik akreditasi");
 }
@@ -1371,6 +1385,8 @@ module.exports = {
   createAccreditationTask,
   accreditationMilestones,
   createAccreditationMilestone,
+  accreditationRisks,
+  createAccreditationRisk,
   accreditationEvidence,
   createAccreditationEvidence,
   accreditationLkps,

@@ -949,6 +949,15 @@ const rawModuleRegistry: ModuleSection[] = [
             status: "active",
           },
           {
+            id: "accreditation-risk",
+            label: "Risk Register",
+            href: "/accreditation#risk-akreditasi",
+            icon: "la-exclamation-triangle",
+            description: "Risiko akreditasi, level dampak, mitigasi, owner, dan deadline.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
             id: "accreditation-task",
             label: "Task Akreditasi",
             href: "/accreditation#task-akreditasi",

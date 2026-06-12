@@ -743,6 +743,11 @@ const state = {
       { id: "AKR-MIL-002", period_id: "AKR-PER-001", title: "Finalisasi LKPS dan bukti kuantitatif", phase: "lkps", owner: "operator@spmi.local", start_date: "2026-06-26", due_date: "2026-07-20", status: "in_progress", progress: 58, notes: "Fokus sinkronisasi SIAKAD dan HRIS." },
       { id: "AKR-MIL-003", period_id: "AKR-PER-001", title: "Review LED dan simulasi asesmen internal", phase: "review", owner: "kaprodi@spmi.local", start_date: "2026-07-21", due_date: "2026-08-15", status: "planned", progress: 10, notes: "Menunggu draft LED lengkap dan bukti valid." },
     ],
+    risks: [
+      { id: "AKR-RSK-001", period_id: "AKR-PER-001", title: "Sinkronisasi data lulusan SIAKAD terlambat", category: "integrasi", owner: "operator@spmi.local", probability: 4, impact: 5, level: "high", status: "open", mitigation: "Jalankan preview SIAKAD mingguan dan siapkan template manual fallback.", due_date: "2026-07-12", notes: "Berdampak ke LKPS mahasiswa dan lulusan." },
+      { id: "AKR-RSK-002", period_id: "AKR-PER-001", title: "Bukti RTL AMI tata kelola belum valid", category: "bukti", owner: "lpm@spmi.local", probability: 3, impact: 4, level: "medium", status: "mitigating", mitigation: "Minta unit mengunggah keputusan RTM dan bukti penutupan RTL.", due_date: "2026-07-18", notes: "Terkait K2 tata kelola." },
+      { id: "AKR-RSK-003", period_id: "AKR-PER-001", title: "Narasi LED K6 belum sinkron dengan LKPS", category: "led", owner: "kaprodi@spmi.local", probability: 3, impact: 5, level: "high", status: "open", mitigation: "Review silang LED K6 dengan tabel kurikulum dan bukti RPS.", due_date: "2026-07-25", notes: "Menjadi catatan review internal." },
+    ],
     evidence: [
       { id: "AKR-EVD-001", period_id: "AKR-PER-001", criteria_code: "K4", title: "Rekap dosen tetap dan sertifikasi pendidik", source_module: "HRIS", status: "valid", file_name: "rekap-dosen-sertifikasi.pdf", linked_lkps_entry_id: "LKPS-ENT-002", linked_led_content_id: "LED-CNT-001", notes: "Sumber HRIS kompetensi." },
       { id: "AKR-EVD-002", period_id: "AKR-PER-001", criteria_code: "K6", title: "Dokumen standar kurikulum dan evaluasi pembelajaran", source_module: "SPMI", status: "valid", file_name: "standar-kurikulum.pdf", linked_lkps_entry_id: null, linked_led_content_id: "LED-CNT-002", notes: "Terkait standar kurikulum." },
@@ -1048,8 +1053,28 @@ function enrichAccreditationMilestone(item) {
   };
 }
 
+function enrichAccreditationRisk(item) {
+  const probability = Math.max(1, Math.min(5, Number(item.probability || 1)));
+  const impact = Math.max(1, Math.min(5, Number(item.impact || 1)));
+  const score = probability * impact;
+  const dueAt = item.due_date ? new Date(item.due_date).getTime() : null;
+  const closed = ["closed", "resolved", "done"].includes(String(item.status || "").toLowerCase());
+  const overdue = Boolean(dueAt && dueAt < Date.now() && !closed);
+
+  return {
+    ...item,
+    period: getAccreditationPeriodById(item.period_id),
+    probability,
+    impact,
+    score,
+    overdue,
+    level: item.level || (score >= 16 ? "high" : score >= 8 ? "medium" : "low"),
+    readiness_status: closed ? "ready" : overdue || score >= 16 ? "risk" : "warning",
+  };
+}
+
 function getAccreditationSummary() {
-  const { periods, instruments, criteria, assessments, teamMembers, tasks, milestones, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, reviews, exports } = state.accreditation;
+  const { periods, instruments, criteria, assessments, teamMembers, tasks, milestones, risks, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, reviews, exports } = state.accreditation;
   const activePeriods = periods.filter((item) => ["draft", "berjalan", "review"].includes(item.status));
   const assessmentRows = assessments.map((assessment) => {
     const period = getAccreditationPeriodById(assessment.period_id);
@@ -1086,6 +1111,7 @@ function getAccreditationSummary() {
       { label: "Self scores", value: selfScores.length },
       { label: "Task terbuka", value: tasks.filter((item) => item.status !== "done").length },
       { label: "Milestone aktif", value: milestones.filter((item) => !["done", "selesai", "closed"].includes(item.status)).length },
+      { label: "Risiko aktif", value: risks.filter((item) => !["closed", "resolved", "done"].includes(item.status)).length },
       { label: "Review terbuka", value: reviews.filter((item) => item.status !== "approved").length },
       { label: "Paket export", value: exports.length },
     ],
@@ -1103,6 +1129,7 @@ function getAccreditationSummary() {
     teamMembers,
     tasks: tasks.map(enrichAccreditationTask),
     milestones: milestones.map(enrichAccreditationMilestone),
+    risks: risks.map(enrichAccreditationRisk),
     evidence: evidence.map(enrichAccreditationEvidence),
     lkpsSections,
     lkpsEntries: lkpsEntries.map((entry) => ({
@@ -1312,6 +1339,34 @@ function addAccreditationMilestone(data, user = null) {
   state.accreditation.milestones.unshift(item);
   recordMutationAudit("accreditation.milestone", "created", item, null, user, { status_code: 201 });
   return enrichAccreditationMilestone(item);
+}
+
+function getAccreditationRisks() {
+  return state.accreditation.risks.map(enrichAccreditationRisk);
+}
+
+function addAccreditationRisk(data, user = null) {
+  const probability = Math.max(1, Math.min(5, Number(data.probability || 1)));
+  const impact = Math.max(1, Math.min(5, Number(data.impact || 1)));
+  const score = probability * impact;
+  const item = {
+    id: buildSequenceCode("AKR-RSK", state.accreditation.risks, "id", 3),
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    title: data.title || "Risiko akreditasi",
+    category: data.category || "umum",
+    owner: data.owner || user?.email || user?.username || "lpm@spmi.local",
+    probability,
+    impact,
+    level: data.level || (score >= 16 ? "high" : score >= 8 ? "medium" : "low"),
+    status: data.status || "open",
+    mitigation: data.mitigation || "",
+    due_date: data.due_date || data.dueDate || null,
+    notes: data.notes || data.note || "",
+  };
+
+  state.accreditation.risks.unshift(item);
+  recordMutationAudit("accreditation.risk", "created", item, null, user, { status_code: 201 });
+  return enrichAccreditationRisk(item);
 }
 
 function getAccreditationEvidence() {
@@ -3652,6 +3707,8 @@ module.exports = {
   addAccreditationTask,
   getAccreditationMilestones,
   addAccreditationMilestone,
+  getAccreditationRisks,
+  addAccreditationRisk,
   getAccreditationEvidence,
   addAccreditationEvidence,
   getAccreditationLkps,

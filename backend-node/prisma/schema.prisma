@@ -477,6 +477,7 @@ model AccreditationPeriod {
   teamMembers    AccreditationTeamMember[]
   tasks          AccreditationTask[]
   milestones     AccreditationMilestone[]
+  risks          AccreditationRisk[]
   evidence       AccreditationEvidence[]
   lkpsEntries    AccreditationLkpsEntry[]
   ledContents    AccreditationLedContent[]
@@ -571,6 +572,31 @@ model AccreditationMilestone {
   @@index([periodId, status])
   @@index([phase, dueDate])
   @@index([owner, dueDate])
+}
+
+model AccreditationRisk {
+  id          String              @id @default(cuid())
+  periodId    String
+  title       String
+  category    String              @default("umum")
+  owner       String?
+  probability Int                 @default(1)
+  impact      Int                 @default(1)
+  level       String              @default("low")
+  status      String              @default("open")
+  mitigation  String?
+  dueDate     DateTime?
+  notes       String?
+  metadata    Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  deletedAt   DateTime?
+  period      AccreditationPeriod @relation(fields: [periodId], references: [id])
+
+  @@index([periodId, status])
+  @@index([level, dueDate])
+  @@index([owner, dueDate])
+  @@index([category, level])
 }
 
 model AccreditationEvidence {

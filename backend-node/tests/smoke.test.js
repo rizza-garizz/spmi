@@ -1727,6 +1727,30 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(milestonePayload.data.phase, "lkps");
   assert.equal(milestonePayload.data.progress, 40);
 
+  const riskResponse = await fetch(`${baseUrl}/accreditation/risks`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      title: "Risiko smoke keterlambatan bukti",
+      category: "bukti",
+      owner: "reviewer.smoke@spmi.local",
+      probability: 4,
+      impact: 4,
+      level: "high",
+      status: "open",
+      mitigation: "Eskalasi ke LPM dan siapkan bukti pengganti.",
+      due_date: "2026-11-15",
+      notes: "Risk smoke untuk kesiapan submit akreditasi.",
+    }),
+  });
+  const riskPayload = await riskResponse.json();
+
+  assert.equal(riskResponse.status, 201);
+  assert.equal(riskPayload.data.period_id, periodPayload.data.id);
+  assert.equal(riskPayload.data.score, 16);
+  assert.equal(riskPayload.data.readiness_status, "risk");
+
   const lkpsResponse = await fetch(`${baseUrl}/accreditation/lkps/entries`, {
     method: "POST",
     headers: authHeaders,

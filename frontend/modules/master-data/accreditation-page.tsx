@@ -102,6 +102,25 @@ type AccreditationMilestone = {
   period?: AccreditationPeriod | null;
 };
 
+type AccreditationRisk = {
+  id: string;
+  period_id: string;
+  title: string;
+  category: string;
+  owner: string;
+  probability: number;
+  impact: number;
+  score: number;
+  level: string;
+  status: string;
+  mitigation: string;
+  due_date: string | null;
+  notes: string;
+  overdue?: boolean;
+  readiness_status?: string;
+  period?: AccreditationPeriod | null;
+};
+
 type AccreditationEvidence = {
   id: string;
   period_id: string;
@@ -244,6 +263,7 @@ type AccreditationSummary = {
   teamMembers: AccreditationTeamMember[];
   tasks: AccreditationTask[];
   milestones: AccreditationMilestone[];
+  risks: AccreditationRisk[];
   evidence: AccreditationEvidence[];
   lkpsSections: AccreditationLkpsSection[];
   lkpsEntries: AccreditationLkpsEntry[];
@@ -273,6 +293,7 @@ const emptySummary: AccreditationSummary = {
   teamMembers: [],
   tasks: [],
   milestones: [],
+  risks: [],
   evidence: [],
   lkpsSections: [],
   lkpsEntries: [],
@@ -287,8 +308,8 @@ const emptySummary: AccreditationSummary = {
 
 function statusBadge(status: string) {
   const normalized = status.toLowerCase();
-  if (["ready", "valid", "selesai", "final", "aktif", "approved", "generated", "done"].includes(normalized)) return "badge-success";
-  if (["warning", "kuning", "berjalan", "review", "perlu_revisi", "revision_required", "in_review", "needs_attention", "todo", "in_progress", "blocked"].includes(normalized)) return "badge-warning";
+  if (["ready", "valid", "selesai", "final", "aktif", "approved", "generated", "done", "closed", "resolved", "low"].includes(normalized)) return "badge-success";
+  if (["warning", "kuning", "berjalan", "review", "perlu_revisi", "revision_required", "in_review", "needs_attention", "todo", "in_progress", "blocked", "mitigating", "medium"].includes(normalized)) return "badge-warning";
   return "badge-danger";
 }
 
@@ -445,6 +466,29 @@ export function AccreditationPage() {
         notes: form.get("notes"),
       },
       "Milestone akreditasi berhasil ditambahkan."
+    );
+    event.currentTarget.reset();
+  }
+
+  function createRisk(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    postJson(
+      "/accreditation/risks",
+      {
+        period_id: form.get("period_id"),
+        title: form.get("title"),
+        category: form.get("category"),
+        owner: form.get("owner"),
+        probability: form.get("probability"),
+        impact: form.get("impact"),
+        level: form.get("level"),
+        status: form.get("status"),
+        mitigation: form.get("mitigation"),
+        due_date: form.get("due_date"),
+        notes: form.get("notes"),
+      },
+      "Risiko akreditasi berhasil ditambahkan."
     );
     event.currentTarget.reset();
   }
@@ -1379,6 +1423,136 @@ export function AccreditationPage() {
                   <small>{item.progress}%</small>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row" id="risk-akreditasi">
+        <div className="col-xl-5">
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title">Risk Register Akreditasi</h4>
+            </div>
+            <div className="card-body">
+              <form onSubmit={createRisk}>
+                <div className="form-group">
+                  <label>Periode</label>
+                  <select className="form-control" name="period_id" defaultValue={firstPeriodId}>
+                    {summary.periods.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Judul Risiko</label>
+                  <input className="form-control" name="title" placeholder="Sinkronisasi SIAKAD terlambat / bukti belum valid" required />
+                </div>
+                <div className="form-row">
+                  <div className="form-group col-md-6">
+                    <label>Kategori</label>
+                    <select className="form-control" name="category" defaultValue="integrasi">
+                      <option value="integrasi">Integrasi</option>
+                      <option value="bukti">Bukti</option>
+                      <option value="lkps">LKPS</option>
+                      <option value="led">LED</option>
+                      <option value="review">Review</option>
+                    </select>
+                  </div>
+                  <div className="form-group col-md-6">
+                    <label>Owner</label>
+                    <input className="form-control" name="owner" placeholder="owner@spmi.local" required />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group col-md-3">
+                    <label>Prob.</label>
+                    <input className="form-control" name="probability" type="number" min="1" max="5" defaultValue="3" />
+                  </div>
+                  <div className="form-group col-md-3">
+                    <label>Dampak</label>
+                    <input className="form-control" name="impact" type="number" min="1" max="5" defaultValue="3" />
+                  </div>
+                  <div className="form-group col-md-3">
+                    <label>Level</label>
+                    <select className="form-control" name="level" defaultValue="medium">
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                  </div>
+                  <div className="form-group col-md-3">
+                    <label>Status</label>
+                    <select className="form-control" name="status" defaultValue="open">
+                      <option value="open">Open</option>
+                      <option value="mitigating">Mitigating</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Deadline Mitigasi</label>
+                  <input className="form-control" name="due_date" type="date" />
+                </div>
+                <div className="form-group">
+                  <label>Mitigasi</label>
+                  <textarea className="form-control" name="mitigation" rows={3} placeholder="Rencana mitigasi, fallback data, atau eskalasi ke unit..."></textarea>
+                </div>
+                <div className="form-group">
+                  <label>Catatan</label>
+                  <textarea className="form-control" name="notes" rows={2} placeholder="Dampak ke LKPS, LED, bukti, atau review internal..."></textarea>
+                </div>
+                <button className="btn btn-outline-primary" type="submit" disabled={saving}>
+                  <i className="la la-exclamation-triangle mr-1"></i> Tambah Risiko
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-xl-7">
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title">Monitoring Risiko</h4>
+            </div>
+            <div className="card-body table-responsive">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Risiko</th>
+                    <th>Owner</th>
+                    <th>Skor</th>
+                    <th>Mitigasi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.risks.length === 0 ? (
+                    <tr><td colSpan={4} className="text-center">Risk register akreditasi belum tersedia.</td></tr>
+                  ) : summary.risks.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <strong>{item.title}</strong>
+                        <br />
+                        <small>{item.category} | {item.period?.name || item.period_id}</small>
+                      </td>
+                      <td>
+                        {item.owner}
+                        <br />
+                        <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                        {item.overdue ? <span className="badge badge-danger ml-1">overdue</span> : null}
+                      </td>
+                      <td>
+                        <strong>{item.score}</strong>
+                        <br />
+                        <span className={`badge ${statusBadge(item.level)}`}>{item.level}</span>
+                      </td>
+                      <td>
+                        <small>{formatDate(item.due_date)}</small>
+                        <br />
+                        {item.mitigation || item.notes || "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
