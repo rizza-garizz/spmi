@@ -484,6 +484,7 @@ model AccreditationPeriod {
   selfScores     AccreditationSelfScore[]
   actionPlans    AccreditationActionPlan[]
   reviews        AccreditationReview[]
+  submissionChecks AccreditationSubmissionCheck[]
   exports        AccreditationExport[]
 
   @@index([institutionId, status, dueDate])
@@ -768,6 +769,29 @@ model AccreditationReview {
 
   @@index([periodId, status])
   @@index([entityType, entityId])
+}
+
+model AccreditationSubmissionCheck {
+  id         String              @id @default(cuid())
+  periodId   String
+  category   String              @default("UMUM")
+  title      String
+  owner      String?
+  verifier   String?
+  status     String              @default("pending")
+  dueDate    DateTime?
+  evidenceId String?
+  notes      String?
+  metadata   Json?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  deletedAt  DateTime?
+  period     AccreditationPeriod @relation(fields: [periodId], references: [id])
+
+  @@index([periodId, status])
+  @@index([category, status])
+  @@index([owner, dueDate])
+  @@index([verifier, status])
 }
 
 model AccreditationExport {

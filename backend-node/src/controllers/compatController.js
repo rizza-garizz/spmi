@@ -37,6 +37,8 @@ const {
   addAccreditationActionPlan,
   getAccreditationReviews,
   addAccreditationReview,
+  getAccreditationSubmissionChecks,
+  addAccreditationSubmissionCheck,
   updateAccreditationPeriodStatus,
   getAccreditationExports,
   getAccreditationExportById,
@@ -1229,6 +1231,18 @@ function createAccreditationReview(req, res) {
   }
 }
 
+function accreditationSubmissionChecks(_req, res) {
+  return success(res, getAccreditationSubmissionChecks(), "Daftar checklist submit akreditasi");
+}
+
+function createAccreditationSubmissionCheck(req, res) {
+  try {
+    return success(res, addAccreditationSubmissionCheck(req.body || {}, req.user), "Checklist submit akreditasi berhasil dibuat.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Checklist submit akreditasi gagal dibuat.");
+  }
+}
+
 function updateAccreditationPeriodStatusRecord(req, res) {
   const period = updateAccreditationPeriodStatus(req.params.id, req.body || {}, req.user);
   if (!period) return failure(res, "Periode akreditasi tidak ditemukan.", 404);
@@ -1413,6 +1427,8 @@ module.exports = {
   createAccreditationActionPlan,
   accreditationReviews,
   createAccreditationReview,
+  accreditationSubmissionChecks,
+  createAccreditationSubmissionCheck,
   updateAccreditationPeriodStatusRecord,
   accreditationExports,
   createAccreditationExport,

@@ -1886,6 +1886,28 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(statusPayload.data.status, "final");
   assert.equal(statusPayload.data.progress, 95);
 
+  const submissionCheckResponse = await fetch(`${baseUrl}/accreditation/submission-checks`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      category: "SUBMIT",
+      title: "Checklist smoke paket submit siap",
+      owner: "reviewer.smoke@spmi.local",
+      verifier: "admin@spmi.local",
+      status: "verified",
+      due_date: "2026-12-24",
+      evidence_id: evidencePayload.data.id,
+      notes: "Checklist submit smoke.",
+    }),
+  });
+  const submissionCheckPayload = await submissionCheckResponse.json();
+
+  assert.equal(submissionCheckResponse.status, 201);
+  assert.equal(submissionCheckPayload.data.period_id, periodPayload.data.id);
+  assert.equal(submissionCheckPayload.data.status, "verified");
+  assert.equal(submissionCheckPayload.data.readiness_status, "ready");
+
   const exportResponse = await fetch(`${baseUrl}/accreditation/exports`, {
     method: "POST",
     headers: authHeaders,
@@ -1902,6 +1924,8 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(exportPayload.data.package_summary.led_contents, 1);
   assert.equal(exportPayload.data.package_summary.evidence, 1);
   assert.equal(exportPayload.data.readiness_items.some((item) => item.key === "reviews"), true);
+  assert.equal(exportPayload.data.package_summary.submission_checks, 1);
+  assert.equal(exportPayload.data.readiness_items.some((item) => item.key === "submission_checks"), true);
 
   const downloadResponse = await fetch(`${baseUrl}/accreditation/exports/${exportPayload.data.id}/download`, {
     headers: { Authorization: `Bearer ${adminToken}` },

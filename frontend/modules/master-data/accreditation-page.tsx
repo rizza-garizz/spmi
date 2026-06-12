@@ -238,6 +238,23 @@ type AccreditationReview = {
   entity?: Record<string, unknown> | null;
 };
 
+type AccreditationSubmissionCheck = {
+  id: string;
+  period_id: string;
+  category: string;
+  title: string;
+  owner: string;
+  verifier: string;
+  status: string;
+  due_date: string | null;
+  evidence_id?: string | null;
+  notes: string;
+  overdue?: boolean;
+  readiness_status?: string;
+  period?: AccreditationPeriod | null;
+  evidence?: AccreditationEvidence | null;
+};
+
 type AccreditationReadinessItem = {
   key: string;
   label: string;
@@ -260,6 +277,7 @@ type AccreditationExport = {
     evidence?: number;
     reviews?: number;
     self_scores?: number;
+    submission_checks?: number;
     readiness_items?: number;
   };
   readiness_items?: AccreditationReadinessItem[];
@@ -293,6 +311,7 @@ type AccreditationSummary = {
   actionPlans: AccreditationActionPlan[];
   scoring: AccreditationScoringSummary[];
   reviews: AccreditationReview[];
+  submissionChecks: AccreditationSubmissionCheck[];
   exports: AccreditationExport[];
   integrations: Array<{ source: string; data: string[]; status: string }>;
 };
@@ -324,14 +343,15 @@ const emptySummary: AccreditationSummary = {
   actionPlans: [],
   scoring: [],
   reviews: [],
+  submissionChecks: [],
   exports: [],
   integrations: [],
 };
 
 function statusBadge(status: string) {
   const normalized = status.toLowerCase();
-  if (["ready", "valid", "selesai", "final", "aktif", "approved", "generated", "done", "closed", "resolved", "low"].includes(normalized)) return "badge-success";
-  if (["warning", "kuning", "berjalan", "review", "perlu_revisi", "revision_required", "in_review", "needs_attention", "todo", "in_progress", "blocked", "mitigating", "medium"].includes(normalized)) return "badge-warning";
+  if (["ready", "valid", "selesai", "final", "aktif", "approved", "generated", "done", "closed", "resolved", "low", "verified"].includes(normalized)) return "badge-success";
+  if (["warning", "kuning", "berjalan", "review", "perlu_revisi", "revision_required", "in_review", "needs_attention", "todo", "in_progress", "blocked", "mitigating", "medium", "pending"].includes(normalized)) return "badge-warning";
   return "badge-danger";
 }
 
@@ -687,6 +707,27 @@ export function AccreditationPage() {
       },
       "Paket export akreditasi berhasil dibuat."
     );
+  }
+
+  function createSubmissionCheck(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    postJson(
+      "/accreditation/submission-checks",
+      {
+        period_id: form.get("period_id"),
+        category: form.get("category"),
+        title: form.get("title"),
+        owner: form.get("owner"),
+        verifier: form.get("verifier"),
+        status: form.get("status"),
+        due_date: form.get("due_date"),
+        evidence_id: form.get("evidence_id"),
+        notes: form.get("notes"),
+      },
+      "Checklist submit akreditasi berhasil ditambahkan."
+    );
+    event.currentTarget.reset();
   }
 
   async function downloadExport(exportId: string, fileName: string) {
@@ -1922,6 +1963,87 @@ export function AccreditationPage() {
                     <p className="mb-1">{item.data.join(", ")}</p>
                     <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
                   </div>
+                </div>
+              ))}
+              <hr />
+              <h5 id="checklist-submit-akreditasi">Checklist Submit</h5>
+              <form className="mb-4" onSubmit={createSubmissionCheck}>
+                <div className="form-row">
+                  <div className="form-group col-md-6">
+                    <label>Periode</label>
+                    <select className="form-control" name="period_id" defaultValue={firstPeriodId}>
+                      {summary.periods.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group col-md-6">
+                    <label>Kategori</label>
+                    <select className="form-control" name="category" defaultValue="LKPS">
+                      <option value="LKPS">LKPS</option>
+                      <option value="LED">LED</option>
+                      <option value="BUKTI">Bukti</option>
+                      <option value="REVIEW">Review</option>
+                      <option value="SUBMIT">Submit</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Item Checklist</label>
+                  <input className="form-control" name="title" placeholder="LKPS lengkap / LED final / bukti valid / approval pimpinan" required />
+                </div>
+                <div className="form-row">
+                  <div className="form-group col-md-4">
+                    <label>Owner</label>
+                    <input className="form-control" name="owner" placeholder="owner@spmi.local" required />
+                  </div>
+                  <div className="form-group col-md-4">
+                    <label>Verifier</label>
+                    <input className="form-control" name="verifier" placeholder="reviewer@spmi.local" required />
+                  </div>
+                  <div className="form-group col-md-4">
+                    <label>Status</label>
+                    <select className="form-control" name="status" defaultValue="pending">
+                      <option value="pending">Pending</option>
+                      <option value="in_review">In Review</option>
+                      <option value="verified">Verified</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group col-md-6">
+                    <label>Deadline</label>
+                    <input className="form-control" name="due_date" type="date" />
+                  </div>
+                  <div className="form-group col-md-6">
+                    <label>Bukti Terkait</label>
+                    <select className="form-control" name="evidence_id" defaultValue="">
+                      <option value="">Tanpa bukti</option>
+                      {summary.evidence.map((item) => <option value={item.id} key={item.id}>{item.id} - {item.title}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Catatan</label>
+                  <textarea className="form-control" name="notes" rows={2} placeholder="Catatan verifikasi submit..."></textarea>
+                </div>
+                <button className="btn btn-outline-primary" type="submit" disabled={saving}>
+                  <i className="la la-clipboard-check mr-1"></i> Tambah Checklist
+                </button>
+              </form>
+              {summary.submissionChecks.length === 0 ? (
+                <p className="text-muted">Checklist submit belum tersedia.</p>
+              ) : summary.submissionChecks.map((item) => (
+                <div className="border rounded p-3 mb-3" key={item.id}>
+                  <div className="d-flex justify-content-between">
+                    <strong>{item.title}</strong>
+                    <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                  </div>
+                  <small>{item.category} | {item.owner} | verifier {item.verifier}</small>
+                  <div className="d-flex justify-content-between mt-2">
+                    <small>{formatDate(item.due_date)}</small>
+                    <small>{item.evidence?.title || item.notes || "-"}</small>
+                  </div>
+                  {item.overdue ? <span className="badge badge-danger mt-2">overdue</span> : null}
                 </div>
               ))}
               <hr />

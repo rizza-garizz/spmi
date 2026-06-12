@@ -985,6 +985,15 @@ const rawModuleRegistry: ModuleSection[] = [
             status: "active",
           },
           {
+            id: "accreditation-submission-check",
+            label: "Checklist Submit",
+            href: "/accreditation#checklist-submit-akreditasi",
+            icon: "la-clipboard-check",
+            description: "Verifikasi LKPS, LED, bukti, review, dan approval sebelum generate paket.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
             id: "accreditation-integration",
             label: "Integrasi & Bukti",
             href: "/accreditation#integrasi-akreditasi",

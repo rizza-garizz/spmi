@@ -242,6 +242,7 @@ const megaParents: MegaParent[] = [
           { id: "accreditation-risk", label: "Risk Register", description: "Risiko akreditasi, level dampak, mitigasi, owner, dan deadline.", href: "/accreditation#risk-akreditasi", icon: "la-exclamation-triangle", roles: roleQuality },
           { id: "accreditation-task", label: "Task Akreditasi", description: "Monitoring PIC, deadline, prioritas, progress, dan kendala task akreditasi.", href: "/accreditation#task-akreditasi", icon: "la-tasks", roles: roleQuality },
           { id: "accreditation-team", label: "Tim Akreditasi", description: "Admin, kaprodi, penyusun, reviewer, dan operator.", href: "/accreditation#tim-akreditasi", icon: "la-users", roles: roleQuality },
+          { id: "accreditation-submission-check", label: "Checklist Submit", description: "Verifikasi LKPS, LED, bukti, review, dan approval sebelum generate paket.", href: "/accreditation#checklist-submit-akreditasi", icon: "la-clipboard-check", roles: roleQuality },
           { id: "accreditation-integration", label: "Integrasi & Bukti", description: "Mapping SIAKAD, HRIS, SPMI, AMI, RTM, dan bukti fisik.", href: "/accreditation#integrasi-akreditasi", icon: "la-link", roles: roleQuality },
         ],
       },

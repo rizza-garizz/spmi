@@ -898,6 +898,44 @@ const state = {
         due_date: null,
       },
     ],
+    submissionChecks: [
+      {
+        id: "AKR-CHK-001",
+        period_id: "AKR-PER-001",
+        category: "LKPS",
+        title: "LKPS mahasiswa, dosen, kurikulum, dan luaran lengkap",
+        owner: "operator@spmi.local",
+        verifier: "lpm@spmi.local",
+        status: "in_review",
+        due_date: "2026-08-10",
+        evidence_id: "AKR-EVD-001",
+        notes: "Menunggu sinkronisasi final SIAKAD untuk data lulusan.",
+      },
+      {
+        id: "AKR-CHK-002",
+        period_id: "AKR-PER-001",
+        category: "LED",
+        title: "Narasi LED 9 kriteria sudah direview internal",
+        owner: "kaprodi@spmi.local",
+        verifier: "auditor@spmi.local",
+        status: "pending",
+        due_date: "2026-08-14",
+        evidence_id: null,
+        notes: "K6 masih perlu sinkronisasi RPS dan PPEPP.",
+      },
+      {
+        id: "AKR-CHK-003",
+        period_id: "AKR-PER-001",
+        category: "BUKTI",
+        title: "Bukti fisik prioritas valid dan tertaut",
+        owner: "lpm@spmi.local",
+        verifier: "auditor@spmi.local",
+        status: "verified",
+        due_date: "2026-08-12",
+        evidence_id: "AKR-EVD-002",
+        notes: "Bukti kurikulum sudah valid untuk K6.",
+      },
+    ],
     exports: [
       {
         id: "AKR-EXP-001",
@@ -913,7 +951,8 @@ const state = {
           evidence: 3,
           reviews: 2,
           self_scores: 3,
-          readiness_items: 6,
+          submission_checks: 3,
+          readiness_items: 7,
         },
         readiness_items: [
           { key: "period", label: "Periode akreditasi tersedia", status: "ready" },
@@ -922,6 +961,7 @@ const state = {
           { key: "evidence", label: "Bukti fisik tersedia", status: "ready" },
           { key: "reviews", label: "Review internal berjalan", status: "warning" },
           { key: "self_scores", label: "Penilaian mandiri tersedia", status: "ready" },
+          { key: "submission_checks", label: "Checklist submit terverifikasi", status: "warning" },
         ],
       },
     ],
@@ -1018,6 +1058,21 @@ function enrichAccreditationActionPlan(item) {
   };
 }
 
+function enrichAccreditationSubmissionCheck(item) {
+  const dueAt = item.due_date ? new Date(item.due_date).getTime() : null;
+  const verified = ["verified", "approved", "done"].includes(String(item.status || "").toLowerCase());
+  const overdue = Boolean(dueAt && dueAt < Date.now() && !verified);
+  const evidence = state.accreditation.evidence.find((entry) => entry.id === item.evidence_id) || null;
+
+  return {
+    ...item,
+    period: getAccreditationPeriodById(item.period_id),
+    evidence: evidence ? enrichAccreditationEvidence(evidence) : null,
+    overdue,
+    readiness_status: verified ? "ready" : overdue ? "risk" : "warning",
+  };
+}
+
 function resolveAccreditationReviewEntity(entityType, entityId) {
   if (entityType === "lkps") return state.accreditation.lkpsEntries.find((item) => item.id === entityId) || null;
   if (entityType === "led") return state.accreditation.ledContents.find((item) => item.id === entityId) || null;
@@ -1042,9 +1097,11 @@ function getAccreditationPackageReadiness(periodId) {
   const reviews = state.accreditation.reviews.filter((item) => item.period_id === periodId);
   const selfScores = state.accreditation.selfScores.filter((item) => item.period_id === periodId);
   const actionPlans = state.accreditation.actionPlans.filter((item) => item.period_id === periodId);
+  const submissionChecks = state.accreditation.submissionChecks.filter((item) => item.period_id === periodId);
   const openReviews = reviews.filter((item) => !["approved", "closed"].includes(item.status));
   const invalidEvidence = evidence.filter((item) => !["valid", "approved"].includes(item.status));
   const openActionPlans = actionPlans.filter((item) => !["done", "closed", "completed"].includes(item.status));
+  const openSubmissionChecks = submissionChecks.filter((item) => !["verified", "approved", "done"].includes(item.status));
 
   return [
     { key: "period", label: "Periode akreditasi tersedia", status: period ? "ready" : "risk", count: period ? 1 : 0 },
@@ -1071,6 +1128,13 @@ function getAccreditationPackageReadiness(periodId) {
       status: actionPlans.length === 0 ? "risk" : openActionPlans.length ? "warning" : "ready",
       count: actionPlans.length,
       open: openActionPlans.length,
+    },
+    {
+      key: "submission_checks",
+      label: "Checklist submit terverifikasi",
+      status: submissionChecks.length === 0 ? "risk" : openSubmissionChecks.length ? "warning" : "ready",
+      count: submissionChecks.length,
+      open: openSubmissionChecks.length,
     },
   ];
 }
@@ -1146,7 +1210,7 @@ function enrichAccreditationRisk(item) {
 }
 
 function getAccreditationSummary() {
-  const { periods, instruments, criteria, assessments, teamMembers, tasks, milestones, risks, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, actionPlans, reviews, exports } = state.accreditation;
+  const { periods, instruments, criteria, assessments, teamMembers, tasks, milestones, risks, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, actionPlans, reviews, submissionChecks, exports } = state.accreditation;
   const activePeriods = periods.filter((item) => ["draft", "berjalan", "review"].includes(item.status));
   const assessmentRows = assessments.map((assessment) => {
     const period = getAccreditationPeriodById(assessment.period_id);
@@ -1186,6 +1250,7 @@ function getAccreditationSummary() {
       { label: "Milestone aktif", value: milestones.filter((item) => !["done", "selesai", "closed"].includes(item.status)).length },
       { label: "Risiko aktif", value: risks.filter((item) => !["closed", "resolved", "done"].includes(item.status)).length },
       { label: "Review terbuka", value: reviews.filter((item) => item.status !== "approved").length },
+      { label: "Checklist submit", value: submissionChecks.filter((item) => !["verified", "approved", "done"].includes(item.status)).length },
       { label: "Paket export", value: exports.length },
     ],
     readiness: {
@@ -1219,6 +1284,7 @@ function getAccreditationSummary() {
     selfScores: selfScores.map(enrichAccreditationSelfScore),
     actionPlans: actionPlans.map(enrichAccreditationActionPlan),
     reviews: reviews.map(enrichAccreditationReview),
+    submissionChecks: submissionChecks.map(enrichAccreditationSubmissionCheck),
     exports: exports.map(enrichAccreditationExport),
     scoring: periods.map((period) => ({
       period_id: period.id,
@@ -1648,6 +1714,29 @@ function addAccreditationReview(data, user = null) {
   return enrichAccreditationReview(item);
 }
 
+function getAccreditationSubmissionChecks() {
+  return state.accreditation.submissionChecks.map(enrichAccreditationSubmissionCheck);
+}
+
+function addAccreditationSubmissionCheck(data, user = null) {
+  const item = {
+    id: buildSequenceCode("AKR-CHK", state.accreditation.submissionChecks, "id", 3),
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    category: data.category || "UMUM",
+    title: data.title || "Checklist submit akreditasi",
+    owner: data.owner || user?.email || user?.username || "lpm@spmi.local",
+    verifier: data.verifier || "lpm@spmi.local",
+    status: data.status || "pending",
+    due_date: data.due_date || data.dueDate || null,
+    evidence_id: data.evidence_id || data.evidenceId || null,
+    notes: data.notes || data.note || "",
+  };
+
+  state.accreditation.submissionChecks.unshift(item);
+  recordMutationAudit("accreditation.submission_check", "created", item, null, user, { status_code: 201 });
+  return enrichAccreditationSubmissionCheck(item);
+}
+
 function updateAccreditationPeriodStatus(periodId, data, user = null) {
   const period = getAccreditationPeriodById(periodId);
   if (!period) return null;
@@ -1693,6 +1782,7 @@ function generateAccreditationExport(data, user = null) {
   const evidence = state.accreditation.evidence.filter((item) => item.period_id === periodId);
   const reviews = state.accreditation.reviews.filter((item) => item.period_id === periodId);
   const selfScores = state.accreditation.selfScores.filter((item) => item.period_id === periodId);
+  const submissionChecks = state.accreditation.submissionChecks.filter((item) => item.period_id === periodId);
   const readinessItems = getAccreditationPackageReadiness(periodId);
   const safeName = String(period.name || "akreditasi").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const extension = type === "zip" ? "zip" : type === "pdf" ? "pdf" : "json";
@@ -1712,6 +1802,7 @@ function generateAccreditationExport(data, user = null) {
       evidence: evidence.length,
       reviews: reviews.length,
       self_scores: selfScores.length,
+      submission_checks: submissionChecks.length,
       readiness_items: readinessItems.length,
     },
     readiness_items: readinessItems,
@@ -1722,6 +1813,7 @@ function generateAccreditationExport(data, user = null) {
       evidence: evidence.map(enrichAccreditationEvidence),
       reviews: reviews.map(enrichAccreditationReview),
       self_scores: selfScores.map(enrichAccreditationSelfScore),
+      submission_checks: submissionChecks.map(enrichAccreditationSubmissionCheck),
     },
   };
 
@@ -3821,6 +3913,8 @@ module.exports = {
   addAccreditationActionPlan,
   getAccreditationReviews,
   addAccreditationReview,
+  getAccreditationSubmissionChecks,
+  addAccreditationSubmissionCheck,
   updateAccreditationPeriodStatus,
   getAccreditationExports,
   getAccreditationExportById,
