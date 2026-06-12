@@ -738,6 +738,11 @@ const state = {
       { id: "AKR-TSK-002", period_id: "AKR-PER-001", title: "Lengkapi narasi LED K6 Pendidikan", category: "LED", assignee: "kaprodi@spmi.local", priority: "high", status: "blocked", due_date: "2026-07-10", progress: 35, notes: "Butuh bukti evaluasi RPS dan tindak lanjut PPEPP." },
       { id: "AKR-TSK-003", period_id: "AKR-PER-001", title: "Review bukti HRIS dosen tersertifikasi", category: "BUKTI", assignee: "lpm@spmi.local", priority: "medium", status: "done", due_date: "2026-06-28", progress: 100, notes: "Bukti valid untuk K4." },
     ],
+    milestones: [
+      { id: "AKR-MIL-001", period_id: "AKR-PER-001", title: "Kick-off APS Teknik Informatika", phase: "persiapan", owner: "lpm@spmi.local", start_date: "2026-06-20", due_date: "2026-06-25", status: "done", progress: 100, notes: "Tim, instrumen, dan pembagian tugas awal selesai." },
+      { id: "AKR-MIL-002", period_id: "AKR-PER-001", title: "Finalisasi LKPS dan bukti kuantitatif", phase: "lkps", owner: "operator@spmi.local", start_date: "2026-06-26", due_date: "2026-07-20", status: "in_progress", progress: 58, notes: "Fokus sinkronisasi SIAKAD dan HRIS." },
+      { id: "AKR-MIL-003", period_id: "AKR-PER-001", title: "Review LED dan simulasi asesmen internal", phase: "review", owner: "kaprodi@spmi.local", start_date: "2026-07-21", due_date: "2026-08-15", status: "planned", progress: 10, notes: "Menunggu draft LED lengkap dan bukti valid." },
+    ],
     evidence: [
       { id: "AKR-EVD-001", period_id: "AKR-PER-001", criteria_code: "K4", title: "Rekap dosen tetap dan sertifikasi pendidik", source_module: "HRIS", status: "valid", file_name: "rekap-dosen-sertifikasi.pdf", linked_lkps_entry_id: "LKPS-ENT-002", linked_led_content_id: "LED-CNT-001", notes: "Sumber HRIS kompetensi." },
       { id: "AKR-EVD-002", period_id: "AKR-PER-001", criteria_code: "K6", title: "Dokumen standar kurikulum dan evaluasi pembelajaran", source_module: "SPMI", status: "valid", file_name: "standar-kurikulum.pdf", linked_lkps_entry_id: null, linked_led_content_id: "LED-CNT-002", notes: "Terkait standar kurikulum." },
@@ -1030,8 +1035,21 @@ function enrichAccreditationTask(item) {
   };
 }
 
+function enrichAccreditationMilestone(item) {
+  const dueAt = item.due_date ? new Date(item.due_date).getTime() : null;
+  const done = ["done", "selesai", "closed"].includes(String(item.status || "").toLowerCase());
+  const overdue = Boolean(dueAt && dueAt < Date.now() && !done);
+
+  return {
+    ...item,
+    period: getAccreditationPeriodById(item.period_id),
+    overdue,
+    readiness_status: overdue ? "risk" : done ? "ready" : item.status === "planned" ? "warning" : "warning",
+  };
+}
+
 function getAccreditationSummary() {
-  const { periods, instruments, criteria, assessments, teamMembers, tasks, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, reviews, exports } = state.accreditation;
+  const { periods, instruments, criteria, assessments, teamMembers, tasks, milestones, evidence, lkpsSections, lkpsEntries, ledSections, ledContents, selfScores, reviews, exports } = state.accreditation;
   const activePeriods = periods.filter((item) => ["draft", "berjalan", "review"].includes(item.status));
   const assessmentRows = assessments.map((assessment) => {
     const period = getAccreditationPeriodById(assessment.period_id);
@@ -1067,6 +1085,7 @@ function getAccreditationSummary() {
       { label: "LED drafts", value: ledContents.length },
       { label: "Self scores", value: selfScores.length },
       { label: "Task terbuka", value: tasks.filter((item) => item.status !== "done").length },
+      { label: "Milestone aktif", value: milestones.filter((item) => !["done", "selesai", "closed"].includes(item.status)).length },
       { label: "Review terbuka", value: reviews.filter((item) => item.status !== "approved").length },
       { label: "Paket export", value: exports.length },
     ],
@@ -1083,6 +1102,7 @@ function getAccreditationSummary() {
     assessments: assessmentRows,
     teamMembers,
     tasks: tasks.map(enrichAccreditationTask),
+    milestones: milestones.map(enrichAccreditationMilestone),
     evidence: evidence.map(enrichAccreditationEvidence),
     lkpsSections,
     lkpsEntries: lkpsEntries.map((entry) => ({
@@ -1269,6 +1289,29 @@ function addAccreditationTask(data, user = null) {
   state.accreditation.tasks.unshift(item);
   recordMutationAudit("accreditation.task", "created", item, null, user, { status_code: 201 });
   return enrichAccreditationTask(item);
+}
+
+function getAccreditationMilestones() {
+  return state.accreditation.milestones.map(enrichAccreditationMilestone);
+}
+
+function addAccreditationMilestone(data, user = null) {
+  const item = {
+    id: buildSequenceCode("AKR-MIL", state.accreditation.milestones, "id", 3),
+    period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
+    title: data.title || "Milestone akreditasi",
+    phase: data.phase || "persiapan",
+    owner: data.owner || user?.email || user?.username || "lpm@spmi.local",
+    start_date: data.start_date || data.startDate || null,
+    due_date: data.due_date || data.dueDate || null,
+    status: data.status || "planned",
+    progress: Math.max(0, Math.min(100, Number(data.progress || 0))),
+    notes: data.notes || data.note || "",
+  };
+
+  state.accreditation.milestones.unshift(item);
+  recordMutationAudit("accreditation.milestone", "created", item, null, user, { status_code: 201 });
+  return enrichAccreditationMilestone(item);
 }
 
 function getAccreditationEvidence() {
@@ -3607,6 +3650,8 @@ module.exports = {
   addAccreditationTeamMember,
   getAccreditationTasks,
   addAccreditationTask,
+  getAccreditationMilestones,
+  addAccreditationMilestone,
   getAccreditationEvidence,
   addAccreditationEvidence,
   getAccreditationLkps,

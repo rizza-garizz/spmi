@@ -940,6 +940,15 @@ const rawModuleRegistry: ModuleSection[] = [
             status: "active",
           },
           {
+            id: "accreditation-milestone",
+            label: "Milestone Akreditasi",
+            href: "/accreditation#milestone-akreditasi",
+            icon: "la-stream",
+            description: "Timeline fase besar, owner, deadline, progress, dan risiko keterlambatan.",
+            roles: qualityRoles,
+            status: "active",
+          },
+          {
             id: "accreditation-task",
             label: "Task Akreditasi",
             href: "/accreditation#task-akreditasi",

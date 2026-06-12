@@ -86,6 +86,22 @@ type AccreditationTask = {
   period?: AccreditationPeriod | null;
 };
 
+type AccreditationMilestone = {
+  id: string;
+  period_id: string;
+  title: string;
+  phase: string;
+  owner: string;
+  start_date: string | null;
+  due_date: string | null;
+  status: string;
+  progress: number;
+  notes: string;
+  overdue?: boolean;
+  readiness_status?: string;
+  period?: AccreditationPeriod | null;
+};
+
 type AccreditationEvidence = {
   id: string;
   period_id: string;
@@ -227,6 +243,7 @@ type AccreditationSummary = {
   assessments: AccreditationAssessment[];
   teamMembers: AccreditationTeamMember[];
   tasks: AccreditationTask[];
+  milestones: AccreditationMilestone[];
   evidence: AccreditationEvidence[];
   lkpsSections: AccreditationLkpsSection[];
   lkpsEntries: AccreditationLkpsEntry[];
@@ -255,6 +272,7 @@ const emptySummary: AccreditationSummary = {
   assessments: [],
   teamMembers: [],
   tasks: [],
+  milestones: [],
   evidence: [],
   lkpsSections: [],
   lkpsEntries: [],
@@ -406,6 +424,27 @@ export function AccreditationPage() {
         notes: form.get("notes"),
       },
       "Task akreditasi berhasil ditambahkan."
+    );
+    event.currentTarget.reset();
+  }
+
+  function createMilestone(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    postJson(
+      "/accreditation/milestones",
+      {
+        period_id: form.get("period_id"),
+        title: form.get("title"),
+        phase: form.get("phase"),
+        owner: form.get("owner"),
+        start_date: form.get("start_date"),
+        due_date: form.get("due_date"),
+        status: form.get("status"),
+        progress: form.get("progress"),
+        notes: form.get("notes"),
+      },
+      "Milestone akreditasi berhasil ditambahkan."
     );
     event.currentTarget.reset();
   }
@@ -1239,6 +1278,107 @@ export function AccreditationPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row" id="milestone-akreditasi">
+        <div className="col-xl-5">
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title">Milestone Akreditasi</h4>
+            </div>
+            <div className="card-body">
+              <form onSubmit={createMilestone}>
+                <div className="form-group">
+                  <label>Periode</label>
+                  <select className="form-control" name="period_id" defaultValue={firstPeriodId}>
+                    {summary.periods.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Judul Milestone</label>
+                  <input className="form-control" name="title" placeholder="Finalisasi LKPS / review LED / submit dokumen" required />
+                </div>
+                <div className="form-row">
+                  <div className="form-group col-md-6">
+                    <label>Fase</label>
+                    <select className="form-control" name="phase" defaultValue="persiapan">
+                      <option value="persiapan">Persiapan</option>
+                      <option value="lkps">LKPS</option>
+                      <option value="led">LED</option>
+                      <option value="review">Review</option>
+                      <option value="submit">Submit</option>
+                    </select>
+                  </div>
+                  <div className="form-group col-md-6">
+                    <label>Owner</label>
+                    <input className="form-control" name="owner" placeholder="owner@spmi.local" required />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group col-md-4">
+                    <label>Mulai</label>
+                    <input className="form-control" name="start_date" type="date" />
+                  </div>
+                  <div className="form-group col-md-4">
+                    <label>Deadline</label>
+                    <input className="form-control" name="due_date" type="date" />
+                  </div>
+                  <div className="form-group col-md-4">
+                    <label>Progress</label>
+                    <input className="form-control" name="progress" type="number" min="0" max="100" defaultValue="0" />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Status</label>
+                  <select className="form-control" name="status" defaultValue="planned">
+                    <option value="planned">Planned</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="blocked">Blocked</option>
+                    <option value="done">Done</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Catatan</label>
+                  <textarea className="form-control" name="notes" rows={3} placeholder="Target, dependensi, atau risiko milestone..."></textarea>
+                </div>
+                <button className="btn btn-outline-primary" type="submit" disabled={saving}>
+                  <i className="la la-stream mr-1"></i> Tambah Milestone
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-xl-7">
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title">Timeline Milestone</h4>
+            </div>
+            <div className="card-body">
+              {summary.milestones.length === 0 ? (
+                <p className="text-muted">Milestone akreditasi belum tersedia.</p>
+              ) : summary.milestones.map((item) => (
+                <div className="border-bottom py-3" key={item.id}>
+                  <div className="d-flex justify-content-between">
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p className="mb-1">{item.notes}</p>
+                      <small>{item.phase} | {item.owner} | {formatDate(item.start_date)} - {formatDate(item.due_date)}</small>
+                    </div>
+                    <div className="text-right">
+                      <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                      {item.overdue ? <span className="badge badge-danger ml-1">overdue</span> : null}
+                    </div>
+                  </div>
+                  <div className="progress mt-2" style={{ height: 8 }}>
+                    <div className={`progress-bar bg-${item.readiness_status === "ready" ? "success" : item.readiness_status === "risk" ? "danger" : "warning"}`} style={{ width: progressWidth(item.progress) }}></div>
+                  </div>
+                  <small>{item.progress}%</small>
+                </div>
+              ))}
             </div>
           </div>
         </div>

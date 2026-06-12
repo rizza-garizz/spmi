@@ -1706,6 +1706,27 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(taskPayload.data.progress, 45);
   assert.equal(taskPayload.data.period_id, periodPayload.data.id);
 
+  const milestoneResponse = await fetch(`${baseUrl}/accreditation/milestones`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      period_id: periodPayload.data.id,
+      title: "Milestone smoke finalisasi LKPS",
+      phase: "lkps",
+      owner: "reviewer.smoke@spmi.local",
+      start_date: "2026-10-01",
+      due_date: "2026-11-01",
+      status: "in_progress",
+      progress: 40,
+      notes: "Milestone smoke untuk timeline akreditasi.",
+    }),
+  });
+  const milestonePayload = await milestoneResponse.json();
+
+  assert.equal(milestoneResponse.status, 201);
+  assert.equal(milestonePayload.data.phase, "lkps");
+  assert.equal(milestonePayload.data.progress, 40);
+
   const lkpsResponse = await fetch(`${baseUrl}/accreditation/lkps/entries`, {
     method: "POST",
     headers: authHeaders,
