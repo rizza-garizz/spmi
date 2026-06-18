@@ -113,6 +113,71 @@ curl -X POST http://localhost:4000/rtm \
   }'
 ```
 
+## Bulk Rencana Perbaikan Akreditasi
+
+```bash
+curl -X POST http://localhost:4000/accreditation/action-plans/bulk \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {
+        "period_id": "AKR-PER-001",
+        "criteria_code": "K1",
+        "title": "Tutup gap K1",
+        "source": "self_score",
+        "owner": "admin-akreditasi@spmi.local",
+        "priority": "high",
+        "status": "todo",
+        "action": "Lengkapi bukti, narasi LED, dan tindak lanjut K1.",
+        "expected_output": "Gap K1 terpenuhi sebelum submit."
+      }
+    ]
+  }'
+```
+
+Response mengembalikan `created_count` dan `skipped_count`; item dengan rencana terbuka yang sama akan dilewati.
+
+## Bulk Checklist Submit Akreditasi
+
+```bash
+curl -X POST http://localhost:4000/accreditation/submission-checks/bulk \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {
+        "period_id": "AKR-PER-001",
+        "category": "LED",
+        "title": "Lengkapi LED K1",
+        "owner": "admin-akreditasi@spmi.local",
+        "verifier": "reviewer@spmi.local",
+        "status": "pending",
+        "notes": "Narasi LED K1 belum siap submit."
+      }
+    ]
+  }'
+```
+
+Response mengembalikan `created_count` dan `skipped_count`; checklist terbuka dengan kategori dan judul yang sama akan dilewati.
+
+## Generate dan Unduh Paket Akreditasi
+
+```bash
+curl -X POST http://localhost:4000/accreditation/exports \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "period_id": "AKR-PER-001",
+    "type": "package_manifest"
+  }'
+
+curl http://localhost:4000/accreditation/exports/AKR-EXP-001/download \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+Manifest berisi `lkps_entries`, `led_contents`, `evidence`, `reviews`, `self_scores`, `action_plans`, `submission_checks`, dan `follow_up_summary`.
+
 ## Buat Survei
 
 ```bash
