@@ -169,6 +169,7 @@ router.get("/accreditation/milestones", verifyToken, requireRole(...ROLE_ACCREDI
 router.post("/accreditation/milestones", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.createAccreditationMilestone);
 router.get("/accreditation/risks", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationRisks);
 router.post("/accreditation/risks", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.createAccreditationRisk);
+router.patch("/accreditation/risks/:id", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.updateAccreditationRiskRecord);
 router.get("/accreditation/evidence", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationEvidence);
 router.post("/accreditation/evidence", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), upload.single("file"), compatController.createAccreditationEvidence);
 router.get("/accreditation/lkps", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationLkps);

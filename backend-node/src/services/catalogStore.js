@@ -1509,6 +1509,40 @@ function addAccreditationRisk(data, user = null) {
   return enrichAccreditationRisk(item);
 }
 
+function updateAccreditationRisk(riskId, data, user = null) {
+  const item = state.accreditation.risks.find((entry) => String(entry.id) === String(riskId));
+  if (!item) return null;
+
+  const previous = { ...item };
+  const probability = Math.max(1, Math.min(5, Number(data.probability ?? item.probability ?? 1)));
+  const impact = Math.max(1, Math.min(5, Number(data.impact ?? item.impact ?? 1)));
+  const score = probability * impact;
+
+  Object.assign(item, {
+    title: data.title || item.title,
+    category: data.category || item.category,
+    owner: data.owner || item.owner,
+    probability,
+    impact,
+    level: data.level || (score >= 16 ? "high" : score >= 8 ? "medium" : "low"),
+    status: data.status || item.status,
+    mitigation: data.mitigation || item.mitigation,
+    due_date: data.due_date || data.dueDate || item.due_date,
+    notes: data.notes || data.note || item.notes,
+    closed_at: ["closed", "resolved", "done"].includes(normalizeComparable(data.status || item.status))
+      ? new Date().toISOString()
+      : item.closed_at || null,
+    closed_by: ["closed", "resolved", "done"].includes(normalizeComparable(data.status || item.status))
+      ? user?.email || user?.username || "system"
+      : item.closed_by || null,
+    updated_at: new Date().toISOString(),
+    updated_by: user?.email || user?.username || "system",
+  });
+
+  recordMutationAudit("accreditation.risk", "updated", item, previous, user);
+  return enrichAccreditationRisk(item);
+}
+
 function getAccreditationEvidence() {
   return state.accreditation.evidence.map(enrichAccreditationEvidence);
 }
@@ -1932,10 +1966,13 @@ function generateAccreditationExport(data, user = null) {
   const reviews = state.accreditation.reviews.filter((item) => item.period_id === periodId);
   const selfScores = state.accreditation.selfScores.filter((item) => item.period_id === periodId);
   const actionPlans = state.accreditation.actionPlans.filter((item) => item.period_id === periodId);
+  const risks = state.accreditation.risks.filter((item) => item.period_id === periodId);
   const submissionChecks = state.accreditation.submissionChecks.filter((item) => item.period_id === periodId);
   const readinessItems = getAccreditationPackageReadiness(periodId);
   const openActionPlans = actionPlans.filter((item) => !["done", "closed", "completed"].includes(normalizeComparable(item.status)));
   const openSubmissionChecks = submissionChecks.filter((item) => !["verified", "approved", "done", "closed"].includes(normalizeComparable(item.status)));
+  const openRisks = risks.map(enrichAccreditationRisk).filter((item) => !["closed", "resolved", "done"].includes(normalizeComparable(item.status)));
+  const highRisks = openRisks.filter((item) => item.score >= 16 || item.level === "high");
   const safeName = String(period.name || "akreditasi").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const extension = type === "zip" ? "zip" : type === "pdf" ? "pdf" : "json";
   const now = new Date().toISOString();
@@ -1955,10 +1992,13 @@ function generateAccreditationExport(data, user = null) {
       reviews: reviews.length,
       self_scores: selfScores.length,
       action_plans: actionPlans.length,
+      risks: risks.length,
       submission_checks: submissionChecks.length,
       readiness_items: readinessItems.length,
       open_action_plans: openActionPlans.length,
       open_submission_checks: openSubmissionChecks.length,
+      open_risks: openRisks.length,
+      high_risks: highRisks.length,
       risk_items: readinessItems.filter((entry) => entry.status === "risk").length,
       warning_items: readinessItems.filter((entry) => entry.status === "warning").length,
     },
@@ -1971,10 +2011,13 @@ function generateAccreditationExport(data, user = null) {
       reviews: reviews.map(enrichAccreditationReview),
       self_scores: selfScores.map(enrichAccreditationSelfScore),
       action_plans: actionPlans.map(enrichAccreditationActionPlan),
+      risks: risks.map(enrichAccreditationRisk),
       submission_checks: submissionChecks.map(enrichAccreditationSubmissionCheck),
       follow_up_summary: {
         open_action_plans: openActionPlans.length,
         open_submission_checks: openSubmissionChecks.length,
+        open_risks: openRisks.length,
+        high_risks: highRisks.length,
         risk_items: readinessItems.filter((entry) => entry.status === "risk"),
         warning_items: readinessItems.filter((entry) => entry.status === "warning"),
       },
@@ -4065,6 +4108,7 @@ module.exports = {
   addAccreditationMilestone,
   getAccreditationRisks,
   addAccreditationRisk,
+  updateAccreditationRisk,
   getAccreditationEvidence,
   addAccreditationEvidence,
   getAccreditationLkps,

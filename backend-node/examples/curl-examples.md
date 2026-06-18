@@ -190,6 +190,22 @@ curl -X PATCH http://localhost:4000/accreditation/submission-checks/AKR-CHK-001 
 
 Status `verified`, `approved`, atau `done` akan mengisi `verified_at` dan `verified_by`.
 
+## Update Risiko Akreditasi
+
+```bash
+curl -X PATCH http://localhost:4000/accreditation/risks/AKR-RSK-001 \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "mitigating",
+    "probability": 2,
+    "impact": 3,
+    "mitigation": "Siapkan fallback bukti dari repository dan eskalasi ke unit pemilik data."
+  }'
+```
+
+Status `closed`, `resolved`, atau `done` akan mengisi `closed_at` dan `closed_by`.
+
 ## Generate dan Unduh Paket Akreditasi
 
 ```bash
@@ -205,7 +221,7 @@ curl http://localhost:4000/accreditation/exports/AKR-EXP-001/download \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
-Manifest berisi `lkps_entries`, `led_contents`, `evidence`, `reviews`, `self_scores`, `action_plans`, `submission_checks`, dan `follow_up_summary`.
+Manifest berisi `lkps_entries`, `led_contents`, `evidence`, `reviews`, `self_scores`, `action_plans`, `risks`, `submission_checks`, dan `follow_up_summary`.
 
 ## Buat Survei
 

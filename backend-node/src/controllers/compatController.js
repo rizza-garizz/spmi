@@ -25,6 +25,7 @@ const {
   addAccreditationMilestone,
   getAccreditationRisks,
   addAccreditationRisk,
+  updateAccreditationRisk,
   getAccreditationEvidence,
   addAccreditationEvidence,
   getAccreditationLkps,
@@ -1158,6 +1159,16 @@ function createAccreditationRisk(req, res) {
   }
 }
 
+function updateAccreditationRiskRecord(req, res) {
+  try {
+    const item = updateAccreditationRisk(req.params.id, req.body || {}, req.user);
+    if (!item) return failure(res, "Risiko akreditasi tidak ditemukan.", 404);
+    return success(res, item, "Risiko akreditasi berhasil diperbarui.");
+  } catch (error) {
+    return mutationFailure(res, error, "Risiko akreditasi gagal diperbarui.");
+  }
+}
+
 function accreditationEvidence(_req, res) {
   return success(res, getAccreditationEvidence(), "Daftar bukti fisik akreditasi");
 }
@@ -1457,6 +1468,7 @@ module.exports = {
   createAccreditationMilestone,
   accreditationRisks,
   createAccreditationRisk,
+  updateAccreditationRiskRecord,
   accreditationEvidence,
   createAccreditationEvidence,
   accreditationLkps,

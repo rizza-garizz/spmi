@@ -1751,6 +1751,23 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(riskPayload.data.score, 16);
   assert.equal(riskPayload.data.readiness_status, "risk");
 
+  const riskUpdateResponse = await fetch(`${baseUrl}/accreditation/risks/${riskPayload.data.id}`, {
+    method: "PATCH",
+    headers: authHeaders,
+    body: JSON.stringify({
+      status: "mitigating",
+      probability: 2,
+      impact: 3,
+      mitigation: "Mitigasi smoke diperbarui dengan fallback bukti dari repository.",
+    }),
+  });
+  const riskUpdatePayload = await riskUpdateResponse.json();
+
+  assert.equal(riskUpdateResponse.status, 200);
+  assert.equal(riskUpdatePayload.data.score, 6);
+  assert.equal(riskUpdatePayload.data.level, "low");
+  assert.equal(riskUpdatePayload.data.status, "mitigating");
+
   const lkpsResponse = await fetch(`${baseUrl}/accreditation/lkps/entries`, {
     method: "POST",
     headers: authHeaders,
@@ -2032,6 +2049,9 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(exportPayload.data.package_summary.evidence, 1);
   assert.equal(exportPayload.data.readiness_items.some((item) => item.key === "reviews"), true);
   assert.equal(exportPayload.data.package_summary.action_plans, 2);
+  assert.equal(exportPayload.data.package_summary.risks, 1);
+  assert.equal(exportPayload.data.package_summary.open_risks, 1);
+  assert.equal(exportPayload.data.package_summary.high_risks, 0);
   assert.equal(exportPayload.data.package_summary.submission_checks, 3);
   assert.equal(exportPayload.data.readiness_items.some((item) => item.key === "submission_checks"), true);
 
@@ -2045,6 +2065,8 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(manifestPayload.period.id, periodPayload.data.id);
   assert.equal(manifestPayload.lkps_entries.length, 1);
   assert.equal(manifestPayload.action_plans.length, 2);
+  assert.equal(manifestPayload.risks.length, 1);
+  assert.equal(manifestPayload.follow_up_summary.open_risks, 1);
   assert.equal(manifestPayload.follow_up_summary.open_submission_checks, 1);
 });
 

@@ -116,6 +116,8 @@ type AccreditationRisk = {
   mitigation: string;
   due_date: string | null;
   notes: string;
+  closed_at?: string | null;
+  closed_by?: string | null;
   overdue?: boolean;
   readiness_status?: string;
   period?: AccreditationPeriod | null;
@@ -358,10 +360,13 @@ type AccreditationExport = {
     reviews?: number;
     self_scores?: number;
     action_plans?: number;
+    risks?: number;
     submission_checks?: number;
     readiness_items?: number;
     open_action_plans?: number;
     open_submission_checks?: number;
+    open_risks?: number;
+    high_risks?: number;
     risk_items?: number;
     warning_items?: number;
   };
@@ -1102,6 +1107,22 @@ export function AccreditationPage() {
         notes: item.notes,
       },
       "Status checklist submit berhasil diperbarui.",
+      "PATCH"
+    );
+  }
+
+  function updateRiskStatus(item: AccreditationRisk, status: string, overrides: Partial<AccreditationRisk> = {}) {
+    postJson(
+      `/accreditation/risks/${encodeURIComponent(item.id)}`,
+      {
+        status,
+        probability: overrides.probability ?? item.probability,
+        impact: overrides.impact ?? item.impact,
+        level: overrides.level ?? item.level,
+        mitigation: overrides.mitigation ?? item.mitigation,
+        notes: overrides.notes ?? item.notes,
+      },
+      "Status risiko akreditasi berhasil diperbarui.",
       "PATCH"
     );
   }
@@ -2588,11 +2609,12 @@ export function AccreditationPage() {
                     <th>Owner</th>
                     <th>Skor</th>
                     <th>Mitigasi</th>
+                    <th>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {summary.risks.length === 0 ? (
-                    <tr><td colSpan={4} className="text-center">Risk register akreditasi belum tersedia.</td></tr>
+                    <tr><td colSpan={5} className="text-center">Risk register akreditasi belum tersedia.</td></tr>
                   ) : summary.risks.map((item) => (
                     <tr key={item.id}>
                       <td>
@@ -2615,6 +2637,29 @@ export function AccreditationPage() {
                         <small>{formatDate(item.due_date)}</small>
                         <br />
                         {item.mitigation || item.notes || "-"}
+                        {item.closed_at ? (
+                          <>
+                            <br />
+                            <small className="text-muted">Ditutup {formatDate(item.closed_at)} oleh {item.closed_by || item.owner}</small>
+                          </>
+                        ) : null}
+                      </td>
+                      <td>
+                        {!["closed", "resolved", "done"].includes(item.status) ? (
+                          <>
+                            <button className="btn btn-outline-secondary btn-xs mr-1 mb-1" type="button" disabled={saving} onClick={() => updateRiskStatus(item, "mitigating")}>
+                              <i className="la la-shield mr-1"></i> Mitigasi
+                            </button>
+                            <button className="btn btn-outline-warning btn-xs mr-1 mb-1" type="button" disabled={saving} onClick={() => updateRiskStatus(item, "open", { probability: 5, impact: Math.max(4, item.impact), level: "high" })}>
+                              <i className="la la-level-up mr-1"></i> Eskalasi
+                            </button>
+                            <button className="btn btn-outline-success btn-xs mb-1" type="button" disabled={saving} onClick={() => updateRiskStatus(item, "closed", { probability: 1, impact: 1, level: "low" })}>
+                              <i className="la la-check mr-1"></i> Tutup
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-muted">Selesai</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -3270,8 +3315,8 @@ export function AccreditationPage() {
                     <div className="col-md-2 col-4"><strong>{item.package_summary?.led_contents || 0}</strong><br /><small>LED</small></div>
                     <div className="col-md-2 col-4"><strong>{item.package_summary?.evidence || 0}</strong><br /><small>Bukti</small></div>
                     <div className="col-md-2 col-4"><strong>{item.package_summary?.action_plans || 0}</strong><br /><small>Rencana</small></div>
+                    <div className="col-md-2 col-4"><strong>{item.package_summary?.risks || 0}</strong><br /><small>Risiko</small></div>
                     <div className="col-md-2 col-4"><strong>{item.package_summary?.submission_checks || 0}</strong><br /><small>Checklist</small></div>
-                    <div className="col-md-2 col-4"><strong>{item.package_summary?.readiness_items || 0}</strong><br /><small>Cek Paket</small></div>
                   </div>
                   <div className="row mt-3">
                     <div className="col-md-3 col-6">
@@ -3281,10 +3326,18 @@ export function AccreditationPage() {
                       <span className="badge badge-outline-warning">{item.package_summary?.open_submission_checks || 0} checklist open</span>
                     </div>
                     <div className="col-md-3 col-6">
-                      <span className="badge badge-outline-danger">{item.package_summary?.risk_items || 0} risk</span>
+                      <span className="badge badge-outline-danger">{item.package_summary?.open_risks || 0} risiko open</span>
                     </div>
                     <div className="col-md-3 col-6">
-                      <span className="badge badge-outline-warning">{item.package_summary?.warning_items || 0} warning</span>
+                      <span className="badge badge-outline-danger">{item.package_summary?.high_risks || 0} risiko high</span>
+                    </div>
+                  </div>
+                  <div className="row mt-2">
+                    <div className="col-md-6 col-6">
+                      <span className="badge badge-outline-danger">{item.package_summary?.risk_items || 0} cek risk</span>
+                    </div>
+                    <div className="col-md-6 col-6">
+                      <span className="badge badge-outline-warning">{item.package_summary?.warning_items || 0} cek warning</span>
                     </div>
                   </div>
                   <div className="mt-3">
