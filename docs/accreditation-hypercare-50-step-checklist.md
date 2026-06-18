@@ -2,6 +2,8 @@
 
 Checklist ini dipakai setelah [Accreditation Go-Live 50-Step Checklist](./accreditation-go-live-50-step-checklist.md) selesai dan modul akreditasi mulai dipakai pada pilot/production. Fokusnya monitoring, support, stabilisasi, dan handover ke operasi harian.
 
+Setelah hypercare stabil, lanjutkan perluasan adopsi dengan [Accreditation Scale-Up 100-Step Roadmap](./accreditation-scale-up-100-step-roadmap.md).
+
 ## Prinsip Hypercare
 
 - Hypercare berjalan minimal 5 hari kerja setelah go-live pilot.

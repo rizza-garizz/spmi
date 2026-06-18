@@ -16,6 +16,7 @@ Dokumen ini dipakai untuk menjalankan UAT pilot sebelum sistem dibuka ke seluruh
 - Triage defect UAT akreditasi: [Accreditation UAT Defect Triage 40-Step Playbook](./accreditation-uat-defect-triage-40-step.md)
 - Go-live akreditasi: [Accreditation Go-Live 50-Step Checklist](./accreditation-go-live-50-step-checklist.md)
 - Hypercare akreditasi: [Accreditation Hypercare 50-Step Checklist](./accreditation-hypercare-50-step-checklist.md)
+- Scale-up akreditasi: [Accreditation Scale-Up 100-Step Roadmap](./accreditation-scale-up-100-step-roadmap.md)
 
 ## Akun Role UAT
 
