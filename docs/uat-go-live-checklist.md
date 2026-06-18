@@ -9,6 +9,10 @@ Dokumen ini dipakai untuk menjalankan UAT pilot sebelum sistem dibuka ke seluruh
 - `Fail` pada skenario kritikal harus diselesaikan sebelum go-live.
 - Perubahan fitur besar dibekukan selama UAT dan pilot, kecuali bug fix kritikal.
 
+## Runbook Modul Khusus
+
+- Akreditasi end-to-end: [Accreditation UAT 50-Step Runbook](./accreditation-uat-50-step-runbook.md)
+
 ## Akun Role UAT
 
 | Role | Fokus Pengujian | Status |
@@ -102,4 +106,3 @@ Dokumen ini dipakai untuk menjalankan UAT pilot sebelum sistem dibuka ke seluruh
 | Auditor |  |  |  |  |  |
 | Unit Pendukung |  |  |  |  |  |
 | Pimpinan |  |  |  |  |  |
-
