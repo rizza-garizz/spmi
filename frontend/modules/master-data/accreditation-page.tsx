@@ -355,8 +355,13 @@ type AccreditationExport = {
     evidence?: number;
     reviews?: number;
     self_scores?: number;
+    action_plans?: number;
     submission_checks?: number;
     readiness_items?: number;
+    open_action_plans?: number;
+    open_submission_checks?: number;
+    risk_items?: number;
+    warning_items?: number;
   };
   readiness_items?: AccreditationReadinessItem[];
   period?: AccreditationPeriod | null;
@@ -3199,9 +3204,26 @@ export function AccreditationPage() {
                     </button>
                   </div>
                   <div className="row mt-3">
-                    <div className="col-4"><strong>{item.package_summary?.lkps_entries || 0}</strong><br /><small>LKPS</small></div>
-                    <div className="col-4"><strong>{item.package_summary?.led_contents || 0}</strong><br /><small>LED</small></div>
-                    <div className="col-4"><strong>{item.package_summary?.evidence || 0}</strong><br /><small>Bukti</small></div>
+                    <div className="col-md-2 col-4"><strong>{item.package_summary?.lkps_entries || 0}</strong><br /><small>LKPS</small></div>
+                    <div className="col-md-2 col-4"><strong>{item.package_summary?.led_contents || 0}</strong><br /><small>LED</small></div>
+                    <div className="col-md-2 col-4"><strong>{item.package_summary?.evidence || 0}</strong><br /><small>Bukti</small></div>
+                    <div className="col-md-2 col-4"><strong>{item.package_summary?.action_plans || 0}</strong><br /><small>Rencana</small></div>
+                    <div className="col-md-2 col-4"><strong>{item.package_summary?.submission_checks || 0}</strong><br /><small>Checklist</small></div>
+                    <div className="col-md-2 col-4"><strong>{item.package_summary?.readiness_items || 0}</strong><br /><small>Cek Paket</small></div>
+                  </div>
+                  <div className="row mt-3">
+                    <div className="col-md-3 col-6">
+                      <span className="badge badge-outline-warning">{item.package_summary?.open_action_plans || 0} rencana open</span>
+                    </div>
+                    <div className="col-md-3 col-6">
+                      <span className="badge badge-outline-warning">{item.package_summary?.open_submission_checks || 0} checklist open</span>
+                    </div>
+                    <div className="col-md-3 col-6">
+                      <span className="badge badge-outline-danger">{item.package_summary?.risk_items || 0} risk</span>
+                    </div>
+                    <div className="col-md-3 col-6">
+                      <span className="badge badge-outline-warning">{item.package_summary?.warning_items || 0} warning</span>
+                    </div>
                   </div>
                   <div className="mt-3">
                     {(item.readiness_items || []).map((readiness) => (
