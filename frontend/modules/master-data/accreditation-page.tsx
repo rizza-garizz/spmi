@@ -1081,52 +1081,6 @@ export function AccreditationPage() {
     event.currentTarget.reset();
   }
 
-  function updateActionPlanStatus(item: AccreditationActionPlan, status: string, progress = item.progress) {
-    postJson(
-      `/accreditation/action-plans/${encodeURIComponent(item.id)}`,
-      {
-        status,
-        progress,
-        notes: item.notes,
-      },
-      "Status rencana perbaikan berhasil diperbarui.",
-      "PATCH"
-    );
-  }
-
-  function advanceActionPlan(item: AccreditationActionPlan) {
-    const nextProgress = Math.min(100, Number(item.progress || 0) + 25);
-    updateActionPlanStatus(item, nextProgress >= 100 ? "done" : "in_progress", nextProgress);
-  }
-
-  function updateSubmissionCheckStatus(item: AccreditationSubmissionCheck, status: string) {
-    postJson(
-      `/accreditation/submission-checks/${encodeURIComponent(item.id)}`,
-      {
-        status,
-        notes: item.notes,
-      },
-      "Status checklist submit berhasil diperbarui.",
-      "PATCH"
-    );
-  }
-
-  function updateRiskStatus(item: AccreditationRisk, status: string, overrides: Partial<AccreditationRisk> = {}) {
-    postJson(
-      `/accreditation/risks/${encodeURIComponent(item.id)}`,
-      {
-        status,
-        probability: overrides.probability ?? item.probability,
-        impact: overrides.impact ?? item.impact,
-        level: overrides.level ?? item.level,
-        mitigation: overrides.mitigation ?? item.mitigation,
-        notes: overrides.notes ?? item.notes,
-      },
-      "Status risiko akreditasi berhasil diperbarui.",
-      "PATCH"
-    );
-  }
-
   function normalizeIssueKey(value: string) {
     return value.trim().toLowerCase();
   }
@@ -2236,23 +2190,6 @@ export function AccreditationPage() {
                       <span className={`badge ${statusBadge(item.priority)}`}>{item.priority}</span>
                       <span className={`badge ${statusBadge(item.status)} ml-1`}>{item.status}</span>
                       {item.overdue ? <span className="badge badge-danger ml-1">overdue</span> : null}
-                      <div className="mt-2">
-                        {item.status === "todo" ? (
-                          <button className="btn btn-outline-secondary btn-xs mr-1" type="button" disabled={saving} onClick={() => updateActionPlanStatus(item, "in_progress", Math.max(10, item.progress || 0))}>
-                            <i className="la la-play mr-1"></i> Mulai
-                          </button>
-                        ) : null}
-                        {!["done", "closed", "completed"].includes(item.status) ? (
-                          <button className="btn btn-outline-secondary btn-xs mr-1" type="button" disabled={saving} onClick={() => advanceActionPlan(item)}>
-                            <i className="la la-arrow-up mr-1"></i> +25%
-                          </button>
-                        ) : null}
-                        {item.status !== "done" ? (
-                          <button className="btn btn-outline-success btn-xs" type="button" disabled={saving} onClick={() => updateActionPlanStatus(item, "done", 100)}>
-                            <i className="la la-check mr-1"></i> Selesai
-                          </button>
-                        ) : null}
-                      </div>
                     </div>
                   </div>
                   <div className="progress mt-2" style={{ height: 8 }}>
@@ -2609,12 +2546,11 @@ export function AccreditationPage() {
                     <th>Owner</th>
                     <th>Skor</th>
                     <th>Mitigasi</th>
-                    <th>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {summary.risks.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center">Risk register akreditasi belum tersedia.</td></tr>
+                    <tr><td colSpan={4} className="text-center">Risk register akreditasi belum tersedia.</td></tr>
                   ) : summary.risks.map((item) => (
                     <tr key={item.id}>
                       <td>
@@ -2643,23 +2579,6 @@ export function AccreditationPage() {
                             <small className="text-muted">Ditutup {formatDate(item.closed_at)} oleh {item.closed_by || item.owner}</small>
                           </>
                         ) : null}
-                      </td>
-                      <td>
-                        {!["closed", "resolved", "done"].includes(item.status) ? (
-                          <>
-                            <button className="btn btn-outline-secondary btn-xs mr-1 mb-1" type="button" disabled={saving} onClick={() => updateRiskStatus(item, "mitigating")}>
-                              <i className="la la-shield mr-1"></i> Mitigasi
-                            </button>
-                            <button className="btn btn-outline-warning btn-xs mr-1 mb-1" type="button" disabled={saving} onClick={() => updateRiskStatus(item, "open", { probability: 5, impact: Math.max(4, item.impact), level: "high" })}>
-                              <i className="la la-level-up mr-1"></i> Eskalasi
-                            </button>
-                            <button className="btn btn-outline-success btn-xs mb-1" type="button" disabled={saving} onClick={() => updateRiskStatus(item, "closed", { probability: 1, impact: 1, level: "low" })}>
-                              <i className="la la-check mr-1"></i> Tutup
-                            </button>
-                          </>
-                        ) : (
-                          <span className="text-muted">Selesai</span>
-                        )}
                       </td>
                     </tr>
                   ))}
@@ -2943,19 +2862,11 @@ export function AccreditationPage() {
                     <small>{formatDate(item.due_date)}</small>
                     <small>{item.evidence?.title || item.notes || "-"}</small>
                   </div>
-                  <div className="mt-2">
-                    {!["verified", "approved", "done"].includes(item.status) ? (
-                      <button className="btn btn-outline-success btn-xs mr-1" type="button" disabled={saving} onClick={() => updateSubmissionCheckStatus(item, "verified")}>
-                        <i className="la la-check mr-1"></i> Verifikasi
-                      </button>
-                    ) : null}
-                    {item.status !== "revision_required" ? (
-                      <button className="btn btn-outline-warning btn-xs mr-1" type="button" disabled={saving} onClick={() => updateSubmissionCheckStatus(item, "revision_required")}>
-                        <i className="la la-undo mr-1"></i> Revisi
-                      </button>
-                    ) : null}
-                    {item.verified_at ? <small className="text-muted">Diverifikasi {formatDate(item.verified_at)} oleh {item.verified_by || item.verifier}</small> : null}
-                  </div>
+                  {item.verified_at ? (
+                    <div className="mt-2">
+                      <small className="text-muted">Diverifikasi {formatDate(item.verified_at)} oleh {item.verified_by || item.verifier}</small>
+                    </div>
+                  ) : null}
                   {item.overdue ? <span className="badge badge-danger mt-2">overdue</span> : null}
                 </div>
               ))}
