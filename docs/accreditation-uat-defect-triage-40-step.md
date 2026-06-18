@@ -2,6 +2,8 @@
 
 Dokumen ini dipakai setelah sesi [Accreditation UAT Execution Report](./accreditation-uat-execution-report.md) terisi. Tujuannya memastikan defect UAT akreditasi diprioritaskan, diperbaiki, diverifikasi, dan diputuskan dengan rapi tanpa memperluas scope fitur.
 
+Jika triage selesai dan keputusan minimal `GO DENGAN CATATAN`, lanjutkan ke [Accreditation Go-Live 50-Step Checklist](./accreditation-go-live-50-step-checklist.md).
+
 ## Prinsip Triage
 
 - Triage hanya membahas defect, data setup, dan klarifikasi acceptance criteria.
