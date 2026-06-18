@@ -2,6 +2,8 @@
 
 Checklist ini dipakai setelah [Accreditation UAT Defect Triage 40-Step Playbook](./accreditation-uat-defect-triage-40-step.md) selesai dan keputusan UAT minimal `GO DENGAN CATATAN`. Tujuannya memastikan modul akreditasi siap dipakai pada pilot atau production rollout.
 
+Setelah go-live selesai, lanjutkan stabilisasi dengan [Accreditation Hypercare 50-Step Checklist](./accreditation-hypercare-50-step-checklist.md).
+
 ## Prinsip Go-Live
 
 - Tidak ada Critical defect terbuka.
