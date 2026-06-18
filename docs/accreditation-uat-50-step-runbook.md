@@ -2,6 +2,8 @@
 
 Dokumen ini dipakai untuk menjalankan UAT modul akreditasi end-to-end tanpa menambah scope fitur saat sesi validasi.
 
+Catat hasil eksekusi di [Accreditation UAT Execution Report](./accreditation-uat-execution-report.md).
+
 ## Aturan Eksekusi
 
 - Jalankan berurutan dari persiapan data sampai sign-off.

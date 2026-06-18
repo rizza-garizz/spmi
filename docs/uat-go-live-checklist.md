@@ -12,6 +12,7 @@ Dokumen ini dipakai untuk menjalankan UAT pilot sebelum sistem dibuka ke seluruh
 ## Runbook Modul Khusus
 
 - Akreditasi end-to-end: [Accreditation UAT 50-Step Runbook](./accreditation-uat-50-step-runbook.md)
+- Template hasil UAT akreditasi: [Accreditation UAT Execution Report](./accreditation-uat-execution-report.md)
 
 ## Akun Role UAT
 
