@@ -1851,6 +1851,40 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(actionPlanPayload.data.criteria_code, "K1");
   assert.equal(actionPlanPayload.data.progress, 35);
 
+  const bulkActionPlanResponse = await fetch(`${baseUrl}/accreditation/action-plans/bulk`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      items: [
+        {
+          period_id: periodPayload.data.id,
+          criteria_code: "K1",
+          title: "Rencana smoke tutup gap VMTS",
+          source: "self_score",
+          owner: "reviewer.smoke@spmi.local",
+          priority: "high",
+          status: "todo",
+          action: "Duplikat rencana yang harus dilewati.",
+        },
+        {
+          period_id: periodPayload.data.id,
+          criteria_code: "K2",
+          title: "Rencana smoke bulk tata pamong",
+          source: "self_score",
+          owner: "reviewer.smoke@spmi.local",
+          priority: "medium",
+          status: "todo",
+          action: "Lengkapi bukti tata pamong.",
+        },
+      ],
+    }),
+  });
+  const bulkActionPlanPayload = await bulkActionPlanResponse.json();
+
+  assert.equal(bulkActionPlanResponse.status, 201);
+  assert.equal(bulkActionPlanPayload.data.created_count, 1);
+  assert.equal(bulkActionPlanPayload.data.skipped_count, 1);
+
   const reviewResponse = await fetch(`${baseUrl}/accreditation/reviews`, {
     method: "POST",
     headers: authHeaders,
@@ -1908,6 +1942,47 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(submissionCheckPayload.data.status, "verified");
   assert.equal(submissionCheckPayload.data.readiness_status, "ready");
 
+  const bulkSubmissionCheckResponse = await fetch(`${baseUrl}/accreditation/submission-checks/bulk`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      items: [
+        {
+          period_id: periodPayload.data.id,
+          category: "SUBMIT",
+          title: "Checklist smoke paket submit siap",
+          owner: "reviewer.smoke@spmi.local",
+          verifier: "admin@spmi.local",
+          status: "pending",
+          notes: "Checklist duplikat tertutup tidak dihitung karena yang lama verified.",
+        },
+        {
+          period_id: periodPayload.data.id,
+          category: "LED",
+          title: "Checklist smoke bulk LED",
+          owner: "reviewer.smoke@spmi.local",
+          verifier: "admin@spmi.local",
+          status: "pending",
+          notes: "Checklist bulk LED smoke.",
+        },
+        {
+          period_id: periodPayload.data.id,
+          category: "LED",
+          title: "Checklist smoke bulk LED",
+          owner: "reviewer.smoke@spmi.local",
+          verifier: "admin@spmi.local",
+          status: "pending",
+          notes: "Checklist bulk LED smoke duplikat.",
+        },
+      ],
+    }),
+  });
+  const bulkSubmissionCheckPayload = await bulkSubmissionCheckResponse.json();
+
+  assert.equal(bulkSubmissionCheckResponse.status, 201);
+  assert.equal(bulkSubmissionCheckPayload.data.created_count, 2);
+  assert.equal(bulkSubmissionCheckPayload.data.skipped_count, 1);
+
   const exportResponse = await fetch(`${baseUrl}/accreditation/exports`, {
     method: "POST",
     headers: authHeaders,
@@ -1924,7 +1999,8 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(exportPayload.data.package_summary.led_contents, 1);
   assert.equal(exportPayload.data.package_summary.evidence, 1);
   assert.equal(exportPayload.data.readiness_items.some((item) => item.key === "reviews"), true);
-  assert.equal(exportPayload.data.package_summary.submission_checks, 1);
+  assert.equal(exportPayload.data.package_summary.action_plans, 2);
+  assert.equal(exportPayload.data.package_summary.submission_checks, 3);
   assert.equal(exportPayload.data.readiness_items.some((item) => item.key === "submission_checks"), true);
 
   const downloadResponse = await fetch(`${baseUrl}/accreditation/exports/${exportPayload.data.id}/download`, {
@@ -1936,6 +2012,8 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(downloadResponse.headers.get("content-type").includes("application/json"), true);
   assert.equal(manifestPayload.period.id, periodPayload.data.id);
   assert.equal(manifestPayload.lkps_entries.length, 1);
+  assert.equal(manifestPayload.action_plans.length, 2);
+  assert.equal(manifestPayload.follow_up_summary.open_submission_checks, 2);
 });
 
 test("integration readiness covers SIAKAD SIMPEG finance repository PDDIKTI and SSO with logs", async () => {

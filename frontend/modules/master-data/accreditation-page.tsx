@@ -1431,20 +1431,20 @@ export function AccreditationPage() {
     setError("");
 
     try {
-      for (const row of newRows) {
-        const response = await clientApiRequest("/accreditation/submission-checks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(row),
-        });
-        const payload = await response.json();
+      const response = await clientApiRequest("/accreditation/submission-checks/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: newRows }),
+      });
+      const payload = await response.json();
 
-        if (!response.ok || (payload && payload.success === false)) {
-          throw new Error(payload?.message || "Checklist issue gagal dibuat.");
-        }
+      if (!response.ok || (payload && payload.success === false)) {
+        throw new Error(payload?.message || "Checklist issue gagal dibuat.");
       }
 
-      setMessage(`${newRows.length} checklist issue berhasil dibuat${skipped ? `, ${skipped} dilewati karena sudah ada` : ""}.`);
+      const createdCount = Number(payload?.data?.created_count ?? newRows.length);
+      const skippedCount = Number(payload?.data?.skipped_count ?? 0) + skipped;
+      setMessage(`${createdCount} checklist issue berhasil dibuat${skippedCount ? `, ${skippedCount} dilewati karena sudah ada` : ""}.`);
       await loadSummary();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checklist issue gagal dibuat.");
@@ -1476,20 +1476,20 @@ export function AccreditationPage() {
     setError("");
 
     try {
-      for (const row of newRows) {
-        const response = await clientApiRequest("/accreditation/action-plans", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(row),
-        });
-        const payload = await response.json();
+      const response = await clientApiRequest("/accreditation/action-plans/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: newRows }),
+      });
+      const payload = await response.json();
 
-        if (!response.ok || (payload && payload.success === false)) {
-          throw new Error(payload?.message || "Rencana perbaikan issue gagal dibuat.");
-        }
+      if (!response.ok || (payload && payload.success === false)) {
+        throw new Error(payload?.message || "Rencana perbaikan issue gagal dibuat.");
       }
 
-      setMessage(`${newRows.length} rencana perbaikan issue berhasil dibuat${skipped ? `, ${skipped} dilewati karena sudah ada` : ""}.`);
+      const createdCount = Number(payload?.data?.created_count ?? newRows.length);
+      const skippedCount = Number(payload?.data?.skipped_count ?? 0) + skipped;
+      setMessage(`${createdCount} rencana perbaikan issue berhasil dibuat${skippedCount ? `, ${skippedCount} dilewati karena sudah ada` : ""}.`);
       await loadSummary();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Rencana perbaikan issue gagal dibuat.");

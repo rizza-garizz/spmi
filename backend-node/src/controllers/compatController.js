@@ -35,10 +35,12 @@ const {
   addAccreditationSelfScore,
   getAccreditationActionPlans,
   addAccreditationActionPlan,
+  addAccreditationActionPlansBulk,
   getAccreditationReviews,
   addAccreditationReview,
   getAccreditationSubmissionChecks,
   addAccreditationSubmissionCheck,
+  addAccreditationSubmissionChecksBulk,
   updateAccreditationPeriodStatus,
   getAccreditationExports,
   getAccreditationExportById,
@@ -1219,6 +1221,15 @@ function createAccreditationActionPlan(req, res) {
   }
 }
 
+function createAccreditationActionPlansBulk(req, res) {
+  try {
+    const rows = Array.isArray(req.body?.items) ? req.body.items : [];
+    return success(res, addAccreditationActionPlansBulk(rows, req.user), "Bulk rencana perbaikan akreditasi selesai diproses.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Bulk rencana perbaikan akreditasi gagal diproses.");
+  }
+}
+
 function accreditationReviews(_req, res) {
   return success(res, getAccreditationReviews(), "Daftar review internal akreditasi");
 }
@@ -1240,6 +1251,15 @@ function createAccreditationSubmissionCheck(req, res) {
     return success(res, addAccreditationSubmissionCheck(req.body || {}, req.user), "Checklist submit akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Checklist submit akreditasi gagal dibuat.");
+  }
+}
+
+function createAccreditationSubmissionChecksBulk(req, res) {
+  try {
+    const rows = Array.isArray(req.body?.items) ? req.body.items : [];
+    return success(res, addAccreditationSubmissionChecksBulk(rows, req.user), "Bulk checklist submit akreditasi selesai diproses.", 201);
+  } catch (error) {
+    return mutationFailure(res, error, "Bulk checklist submit akreditasi gagal diproses.");
   }
 }
 
@@ -1425,10 +1445,12 @@ module.exports = {
   createAccreditationSelfScore,
   accreditationActionPlans,
   createAccreditationActionPlan,
+  createAccreditationActionPlansBulk,
   accreditationReviews,
   createAccreditationReview,
   accreditationSubmissionChecks,
   createAccreditationSubmissionCheck,
+  createAccreditationSubmissionChecksBulk,
   updateAccreditationPeriodStatusRecord,
   accreditationExports,
   createAccreditationExport,

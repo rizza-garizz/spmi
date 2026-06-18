@@ -1664,9 +1664,8 @@ function getAccreditationActionPlans() {
   return state.accreditation.actionPlans.map(enrichAccreditationActionPlan);
 }
 
-function addAccreditationActionPlan(data, user = null) {
-  const item = {
-    id: buildSequenceCode("AKR-ACT", state.accreditation.actionPlans, "id", 3),
+function normalizeAccreditationActionPlanInput(data, user = null) {
+  return {
     period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
     criteria_code: data.criteria_code || data.criteriaCode || state.accreditation.criteria[0]?.code || null,
     title: data.title || "Rencana perbaikan akreditasi",
@@ -1680,10 +1679,58 @@ function addAccreditationActionPlan(data, user = null) {
     expected_output: data.expected_output || data.expectedOutput || "",
     notes: data.notes || data.note || "",
   };
+}
+
+function findOpenAccreditationActionPlanDuplicate(data) {
+  const closedStatuses = ["done", "closed", "completed"];
+  return state.accreditation.actionPlans.find((item) => (
+    normalizeComparable(item.period_id) === normalizeComparable(data.period_id) &&
+    normalizeComparable(item.criteria_code) === normalizeComparable(data.criteria_code) &&
+    normalizeComparable(item.source) === normalizeComparable(data.source) &&
+    normalizeComparable(item.title) === normalizeComparable(data.title) &&
+    !closedStatuses.includes(normalizeComparable(item.status))
+  )) || null;
+}
+
+function addAccreditationActionPlan(data, user = null) {
+  const payload = normalizeAccreditationActionPlanInput(data, user);
+  const duplicate = findOpenAccreditationActionPlanDuplicate(payload);
+  if (duplicate) {
+    throw createConflict("Rencana perbaikan terbuka untuk issue yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
+
+  const item = {
+    id: buildSequenceCode("AKR-ACT", state.accreditation.actionPlans, "id", 3),
+    ...payload,
+  };
 
   state.accreditation.actionPlans.unshift(item);
   recordMutationAudit("accreditation.action_plan", "created", item, null, user, { status_code: 201 });
   return enrichAccreditationActionPlan(item);
+}
+
+function addAccreditationActionPlansBulk(rows, user = null) {
+  const created = [];
+  const skipped = [];
+
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const payload = normalizeAccreditationActionPlanInput(row || {}, user);
+    const duplicate = findOpenAccreditationActionPlanDuplicate(payload);
+
+    if (duplicate) {
+      skipped.push({ title: payload.title, duplicate_id: duplicate.id, reason: "duplicate_open_action_plan" });
+      continue;
+    }
+
+    created.push(addAccreditationActionPlan(payload, user));
+  }
+
+  return {
+    created,
+    skipped,
+    created_count: created.length,
+    skipped_count: skipped.length,
+  };
 }
 
 function getAccreditationReviews() {
@@ -1718,9 +1765,8 @@ function getAccreditationSubmissionChecks() {
   return state.accreditation.submissionChecks.map(enrichAccreditationSubmissionCheck);
 }
 
-function addAccreditationSubmissionCheck(data, user = null) {
-  const item = {
-    id: buildSequenceCode("AKR-CHK", state.accreditation.submissionChecks, "id", 3),
+function normalizeAccreditationSubmissionCheckInput(data, user = null) {
+  return {
     period_id: data.period_id || data.periodId || state.accreditation.periods[0]?.id || null,
     category: data.category || "UMUM",
     title: data.title || "Checklist submit akreditasi",
@@ -1731,10 +1777,57 @@ function addAccreditationSubmissionCheck(data, user = null) {
     evidence_id: data.evidence_id || data.evidenceId || null,
     notes: data.notes || data.note || "",
   };
+}
+
+function findOpenAccreditationSubmissionCheckDuplicate(data) {
+  const closedStatuses = ["verified", "approved", "done", "closed"];
+  return state.accreditation.submissionChecks.find((item) => (
+    normalizeComparable(item.period_id) === normalizeComparable(data.period_id) &&
+    normalizeComparable(item.category) === normalizeComparable(data.category) &&
+    normalizeComparable(item.title) === normalizeComparable(data.title) &&
+    !closedStatuses.includes(normalizeComparable(item.status))
+  )) || null;
+}
+
+function addAccreditationSubmissionCheck(data, user = null) {
+  const payload = normalizeAccreditationSubmissionCheckInput(data, user);
+  const duplicate = findOpenAccreditationSubmissionCheckDuplicate(payload);
+  if (duplicate) {
+    throw createConflict("Checklist submit terbuka untuk issue yang sama sudah ada.", { duplicate_id: duplicate.id });
+  }
+
+  const item = {
+    id: buildSequenceCode("AKR-CHK", state.accreditation.submissionChecks, "id", 3),
+    ...payload,
+  };
 
   state.accreditation.submissionChecks.unshift(item);
   recordMutationAudit("accreditation.submission_check", "created", item, null, user, { status_code: 201 });
   return enrichAccreditationSubmissionCheck(item);
+}
+
+function addAccreditationSubmissionChecksBulk(rows, user = null) {
+  const created = [];
+  const skipped = [];
+
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const payload = normalizeAccreditationSubmissionCheckInput(row || {}, user);
+    const duplicate = findOpenAccreditationSubmissionCheckDuplicate(payload);
+
+    if (duplicate) {
+      skipped.push({ title: payload.title, duplicate_id: duplicate.id, reason: "duplicate_open_submission_check" });
+      continue;
+    }
+
+    created.push(addAccreditationSubmissionCheck(payload, user));
+  }
+
+  return {
+    created,
+    skipped,
+    created_count: created.length,
+    skipped_count: skipped.length,
+  };
 }
 
 function updateAccreditationPeriodStatus(periodId, data, user = null) {
@@ -1782,8 +1875,11 @@ function generateAccreditationExport(data, user = null) {
   const evidence = state.accreditation.evidence.filter((item) => item.period_id === periodId);
   const reviews = state.accreditation.reviews.filter((item) => item.period_id === periodId);
   const selfScores = state.accreditation.selfScores.filter((item) => item.period_id === periodId);
+  const actionPlans = state.accreditation.actionPlans.filter((item) => item.period_id === periodId);
   const submissionChecks = state.accreditation.submissionChecks.filter((item) => item.period_id === periodId);
   const readinessItems = getAccreditationPackageReadiness(periodId);
+  const openActionPlans = actionPlans.filter((item) => !["done", "closed", "completed"].includes(normalizeComparable(item.status)));
+  const openSubmissionChecks = submissionChecks.filter((item) => !["verified", "approved", "done", "closed"].includes(normalizeComparable(item.status)));
   const safeName = String(period.name || "akreditasi").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const extension = type === "zip" ? "zip" : type === "pdf" ? "pdf" : "json";
   const now = new Date().toISOString();
@@ -1802,8 +1898,13 @@ function generateAccreditationExport(data, user = null) {
       evidence: evidence.length,
       reviews: reviews.length,
       self_scores: selfScores.length,
+      action_plans: actionPlans.length,
       submission_checks: submissionChecks.length,
       readiness_items: readinessItems.length,
+      open_action_plans: openActionPlans.length,
+      open_submission_checks: openSubmissionChecks.length,
+      risk_items: readinessItems.filter((entry) => entry.status === "risk").length,
+      warning_items: readinessItems.filter((entry) => entry.status === "warning").length,
     },
     readiness_items: readinessItems,
     manifest: {
@@ -1813,7 +1914,14 @@ function generateAccreditationExport(data, user = null) {
       evidence: evidence.map(enrichAccreditationEvidence),
       reviews: reviews.map(enrichAccreditationReview),
       self_scores: selfScores.map(enrichAccreditationSelfScore),
+      action_plans: actionPlans.map(enrichAccreditationActionPlan),
       submission_checks: submissionChecks.map(enrichAccreditationSubmissionCheck),
+      follow_up_summary: {
+        open_action_plans: openActionPlans.length,
+        open_submission_checks: openSubmissionChecks.length,
+        risk_items: readinessItems.filter((entry) => entry.status === "risk"),
+        warning_items: readinessItems.filter((entry) => entry.status === "warning"),
+      },
     },
   };
 
@@ -3911,10 +4019,12 @@ module.exports = {
   addAccreditationSelfScore,
   getAccreditationActionPlans,
   addAccreditationActionPlan,
+  addAccreditationActionPlansBulk,
   getAccreditationReviews,
   addAccreditationReview,
   getAccreditationSubmissionChecks,
   addAccreditationSubmissionCheck,
+  addAccreditationSubmissionChecksBulk,
   updateAccreditationPeriodStatus,
   getAccreditationExports,
   getAccreditationExportById,
