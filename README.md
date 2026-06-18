@@ -3,6 +3,7 @@
 ## Go-Live Documents
 
 - [UAT Go-Live Checklist](docs/uat-go-live-checklist.md)
+- [Accreditation Runbook Index](docs/accreditation-runbook-index.md)
 - [Production Operations Runbook](docs/production-operations-runbook.md)
 
 SPMI Command Center adalah dashboard Sistem Penjaminan Mutu Internal untuk perguruan tinggi. Repo ini memakai:
@@ -109,6 +110,9 @@ Untuk mode `database`, lihat juga seed di `backend-node/prisma/seed.js`.
 - `GET/POST /ami/audits`
 - `GET/POST /rtm/meetings`
 - `GET/POST /indicators`
+- `GET /accreditation/summary`
+- `POST /accreditation/exports`
+- `GET /accreditation/exports/:id/download`
 
 ## File Penting
 

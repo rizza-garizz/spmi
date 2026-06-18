@@ -150,6 +150,19 @@ npm run dev
 - `GET/POST /rtm/meetings`
 - `GET/POST /indicators`
 - `POST /indicators/:id/values`
+- `GET /accreditation/summary`
+- `GET/POST /accreditation/periods`
+- `GET/POST /accreditation/team-members`
+- `GET/POST /accreditation/tasks`
+- `GET/POST /accreditation/milestones`
+- `GET/POST /accreditation/risks`
+- `GET/POST /accreditation/evidence`
+- `GET/POST /accreditation/action-plans`
+- `POST /accreditation/action-plans/bulk`
+- `GET/POST /accreditation/submission-checks`
+- `POST /accreditation/submission-checks/bulk`
+- `POST /accreditation/exports`
+- `GET /accreditation/exports/:id/download`
 
 ## Automated Smoke Test
 
