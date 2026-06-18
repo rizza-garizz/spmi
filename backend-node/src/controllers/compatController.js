@@ -36,11 +36,13 @@ const {
   getAccreditationActionPlans,
   addAccreditationActionPlan,
   addAccreditationActionPlansBulk,
+  updateAccreditationActionPlan,
   getAccreditationReviews,
   addAccreditationReview,
   getAccreditationSubmissionChecks,
   addAccreditationSubmissionCheck,
   addAccreditationSubmissionChecksBulk,
+  updateAccreditationSubmissionCheck,
   updateAccreditationPeriodStatus,
   getAccreditationExports,
   getAccreditationExportById,
@@ -1230,6 +1232,16 @@ function createAccreditationActionPlansBulk(req, res) {
   }
 }
 
+function updateAccreditationActionPlanRecord(req, res) {
+  try {
+    const item = updateAccreditationActionPlan(req.params.id, req.body || {}, req.user);
+    if (!item) return failure(res, "Rencana perbaikan akreditasi tidak ditemukan.", 404);
+    return success(res, item, "Rencana perbaikan akreditasi berhasil diperbarui.");
+  } catch (error) {
+    return mutationFailure(res, error, "Rencana perbaikan akreditasi gagal diperbarui.");
+  }
+}
+
 function accreditationReviews(_req, res) {
   return success(res, getAccreditationReviews(), "Daftar review internal akreditasi");
 }
@@ -1260,6 +1272,16 @@ function createAccreditationSubmissionChecksBulk(req, res) {
     return success(res, addAccreditationSubmissionChecksBulk(rows, req.user), "Bulk checklist submit akreditasi selesai diproses.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Bulk checklist submit akreditasi gagal diproses.");
+  }
+}
+
+function updateAccreditationSubmissionCheckRecord(req, res) {
+  try {
+    const item = updateAccreditationSubmissionCheck(req.params.id, req.body || {}, req.user);
+    if (!item) return failure(res, "Checklist submit akreditasi tidak ditemukan.", 404);
+    return success(res, item, "Checklist submit akreditasi berhasil diperbarui.");
+  } catch (error) {
+    return mutationFailure(res, error, "Checklist submit akreditasi gagal diperbarui.");
   }
 }
 
@@ -1446,11 +1468,13 @@ module.exports = {
   accreditationActionPlans,
   createAccreditationActionPlan,
   createAccreditationActionPlansBulk,
+  updateAccreditationActionPlanRecord,
   accreditationReviews,
   createAccreditationReview,
   accreditationSubmissionChecks,
   createAccreditationSubmissionCheck,
   createAccreditationSubmissionChecksBulk,
+  updateAccreditationSubmissionCheckRecord,
   updateAccreditationPeriodStatusRecord,
   accreditationExports,
   createAccreditationExport,

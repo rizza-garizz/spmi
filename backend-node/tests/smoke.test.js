@@ -1885,6 +1885,22 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(bulkActionPlanPayload.data.created_count, 1);
   assert.equal(bulkActionPlanPayload.data.skipped_count, 1);
 
+  const actionPlanUpdateResponse = await fetch(`${baseUrl}/accreditation/action-plans/${actionPlanPayload.data.id}`, {
+    method: "PATCH",
+    headers: authHeaders,
+    body: JSON.stringify({
+      status: "in_progress",
+      progress: 100,
+      notes: "Action plan smoke sudah tuntas.",
+    }),
+  });
+  const actionPlanUpdatePayload = await actionPlanUpdateResponse.json();
+
+  assert.equal(actionPlanUpdateResponse.status, 200);
+  assert.equal(actionPlanUpdatePayload.data.status, "done");
+  assert.equal(actionPlanUpdatePayload.data.progress, 100);
+  assert.equal(actionPlanUpdatePayload.data.readiness_status, "ready");
+
   const reviewResponse = await fetch(`${baseUrl}/accreditation/reviews`, {
     method: "POST",
     headers: authHeaders,
@@ -1983,6 +1999,22 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(bulkSubmissionCheckPayload.data.created_count, 2);
   assert.equal(bulkSubmissionCheckPayload.data.skipped_count, 1);
 
+  const pendingChecklist = bulkSubmissionCheckPayload.data.created.find((item) => item.status === "pending");
+  const submissionCheckUpdateResponse = await fetch(`${baseUrl}/accreditation/submission-checks/${pendingChecklist.id}`, {
+    method: "PATCH",
+    headers: authHeaders,
+    body: JSON.stringify({
+      status: "verified",
+      notes: "Checklist bulk sudah diverifikasi.",
+    }),
+  });
+  const submissionCheckUpdatePayload = await submissionCheckUpdateResponse.json();
+
+  assert.equal(submissionCheckUpdateResponse.status, 200);
+  assert.equal(submissionCheckUpdatePayload.data.status, "verified");
+  assert.equal(submissionCheckUpdatePayload.data.readiness_status, "ready");
+  assert.equal(Boolean(submissionCheckUpdatePayload.data.verified_at), true);
+
   const exportResponse = await fetch(`${baseUrl}/accreditation/exports`, {
     method: "POST",
     headers: authHeaders,
@@ -2013,7 +2045,7 @@ test("accreditation core exposes summary and creates setup records", async () =>
   assert.equal(manifestPayload.period.id, periodPayload.data.id);
   assert.equal(manifestPayload.lkps_entries.length, 1);
   assert.equal(manifestPayload.action_plans.length, 2);
-  assert.equal(manifestPayload.follow_up_summary.open_submission_checks, 2);
+  assert.equal(manifestPayload.follow_up_summary.open_submission_checks, 1);
 });
 
 test("integration readiness covers SIAKAD SIMPEG finance repository PDDIKTI and SSO with logs", async () => {

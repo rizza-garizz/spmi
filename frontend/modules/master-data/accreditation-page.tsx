@@ -249,6 +249,8 @@ type AccreditationSubmissionCheck = {
   due_date: string | null;
   evidence_id?: string | null;
   notes: string;
+  verified_at?: string | null;
+  verified_by?: string | null;
   overdue?: boolean;
   readiness_status?: string;
   period?: AccreditationPeriod | null;
@@ -1072,6 +1074,36 @@ export function AccreditationPage() {
       "Checklist submit akreditasi berhasil ditambahkan."
     );
     event.currentTarget.reset();
+  }
+
+  function updateActionPlanStatus(item: AccreditationActionPlan, status: string, progress = item.progress) {
+    postJson(
+      `/accreditation/action-plans/${encodeURIComponent(item.id)}`,
+      {
+        status,
+        progress,
+        notes: item.notes,
+      },
+      "Status rencana perbaikan berhasil diperbarui.",
+      "PATCH"
+    );
+  }
+
+  function advanceActionPlan(item: AccreditationActionPlan) {
+    const nextProgress = Math.min(100, Number(item.progress || 0) + 25);
+    updateActionPlanStatus(item, nextProgress >= 100 ? "done" : "in_progress", nextProgress);
+  }
+
+  function updateSubmissionCheckStatus(item: AccreditationSubmissionCheck, status: string) {
+    postJson(
+      `/accreditation/submission-checks/${encodeURIComponent(item.id)}`,
+      {
+        status,
+        notes: item.notes,
+      },
+      "Status checklist submit berhasil diperbarui.",
+      "PATCH"
+    );
   }
 
   function normalizeIssueKey(value: string) {
@@ -2183,6 +2215,23 @@ export function AccreditationPage() {
                       <span className={`badge ${statusBadge(item.priority)}`}>{item.priority}</span>
                       <span className={`badge ${statusBadge(item.status)} ml-1`}>{item.status}</span>
                       {item.overdue ? <span className="badge badge-danger ml-1">overdue</span> : null}
+                      <div className="mt-2">
+                        {item.status === "todo" ? (
+                          <button className="btn btn-outline-secondary btn-xs mr-1" type="button" disabled={saving} onClick={() => updateActionPlanStatus(item, "in_progress", Math.max(10, item.progress || 0))}>
+                            <i className="la la-play mr-1"></i> Mulai
+                          </button>
+                        ) : null}
+                        {!["done", "closed", "completed"].includes(item.status) ? (
+                          <button className="btn btn-outline-secondary btn-xs mr-1" type="button" disabled={saving} onClick={() => advanceActionPlan(item)}>
+                            <i className="la la-arrow-up mr-1"></i> +25%
+                          </button>
+                        ) : null}
+                        {item.status !== "done" ? (
+                          <button className="btn btn-outline-success btn-xs" type="button" disabled={saving} onClick={() => updateActionPlanStatus(item, "done", 100)}>
+                            <i className="la la-check mr-1"></i> Selesai
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                   <div className="progress mt-2" style={{ height: 8 }}>
@@ -2848,6 +2897,19 @@ export function AccreditationPage() {
                   <div className="d-flex justify-content-between mt-2">
                     <small>{formatDate(item.due_date)}</small>
                     <small>{item.evidence?.title || item.notes || "-"}</small>
+                  </div>
+                  <div className="mt-2">
+                    {!["verified", "approved", "done"].includes(item.status) ? (
+                      <button className="btn btn-outline-success btn-xs mr-1" type="button" disabled={saving} onClick={() => updateSubmissionCheckStatus(item, "verified")}>
+                        <i className="la la-check mr-1"></i> Verifikasi
+                      </button>
+                    ) : null}
+                    {item.status !== "revision_required" ? (
+                      <button className="btn btn-outline-warning btn-xs mr-1" type="button" disabled={saving} onClick={() => updateSubmissionCheckStatus(item, "revision_required")}>
+                        <i className="la la-undo mr-1"></i> Revisi
+                      </button>
+                    ) : null}
+                    {item.verified_at ? <small className="text-muted">Diverifikasi {formatDate(item.verified_at)} oleh {item.verified_by || item.verifier}</small> : null}
                   </div>
                   {item.overdue ? <span className="badge badge-danger mt-2">overdue</span> : null}
                 </div>

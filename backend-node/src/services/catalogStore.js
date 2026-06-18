@@ -1733,6 +1733,34 @@ function addAccreditationActionPlansBulk(rows, user = null) {
   };
 }
 
+function updateAccreditationActionPlan(actionPlanId, data, user = null) {
+  const item = state.accreditation.actionPlans.find((entry) => String(entry.id) === String(actionPlanId));
+  if (!item) return null;
+
+  const previous = { ...item };
+  const progress = data.progress ?? item.progress;
+  Object.assign(item, {
+    title: data.title || item.title,
+    owner: data.owner || item.owner,
+    priority: data.priority || item.priority,
+    status: data.status || item.status,
+    target_date: data.target_date || data.targetDate || item.target_date,
+    progress: Math.max(0, Math.min(100, Number(progress || 0))),
+    action: data.action || item.action,
+    expected_output: data.expected_output || data.expectedOutput || item.expected_output,
+    notes: data.notes || data.note || item.notes,
+    updated_at: new Date().toISOString(),
+    updated_by: user?.email || user?.username || "system",
+  });
+
+  if (item.progress >= 100 && !["done", "closed", "completed"].includes(normalizeComparable(item.status))) {
+    item.status = "done";
+  }
+
+  recordMutationAudit("accreditation.action_plan", "updated", item, previous, user);
+  return enrichAccreditationActionPlan(item);
+}
+
 function getAccreditationReviews() {
   return state.accreditation.reviews.map(enrichAccreditationReview);
 }
@@ -1828,6 +1856,34 @@ function addAccreditationSubmissionChecksBulk(rows, user = null) {
     created_count: created.length,
     skipped_count: skipped.length,
   };
+}
+
+function updateAccreditationSubmissionCheck(checkId, data, user = null) {
+  const item = state.accreditation.submissionChecks.find((entry) => String(entry.id) === String(checkId));
+  if (!item) return null;
+
+  const previous = { ...item };
+  Object.assign(item, {
+    category: data.category || item.category,
+    title: data.title || item.title,
+    owner: data.owner || item.owner,
+    verifier: data.verifier || item.verifier,
+    status: data.status || item.status,
+    due_date: data.due_date || data.dueDate || item.due_date,
+    evidence_id: data.evidence_id || data.evidenceId || item.evidence_id,
+    notes: data.notes || data.note || item.notes,
+    verified_at: ["verified", "approved", "done"].includes(normalizeComparable(data.status || item.status))
+      ? new Date().toISOString()
+      : item.verified_at || null,
+    verified_by: ["verified", "approved", "done"].includes(normalizeComparable(data.status || item.status))
+      ? user?.email || user?.username || item.verifier || "system"
+      : item.verified_by || null,
+    updated_at: new Date().toISOString(),
+    updated_by: user?.email || user?.username || "system",
+  });
+
+  recordMutationAudit("accreditation.submission_check", "updated", item, previous, user);
+  return enrichAccreditationSubmissionCheck(item);
 }
 
 function updateAccreditationPeriodStatus(periodId, data, user = null) {
@@ -4020,11 +4076,13 @@ module.exports = {
   getAccreditationActionPlans,
   addAccreditationActionPlan,
   addAccreditationActionPlansBulk,
+  updateAccreditationActionPlan,
   getAccreditationReviews,
   addAccreditationReview,
   getAccreditationSubmissionChecks,
   addAccreditationSubmissionCheck,
   addAccreditationSubmissionChecksBulk,
+  updateAccreditationSubmissionCheck,
   updateAccreditationPeriodStatus,
   getAccreditationExports,
   getAccreditationExportById,

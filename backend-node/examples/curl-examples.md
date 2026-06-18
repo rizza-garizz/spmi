@@ -138,6 +138,21 @@ curl -X POST http://localhost:4000/accreditation/action-plans/bulk \
 
 Response mengembalikan `created_count` dan `skipped_count`; item dengan rencana terbuka yang sama akan dilewati.
 
+## Update Progress Rencana Perbaikan Akreditasi
+
+```bash
+curl -X PATCH http://localhost:4000/accreditation/action-plans/AKR-ACT-001 \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "in_progress",
+    "progress": 75,
+    "notes": "Bukti utama sudah masuk, tinggal review akhir."
+  }'
+```
+
+Jika `progress` dikirim `100`, status otomatis menjadi `done`.
+
 ## Bulk Checklist Submit Akreditasi
 
 ```bash
@@ -160,6 +175,20 @@ curl -X POST http://localhost:4000/accreditation/submission-checks/bulk \
 ```
 
 Response mengembalikan `created_count` dan `skipped_count`; checklist terbuka dengan kategori dan judul yang sama akan dilewati.
+
+## Verifikasi Checklist Submit Akreditasi
+
+```bash
+curl -X PATCH http://localhost:4000/accreditation/submission-checks/AKR-CHK-001 \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "verified",
+    "notes": "Checklist sudah lengkap dan siap masuk paket submit."
+  }'
+```
+
+Status `verified`, `approved`, atau `done` akan mengisi `verified_at` dan `verified_by`.
 
 ## Generate dan Unduh Paket Akreditasi
 

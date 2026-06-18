@@ -180,11 +180,13 @@ router.post("/accreditation/self-scores", verifyToken, requireRole(...ROLE_ACCRE
 router.get("/accreditation/action-plans", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationActionPlans);
 router.post("/accreditation/action-plans", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.createAccreditationActionPlan);
 router.post("/accreditation/action-plans/bulk", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.createAccreditationActionPlansBulk);
+router.patch("/accreditation/action-plans/:id", verifyToken, requireRole(...ROLE_ACCREDITATION_WRITE), compatController.updateAccreditationActionPlanRecord);
 router.get("/accreditation/reviews", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationReviews);
 router.post("/accreditation/reviews", verifyToken, requireRole(...ROLE_ACCREDITATION_REVIEW), compatController.createAccreditationReview);
 router.get("/accreditation/submission-checks", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationSubmissionChecks);
 router.post("/accreditation/submission-checks", verifyToken, requireRole(...ROLE_ACCREDITATION_REVIEW), compatController.createAccreditationSubmissionCheck);
 router.post("/accreditation/submission-checks/bulk", verifyToken, requireRole(...ROLE_ACCREDITATION_REVIEW), compatController.createAccreditationSubmissionChecksBulk);
+router.patch("/accreditation/submission-checks/:id", verifyToken, requireRole(...ROLE_ACCREDITATION_REVIEW), compatController.updateAccreditationSubmissionCheckRecord);
 router.patch("/accreditation/periods/:id/status", verifyToken, requireRole(...ROLE_ACCREDITATION_REVIEW), compatController.updateAccreditationPeriodStatusRecord);
 router.get("/accreditation/exports", verifyToken, requireRole(...ROLE_ACCREDITATION_READ), compatController.accreditationExports);
 router.post("/accreditation/exports", verifyToken, requireRole(...ROLE_ACCREDITATION_REVIEW), compatController.createAccreditationExport);
