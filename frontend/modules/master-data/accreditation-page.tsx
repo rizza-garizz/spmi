@@ -263,6 +263,84 @@ type AccreditationReadinessItem = {
   open?: number;
 };
 
+type EvidenceCoverageItem = {
+  code: string;
+  title: string;
+  required: number;
+  total: number;
+  valid: number;
+  open: number;
+  status: string;
+};
+
+type LedCoverageItem = {
+  id: string;
+  criteriaCode: string;
+  title: string;
+  total: number;
+  ready: number;
+  latestStatus: string;
+  status: string;
+};
+
+type SelfScoreCoverageItem = {
+  code: string;
+  title: string;
+  score: number | null;
+  target: number;
+  gap: number | null;
+  reviewer: string;
+  status: string;
+};
+
+type ActionPlanCoverageItem = {
+  code: string;
+  title: string;
+  gap: number;
+  total: number;
+  open: number;
+  done: number;
+  status: string;
+};
+
+type ReviewCoverageItem = {
+  key: string;
+  label: string;
+  entityType: string;
+  total: number;
+  approved: number;
+  open: number;
+  missing: number;
+  status: string;
+};
+
+type SubmissionCheckDraft = {
+  period_id: string;
+  category: string;
+  title: string;
+  owner: string;
+  verifier: string;
+  status: string;
+  due_date: string | null;
+  evidence_id: string | null;
+  notes: string;
+};
+
+type ActionPlanDraft = {
+  period_id: string;
+  criteria_code: string;
+  title: string;
+  source: string;
+  owner: string;
+  priority: string;
+  status: string;
+  target_date: string | null;
+  progress: number;
+  action: string;
+  expected_output: string;
+  notes: string;
+};
+
 type AccreditationExport = {
   id: string;
   period_id: string;
@@ -364,21 +442,31 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(value));
 }
 
+function readinessCategory(key: string) {
+  if (key === "lkps") return "LKPS";
+  if (key === "led") return "LED";
+  if (key === "evidence") return "BUKTI";
+  if (key === "reviews") return "REVIEW";
+  return "SUBMIT";
+}
+
 export function AccreditationPage() {
   const [summary, setSummary] = useState<AccreditationSummary>(emptySummary);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [packagePeriodId, setPackagePeriodId] = useState("");
+  const [showOnlyPackageIssues, setShowOnlyPackageIssues] = useState(false);
+  const [packageIssueCategory, setPackageIssueCategory] = useState("all");
 
   const firstInstrumentId = summary.instruments[0]?.id || "";
   const firstPeriodId = summary.periods[0]?.id || "";
   const firstCriteriaCode = summary.criteria[0]?.code || "";
   const firstLkpsSectionId = summary.lkpsSections[0]?.id || "";
   const firstLedSectionId = summary.ledSections[0]?.id || "";
-  const firstLkpsEntryId = summary.lkpsEntries[0]?.id || "";
-  const firstLedContentId = summary.ledContents[0]?.id || "";
   const firstReviewEntityId = summary.ledContents[0]?.id || "";
+  const activePackagePeriodId = packagePeriodId || firstPeriodId;
 
   async function loadSummary() {
     setLoading(true);
@@ -406,6 +494,243 @@ export function AccreditationPage() {
       return acc;
     }, {});
   }, [summary.criteria]);
+
+  const packageReadiness = useMemo(() => {
+    const period = summary.periods.find((item) => item.id === activePackagePeriodId) || null;
+    const lkpsEntries = summary.lkpsEntries.filter((item) => item.period_id === activePackagePeriodId);
+    const ledContents = summary.ledContents.filter((item) => item.period_id === activePackagePeriodId);
+    const evidence = summary.evidence.filter((item) => item.period_id === activePackagePeriodId);
+    const reviews = summary.reviews.filter((item) => item.period_id === activePackagePeriodId);
+    const selfScores = summary.selfScores.filter((item) => item.period_id === activePackagePeriodId);
+    const actionPlans = summary.actionPlans.filter((item) => item.period_id === activePackagePeriodId);
+    const submissionChecks = summary.submissionChecks.filter((item) => item.period_id === activePackagePeriodId);
+    const invalidEvidence = evidence.filter((item) => !["valid", "approved"].includes(item.status));
+    const openReviews = reviews.filter((item) => !["approved", "closed"].includes(item.status));
+    const openActionPlans = actionPlans.filter((item) => !["done", "closed", "completed"].includes(item.status));
+    const openSubmissionChecks = submissionChecks.filter((item) => !["verified", "approved", "done"].includes(item.status));
+    const validEvidence = evidence.filter((item) => ["valid", "approved"].includes(item.status));
+    const revisionEvidence = evidence.filter((item) => ["perlu_revisi", "revision_required", "rejected"].includes(item.status));
+    const draftEvidence = evidence.filter((item) => ["draft", "pending"].includes(item.status));
+
+    const items: AccreditationReadinessItem[] = [
+      { key: "period", label: "Periode", status: period ? "ready" : "risk", count: period ? 1 : 0 },
+      { key: "lkps", label: "LKPS", status: lkpsEntries.length ? "ready" : "risk", count: lkpsEntries.length },
+      { key: "led", label: "LED", status: ledContents.length ? "ready" : "risk", count: ledContents.length },
+      { key: "evidence", label: "Bukti valid", status: evidence.length === 0 ? "risk" : invalidEvidence.length ? "warning" : "ready", count: evidence.length, open: invalidEvidence.length },
+      { key: "reviews", label: "Review selesai", status: reviews.length === 0 ? "risk" : openReviews.length ? "warning" : "ready", count: reviews.length, open: openReviews.length },
+      { key: "self_scores", label: "Skor mandiri", status: selfScores.length ? "ready" : "risk", count: selfScores.length },
+      { key: "action_plans", label: "Rencana perbaikan", status: actionPlans.length === 0 ? "risk" : openActionPlans.length ? "warning" : "ready", count: actionPlans.length, open: openActionPlans.length },
+      { key: "submission_checks", label: "Checklist submit", status: submissionChecks.length === 0 ? "risk" : openSubmissionChecks.length ? "warning" : "ready", count: submissionChecks.length, open: openSubmissionChecks.length },
+    ];
+
+    return {
+      evidence: {
+        total: evidence.length,
+        valid: validEvidence.length,
+        revision: revisionEvidence.length,
+        draft: draftEvidence.length,
+        open: invalidEvidence.length,
+      },
+      items,
+      riskCount: items.filter((item) => item.status === "risk").length,
+      warningCount: items.filter((item) => item.status === "warning").length,
+    };
+  }, [activePackagePeriodId, summary.actionPlans, summary.evidence, summary.ledContents, summary.lkpsEntries, summary.periods, summary.reviews, summary.selfScores, summary.submissionChecks]);
+
+  const activePeriodEvidence = useMemo(
+    () => summary.evidence.filter((item) => item.period_id === activePackagePeriodId),
+    [activePackagePeriodId, summary.evidence]
+  );
+  const activePeriodExports = useMemo(
+    () => summary.exports.filter((item) => item.period_id === activePackagePeriodId),
+    [activePackagePeriodId, summary.exports]
+  );
+  const activePeriodSubmissionChecks = useMemo(
+    () => summary.submissionChecks.filter((item) => item.period_id === activePackagePeriodId),
+    [activePackagePeriodId, summary.submissionChecks]
+  );
+  const activePeriodLkpsEntries = useMemo(
+    () => summary.lkpsEntries.filter((item) => item.period_id === activePackagePeriodId),
+    [activePackagePeriodId, summary.lkpsEntries]
+  );
+  const activePeriodLedContents = useMemo(
+    () => summary.ledContents.filter((item) => item.period_id === activePackagePeriodId),
+    [activePackagePeriodId, summary.ledContents]
+  );
+  const activePeriodActionPlans = useMemo(
+    () => summary.actionPlans.filter((item) => item.period_id === activePackagePeriodId),
+    [activePackagePeriodId, summary.actionPlans]
+  );
+  const activePeriodSelfScores = useMemo(
+    () => summary.selfScores.filter((item) => item.period_id === activePackagePeriodId),
+    [activePackagePeriodId, summary.selfScores]
+  );
+  const activePeriodReviews = useMemo(
+    () => summary.reviews.filter((item) => item.period_id === activePackagePeriodId),
+    [activePackagePeriodId, summary.reviews]
+  );
+  const evidenceCoverage = useMemo<EvidenceCoverageItem[]>(() => {
+    const period = summary.periods.find((item) => item.id === activePackagePeriodId);
+    const criteria = summary.criteria.filter((item) => !period?.instrument_id || item.instrument_id === period.instrument_id);
+
+    return criteria.map((criterion) => {
+      const evidence = activePeriodEvidence.filter((item) => item.criteria_code === criterion.code);
+      const valid = evidence.filter((item) => ["valid", "approved"].includes(item.status)).length;
+      const open = evidence.length - valid;
+      const required = Number(criterion.evidence_required || 0);
+
+      return {
+        code: criterion.code,
+        title: criterion.title,
+        required,
+        total: evidence.length,
+        valid,
+        open,
+        status: valid >= required ? "ready" : evidence.length >= required ? "warning" : "risk",
+      };
+    });
+  }, [activePackagePeriodId, activePeriodEvidence, summary.criteria, summary.periods]);
+  const ledCoverage = useMemo<LedCoverageItem[]>(() => {
+    return summary.ledSections.map((section) => {
+      const contents = activePeriodLedContents.filter((item) => item.section_id === section.id);
+      const ready = contents.filter((item) => ["reviewed", "approved"].includes(item.status)).length;
+      const latestStatus = contents[0]?.status || "missing";
+
+      return {
+        id: section.id,
+        criteriaCode: section.criteria_code,
+        title: section.title,
+        total: contents.length,
+        ready,
+        latestStatus,
+        status: ready > 0 ? "ready" : contents.length > 0 ? "warning" : "risk",
+      };
+    });
+  }, [activePeriodLedContents, summary.ledSections]);
+  const selfScoreCoverage = useMemo<SelfScoreCoverageItem[]>(() => {
+    const period = summary.periods.find((item) => item.id === activePackagePeriodId);
+    const criteria = summary.criteria.filter((item) => !period?.instrument_id || item.instrument_id === period.instrument_id);
+    const selfScores = summary.selfScores.filter((item) => item.period_id === activePackagePeriodId);
+
+    return criteria.map((criterion) => {
+      const score = selfScores.find((item) => item.criteria_code === criterion.code) || null;
+      const scoreValue = score ? Number(score.score || 0) : null;
+      const target = score ? Number(score.target_score || 0) : 3.5;
+      const gap = score ? Math.max(0, Number(score.gap ?? target - Number(score.score || 0))) : null;
+
+      return {
+        code: criterion.code,
+        title: criterion.title,
+        score: scoreValue,
+        target,
+        gap,
+        reviewer: score?.reviewer || "-",
+        status: !score ? "risk" : gap && gap > 0 ? "warning" : "ready",
+      };
+    });
+  }, [activePackagePeriodId, summary.criteria, summary.periods, summary.selfScores]);
+  const actionPlanCoverage = useMemo<ActionPlanCoverageItem[]>(() => {
+    return selfScoreCoverage.map((item) => {
+      const plans = activePeriodActionPlans.filter((plan) => plan.criteria_code === item.code);
+      const done = plans.filter((plan) => ["done", "closed", "completed"].includes(plan.status)).length;
+      const open = plans.length - done;
+      const gap = Number(item.gap || 0);
+
+      return {
+        code: item.code,
+        title: item.title,
+        gap,
+        total: plans.length,
+        open,
+        done,
+        status: gap <= 0 ? "ready" : done > 0 ? "ready" : plans.length > 0 ? "warning" : "risk",
+      };
+    });
+  }, [activePeriodActionPlans, selfScoreCoverage]);
+  const reviewCoverage = useMemo<ReviewCoverageItem[]>(() => {
+    const rows = [
+      { key: "led", label: "LED", entityType: "led", total: activePeriodLedContents.length, ids: activePeriodLedContents.map((item) => item.id) },
+      { key: "evidence", label: "Bukti", entityType: "evidence", total: activePeriodEvidence.length, ids: activePeriodEvidence.map((item) => item.id) },
+      { key: "self_score", label: "Self Score", entityType: "self_score", total: activePeriodSelfScores.length, ids: activePeriodSelfScores.map((item) => item.id) },
+    ];
+
+    return rows.map((row) => {
+      const reviews = activePeriodReviews.filter((review) => review.entity_type === row.entityType && (!review.entity_id || row.ids.includes(review.entity_id)));
+      const approved = reviews.filter((review) => ["approved", "closed"].includes(review.status)).length;
+      const open = reviews.filter((review) => !["approved", "closed"].includes(review.status)).length;
+      const reviewedEntityIds = new Set(reviews.map((review) => review.entity_id).filter(Boolean));
+      const missing = row.ids.filter((id) => !reviewedEntityIds.has(id)).length;
+
+      return {
+        key: row.key,
+        label: row.label,
+        entityType: row.entityType,
+        total: row.total,
+        approved,
+        open,
+        missing,
+        status: row.total === 0 ? "risk" : missing === 0 && open === 0 ? "ready" : reviews.length > 0 ? "warning" : "risk",
+      };
+    });
+  }, [activePeriodEvidence, activePeriodLedContents, activePeriodReviews, activePeriodSelfScores]);
+  const packageGate = useMemo(() => {
+    const coverageItems = [
+      ...packageReadiness.items,
+      ...evidenceCoverage,
+      ...ledCoverage,
+      ...selfScoreCoverage,
+      ...actionPlanCoverage,
+      ...reviewCoverage,
+    ];
+    const riskCount = coverageItems.filter((item) => item.status === "risk").length;
+    const warningCount = coverageItems.filter((item) => item.status === "warning").length;
+    const status = riskCount ? "risk" : warningCount ? "warning" : "ready";
+
+    return {
+      status,
+      riskCount,
+      warningCount,
+      label: status === "ready" ? "Siap Generate" : status === "warning" ? "Generate dengan Catatan" : "Generate Paket Draft",
+    };
+  }, [actionPlanCoverage, evidenceCoverage, ledCoverage, packageReadiness.items, reviewCoverage, selfScoreCoverage]);
+  const visiblePackageReadinessItems = useMemo(
+    () => showOnlyPackageIssues ? packageReadiness.items.filter((item) => item.status !== "ready") : packageReadiness.items,
+    [packageReadiness.items, showOnlyPackageIssues]
+  );
+  const visibleEvidenceCoverage = useMemo(
+    () => showOnlyPackageIssues ? evidenceCoverage.filter((item) => item.status !== "ready") : evidenceCoverage,
+    [evidenceCoverage, showOnlyPackageIssues]
+  );
+  const visibleLedCoverage = useMemo(
+    () => showOnlyPackageIssues ? ledCoverage.filter((item) => item.status !== "ready") : ledCoverage,
+    [ledCoverage, showOnlyPackageIssues]
+  );
+  const visibleSelfScoreCoverage = useMemo(
+    () => showOnlyPackageIssues ? selfScoreCoverage.filter((item) => item.status !== "ready") : selfScoreCoverage,
+    [selfScoreCoverage, showOnlyPackageIssues]
+  );
+  const visibleActionPlanCoverage = useMemo(
+    () => showOnlyPackageIssues ? actionPlanCoverage.filter((item) => item.status !== "ready") : actionPlanCoverage,
+    [actionPlanCoverage, showOnlyPackageIssues]
+  );
+  const visibleReviewCoverage = useMemo(
+    () => showOnlyPackageIssues ? reviewCoverage.filter((item) => item.status !== "ready") : reviewCoverage,
+    [reviewCoverage, showOnlyPackageIssues]
+  );
+  const packageIssueSummary = useMemo(() => {
+    return [
+      { key: "readiness", label: "Readiness", count: packageReadiness.items.filter((item) => item.status !== "ready").length },
+      { key: "evidence", label: "Bukti", count: evidenceCoverage.filter((item) => item.status !== "ready").length },
+      { key: "led", label: "LED", count: ledCoverage.filter((item) => item.status !== "ready").length },
+      { key: "self_score", label: "Self Score", count: selfScoreCoverage.filter((item) => item.status !== "ready").length },
+      { key: "action_plan", label: "Rencana", count: actionPlanCoverage.filter((item) => item.status !== "ready").length },
+      { key: "review", label: "Review", count: reviewCoverage.filter((item) => item.status !== "ready").length },
+    ];
+  }, [actionPlanCoverage, evidenceCoverage, ledCoverage, packageReadiness.items, reviewCoverage, selfScoreCoverage]);
+
+  function shouldShowPackageSection(key: string) {
+    return packageIssueCategory === "all" || packageIssueCategory === key;
+  }
 
   async function postJson(path: string, body: Record<string, unknown>, successMessage: string, method = "POST") {
     setSaving(true);
@@ -596,23 +921,37 @@ export function AccreditationPage() {
   function createEvidence(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    postJson(
-      "/accreditation/evidence",
-      {
-        period_id: form.get("period_id"),
-        criteria_code: form.get("criteria_code"),
-        title: form.get("title"),
-        source_module: form.get("source_module"),
-        status: form.get("status"),
-        file_name: form.get("file_name"),
-        file_url: form.get("file_url"),
-        linked_lkps_entry_id: form.get("linked_lkps_entry_id") || null,
-        linked_led_content_id: form.get("linked_led_content_id") || null,
-        notes: form.get("notes"),
-      },
-      "Bukti fisik berhasil disimpan."
-    );
-    event.currentTarget.reset();
+    const file = form.get("file");
+
+    if (file instanceof File && file.size === 0) {
+      form.delete("file");
+    }
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+
+    clientApiRequest("/accreditation/evidence", {
+      method: "POST",
+      body: form,
+    })
+      .then(async (response) => {
+        const payload = await response.json();
+
+        if (!response.ok || (payload && payload.success === false)) {
+          throw new Error(payload?.message || "Bukti fisik gagal disimpan.");
+        }
+
+        setMessage("Bukti fisik berhasil disimpan.");
+        await loadSummary();
+        event.currentTarget.reset();
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Bukti fisik gagal disimpan.");
+      })
+      .finally(() => {
+        setSaving(false);
+      });
   }
 
   function createSelfScore(event: FormEvent<HTMLFormElement>) {
@@ -730,6 +1069,435 @@ export function AccreditationPage() {
     event.currentTarget.reset();
   }
 
+  function normalizeIssueKey(value: string) {
+    return value.trim().toLowerCase();
+  }
+
+  function hasOpenSubmissionCheck(row: Pick<SubmissionCheckDraft, "category" | "title">) {
+    const closedStatuses = ["verified", "approved", "done", "closed"];
+    const category = normalizeIssueKey(row.category);
+    const title = normalizeIssueKey(row.title);
+
+    return activePeriodSubmissionChecks.some((item) => (
+      normalizeIssueKey(item.category) === category &&
+      normalizeIssueKey(item.title) === title &&
+      !closedStatuses.includes(item.status)
+    ));
+  }
+
+  function hasOpenActionPlan(row: Pick<ActionPlanDraft, "criteria_code" | "source" | "title">) {
+    const closedStatuses = ["done", "closed", "completed"];
+    const criteriaCode = normalizeIssueKey(row.criteria_code);
+    const source = normalizeIssueKey(row.source);
+    const title = normalizeIssueKey(row.title);
+
+    return activePeriodActionPlans.some((item) => (
+      normalizeIssueKey(item.criteria_code) === criteriaCode &&
+      normalizeIssueKey(item.source) === source &&
+      normalizeIssueKey(item.title) === title &&
+      !closedStatuses.includes(item.status)
+    ));
+  }
+
+  function readinessCheckIdentity(item: AccreditationReadinessItem) {
+    return { category: readinessCategory(item.key), title: `Tindak lanjut ${item.label}` };
+  }
+
+  function evidenceCheckIdentity(item: EvidenceCoverageItem) {
+    return { category: "BUKTI", title: `Lengkapi bukti ${item.code}` };
+  }
+
+  function ledCheckIdentity(item: LedCoverageItem) {
+    return { category: "LED", title: `Lengkapi LED ${item.criteriaCode}` };
+  }
+
+  function selfScoreCheckIdentity(item: SelfScoreCoverageItem) {
+    return { category: "SUBMIT", title: `Lengkapi self-assessment ${item.code}` };
+  }
+
+  function reviewCheckIdentity(item: ReviewCoverageItem) {
+    return { category: "REVIEW", title: `Selesaikan review ${item.label}` };
+  }
+
+  function actionPlanIdentity(item: ActionPlanCoverageItem) {
+    return { criteria_code: item.code, source: "self_score", title: `Tutup gap ${item.code}` };
+  }
+
+  function createSubmissionCheckFromReadiness(item: AccreditationReadinessItem) {
+    const identity = readinessCheckIdentity(item);
+    const row: SubmissionCheckDraft = {
+      period_id: activePackagePeriodId,
+      category: identity.category,
+      title: identity.title,
+      owner: "admin-akreditasi@spmi.local",
+      verifier: "reviewer@spmi.local",
+      status: "pending",
+      due_date: null,
+      evidence_id: null,
+      notes: `${item.label}: ${item.status}${item.open ? `, ${item.open} open` : ""}.`,
+    };
+
+    if (hasOpenSubmissionCheck(row)) {
+      setMessage("Checklist untuk issue ini sudah ada.");
+      setError("");
+      return;
+    }
+
+    postJson(
+      "/accreditation/submission-checks",
+      row,
+      "Checklist dari readiness berhasil dibuat."
+    );
+  }
+
+  function createSubmissionCheckFromCoverage(item: EvidenceCoverageItem) {
+    const identity = evidenceCheckIdentity(item);
+    const row: SubmissionCheckDraft = {
+      period_id: activePackagePeriodId,
+      category: identity.category,
+      title: identity.title,
+      owner: "admin-akreditasi@spmi.local",
+      verifier: "reviewer@spmi.local",
+      status: "pending",
+      due_date: null,
+      evidence_id: null,
+      notes: `${item.code} membutuhkan ${item.required} bukti valid. Saat ini ${item.valid} valid dari ${item.total} bukti.`,
+    };
+
+    if (hasOpenSubmissionCheck(row)) {
+      setMessage("Checklist untuk issue ini sudah ada.");
+      setError("");
+      return;
+    }
+
+    postJson(
+      "/accreditation/submission-checks",
+      row,
+      "Checklist gap bukti berhasil dibuat."
+    );
+  }
+
+  function createSubmissionCheckFromLedCoverage(item: LedCoverageItem) {
+    const identity = ledCheckIdentity(item);
+    const row: SubmissionCheckDraft = {
+      period_id: activePackagePeriodId,
+      category: identity.category,
+      title: identity.title,
+      owner: "admin-akreditasi@spmi.local",
+      verifier: "reviewer@spmi.local",
+      status: "pending",
+      due_date: null,
+      evidence_id: null,
+      notes: `${item.criteriaCode} - ${item.title}: ${item.total} draft, status terakhir ${item.latestStatus}.`,
+    };
+
+    if (hasOpenSubmissionCheck(row)) {
+      setMessage("Checklist untuk issue ini sudah ada.");
+      setError("");
+      return;
+    }
+
+    postJson(
+      "/accreditation/submission-checks",
+      row,
+      "Checklist gap LED berhasil dibuat."
+    );
+  }
+
+  function createSubmissionCheckFromSelfScoreCoverage(item: SelfScoreCoverageItem) {
+    const identity = selfScoreCheckIdentity(item);
+    const row: SubmissionCheckDraft = {
+      period_id: activePackagePeriodId,
+      category: identity.category,
+      title: identity.title,
+      owner: "admin-akreditasi@spmi.local",
+      verifier: "reviewer@spmi.local",
+      status: "pending",
+      due_date: null,
+      evidence_id: null,
+      notes: item.score === null
+        ? `${item.code} belum memiliki skor mandiri.`
+        : `${item.code} skor ${item.score}/${item.target}, gap ${item.gap || 0}.`,
+    };
+
+    if (hasOpenSubmissionCheck(row)) {
+      setMessage("Checklist untuk issue ini sudah ada.");
+      setError("");
+      return;
+    }
+
+    postJson(
+      "/accreditation/submission-checks",
+      row,
+      "Checklist gap self-assessment berhasil dibuat."
+    );
+  }
+
+  function createActionPlanFromCoverage(item: ActionPlanCoverageItem) {
+    const identity = actionPlanIdentity(item);
+    const row: ActionPlanDraft = {
+      period_id: activePackagePeriodId,
+      criteria_code: identity.criteria_code,
+      title: identity.title,
+      source: identity.source,
+      owner: "admin-akreditasi@spmi.local",
+      priority: item.gap >= 1 ? "high" : "medium",
+      status: "todo",
+      target_date: null,
+      progress: 0,
+      action: `Identifikasi bukti, narasi LED, dan tindak lanjut untuk menutup gap ${item.code}.`,
+      expected_output: `Gap ${item.code} turun sampai target self-assessment terpenuhi.`,
+      notes: `${item.code} memiliki gap ${item.gap}.`,
+    };
+
+    if (hasOpenActionPlan(row)) {
+      setMessage("Rencana perbaikan untuk gap ini sudah ada.");
+      setError("");
+      return;
+    }
+
+    postJson(
+      "/accreditation/action-plans",
+      row,
+      "Rencana perbaikan dari gap berhasil dibuat."
+    );
+  }
+
+  function createSubmissionCheckFromReviewCoverage(item: ReviewCoverageItem) {
+    const identity = reviewCheckIdentity(item);
+    const row: SubmissionCheckDraft = {
+      period_id: activePackagePeriodId,
+      category: identity.category,
+      title: identity.title,
+      owner: "admin-akreditasi@spmi.local",
+      verifier: "reviewer@spmi.local",
+      status: "pending",
+      due_date: null,
+      evidence_id: null,
+      notes: `${item.label}: ${item.approved} approved, ${item.open} open, ${item.missing} belum direview dari ${item.total} item.`,
+    };
+
+    if (hasOpenSubmissionCheck(row)) {
+      setMessage("Checklist untuk issue ini sudah ada.");
+      setError("");
+      return;
+    }
+
+    postJson(
+      "/accreditation/submission-checks",
+      row,
+      "Checklist gap review berhasil dibuat."
+    );
+  }
+
+  function buildVisibleIssueChecklistRows() {
+    const rows: SubmissionCheckDraft[] = [];
+
+    if (shouldShowPackageSection("readiness")) {
+      visiblePackageReadinessItems.filter((item) => item.status !== "ready").forEach((item) => {
+        const identity = readinessCheckIdentity(item);
+        rows.push({
+          period_id: activePackagePeriodId,
+          category: identity.category,
+          title: identity.title,
+          owner: "admin-akreditasi@spmi.local",
+          verifier: "reviewer@spmi.local",
+          status: "pending",
+          due_date: null,
+          evidence_id: null,
+          notes: `${item.label}: ${item.status}${item.open ? `, ${item.open} open` : ""}.`,
+        });
+      });
+    }
+
+    if (shouldShowPackageSection("evidence")) {
+      visibleEvidenceCoverage.filter((item) => item.status !== "ready").forEach((item) => {
+        const identity = evidenceCheckIdentity(item);
+        rows.push({
+          period_id: activePackagePeriodId,
+          category: identity.category,
+          title: identity.title,
+          owner: "admin-akreditasi@spmi.local",
+          verifier: "reviewer@spmi.local",
+          status: "pending",
+          due_date: null,
+          evidence_id: null,
+          notes: `${item.code} membutuhkan ${item.required} bukti valid. Saat ini ${item.valid} valid dari ${item.total} bukti.`,
+        });
+      });
+    }
+
+    if (shouldShowPackageSection("led")) {
+      visibleLedCoverage.filter((item) => item.status !== "ready").forEach((item) => {
+        const identity = ledCheckIdentity(item);
+        rows.push({
+          period_id: activePackagePeriodId,
+          category: identity.category,
+          title: identity.title,
+          owner: "admin-akreditasi@spmi.local",
+          verifier: "reviewer@spmi.local",
+          status: "pending",
+          due_date: null,
+          evidence_id: null,
+          notes: `${item.criteriaCode} - ${item.title}: ${item.total} draft, status terakhir ${item.latestStatus}.`,
+        });
+      });
+    }
+
+    if (shouldShowPackageSection("self_score")) {
+      visibleSelfScoreCoverage.filter((item) => item.status !== "ready").forEach((item) => {
+        const identity = selfScoreCheckIdentity(item);
+        rows.push({
+          period_id: activePackagePeriodId,
+          category: identity.category,
+          title: identity.title,
+          owner: "admin-akreditasi@spmi.local",
+          verifier: "reviewer@spmi.local",
+          status: "pending",
+          due_date: null,
+          evidence_id: null,
+          notes: item.score === null
+            ? `${item.code} belum memiliki skor mandiri.`
+            : `${item.code} skor ${item.score}/${item.target}, gap ${item.gap || 0}.`,
+        });
+      });
+    }
+
+    if (shouldShowPackageSection("review")) {
+      visibleReviewCoverage.filter((item) => item.status !== "ready").forEach((item) => {
+        const identity = reviewCheckIdentity(item);
+        rows.push({
+          period_id: activePackagePeriodId,
+          category: identity.category,
+          title: identity.title,
+          owner: "admin-akreditasi@spmi.local",
+          verifier: "reviewer@spmi.local",
+          status: "pending",
+          due_date: null,
+          evidence_id: null,
+          notes: `${item.label}: ${item.approved} approved, ${item.open} open, ${item.missing} belum direview dari ${item.total} item.`,
+        });
+      });
+    }
+
+    return rows;
+  }
+
+  function buildVisibleActionPlanRows() {
+    if (!shouldShowPackageSection("action_plan")) return [];
+
+    return visibleActionPlanCoverage
+      .filter((item) => item.status !== "ready")
+      .map((item) => {
+        const identity = actionPlanIdentity(item);
+
+        return {
+          period_id: activePackagePeriodId,
+          criteria_code: identity.criteria_code,
+          title: identity.title,
+          source: identity.source,
+          owner: "admin-akreditasi@spmi.local",
+          priority: item.gap >= 1 ? "high" : "medium",
+          status: "todo",
+          target_date: null,
+          progress: 0,
+          action: `Identifikasi bukti, narasi LED, dan tindak lanjut untuk menutup gap ${item.code}.`,
+          expected_output: `Gap ${item.code} turun sampai target self-assessment terpenuhi.`,
+          notes: `${item.code} memiliki gap ${item.gap}.`,
+        };
+      });
+  }
+
+  async function createVisibleIssueChecklists() {
+    const rows = buildVisibleIssueChecklistRows();
+
+    if (rows.length === 0) {
+      setMessage("Tidak ada issue terlihat untuk dibuat checklist.");
+      setError("");
+      return;
+    }
+
+    const newRows = rows.filter((row) => !hasOpenSubmissionCheck(row));
+    const skipped = rows.length - newRows.length;
+
+    if (newRows.length === 0) {
+      setMessage(`${skipped} checklist issue terlihat sudah ada.`);
+      setError("");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+
+    try {
+      for (const row of newRows) {
+        const response = await clientApiRequest("/accreditation/submission-checks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(row),
+        });
+        const payload = await response.json();
+
+        if (!response.ok || (payload && payload.success === false)) {
+          throw new Error(payload?.message || "Checklist issue gagal dibuat.");
+        }
+      }
+
+      setMessage(`${newRows.length} checklist issue berhasil dibuat${skipped ? `, ${skipped} dilewati karena sudah ada` : ""}.`);
+      await loadSummary();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Checklist issue gagal dibuat.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function createVisibleActionPlans() {
+    const rows = buildVisibleActionPlanRows();
+
+    if (rows.length === 0) {
+      setMessage("Tidak ada issue rencana terlihat untuk dibuat action plan.");
+      setError("");
+      return;
+    }
+
+    const newRows = rows.filter((row) => !hasOpenActionPlan(row));
+    const skipped = rows.length - newRows.length;
+
+    if (newRows.length === 0) {
+      setMessage(`${skipped} rencana perbaikan terlihat sudah ada.`);
+      setError("");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+
+    try {
+      for (const row of newRows) {
+        const response = await clientApiRequest("/accreditation/action-plans", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(row),
+        });
+        const payload = await response.json();
+
+        if (!response.ok || (payload && payload.success === false)) {
+          throw new Error(payload?.message || "Rencana perbaikan issue gagal dibuat.");
+        }
+      }
+
+      setMessage(`${newRows.length} rencana perbaikan issue berhasil dibuat${skipped ? `, ${skipped} dilewati karena sudah ada` : ""}.`);
+      await loadSummary();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Rencana perbaikan issue gagal dibuat.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function downloadExport(exportId: string, fileName: string) {
     setMessage("");
     setError("");
@@ -755,6 +1523,39 @@ export function AccreditationPage() {
       setError(err instanceof Error ? err.message : "Paket export gagal diunduh.");
     }
   }
+
+  const visibleIssueChecklistRows = buildVisibleIssueChecklistRows();
+  const visibleNewIssueChecklistCount = visibleIssueChecklistRows.filter((row) => !hasOpenSubmissionCheck(row)).length;
+  const visibleExistingIssueChecklistCount = visibleIssueChecklistRows.length - visibleNewIssueChecklistCount;
+  const visibleActionPlanRows = buildVisibleActionPlanRows();
+  const visibleNewActionPlanCount = visibleActionPlanRows.filter((row) => !hasOpenActionPlan(row)).length;
+  const visibleExistingActionPlanCount = visibleActionPlanRows.length - visibleNewActionPlanCount;
+  const packageIssueActionSummary: Record<string, { new: number; existing: number }> = {
+    readiness: {
+      new: packageReadiness.items.filter((item) => item.status !== "ready" && !hasOpenSubmissionCheck(readinessCheckIdentity(item))).length,
+      existing: packageReadiness.items.filter((item) => item.status !== "ready" && hasOpenSubmissionCheck(readinessCheckIdentity(item))).length,
+    },
+    evidence: {
+      new: evidenceCoverage.filter((item) => item.status !== "ready" && !hasOpenSubmissionCheck(evidenceCheckIdentity(item))).length,
+      existing: evidenceCoverage.filter((item) => item.status !== "ready" && hasOpenSubmissionCheck(evidenceCheckIdentity(item))).length,
+    },
+    led: {
+      new: ledCoverage.filter((item) => item.status !== "ready" && !hasOpenSubmissionCheck(ledCheckIdentity(item))).length,
+      existing: ledCoverage.filter((item) => item.status !== "ready" && hasOpenSubmissionCheck(ledCheckIdentity(item))).length,
+    },
+    self_score: {
+      new: selfScoreCoverage.filter((item) => item.status !== "ready" && !hasOpenSubmissionCheck(selfScoreCheckIdentity(item))).length,
+      existing: selfScoreCoverage.filter((item) => item.status !== "ready" && hasOpenSubmissionCheck(selfScoreCheckIdentity(item))).length,
+    },
+    action_plan: {
+      new: actionPlanCoverage.filter((item) => item.status !== "ready" && !hasOpenActionPlan(actionPlanIdentity(item))).length,
+      existing: actionPlanCoverage.filter((item) => item.status !== "ready" && hasOpenActionPlan(actionPlanIdentity(item))).length,
+    },
+    review: {
+      new: reviewCoverage.filter((item) => item.status !== "ready" && !hasOpenSubmissionCheck(reviewCheckIdentity(item))).length,
+      existing: reviewCoverage.filter((item) => item.status !== "ready" && hasOpenSubmissionCheck(reviewCheckIdentity(item))).length,
+    },
+  };
 
   return (
     <>
@@ -999,7 +1800,7 @@ export function AccreditationPage() {
                 <div className="form-row">
                   <div className="form-group col-md-6">
                     <label>Periode</label>
-                    <select className="form-control" name="period_id" defaultValue={firstPeriodId}>
+                    <select className="form-control" name="period_id" value={activePackagePeriodId} onChange={(event) => setPackagePeriodId(event.target.value)}>
                       {summary.periods.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
                     </select>
                   </div>
@@ -1967,7 +2768,7 @@ export function AccreditationPage() {
               ))}
               <hr />
               <h5 id="checklist-submit-akreditasi">Checklist Submit</h5>
-              <form className="mb-4" onSubmit={createSubmissionCheck}>
+              <form className="mb-4" key={`checklist-${activePackagePeriodId}`} onSubmit={createSubmissionCheck}>
                 <div className="form-row">
                   <div className="form-group col-md-6">
                     <label>Periode</label>
@@ -2018,7 +2819,7 @@ export function AccreditationPage() {
                     <label>Bukti Terkait</label>
                     <select className="form-control" name="evidence_id" defaultValue="">
                       <option value="">Tanpa bukti</option>
-                      {summary.evidence.map((item) => <option value={item.id} key={item.id}>{item.id} - {item.title}</option>)}
+                      {activePeriodEvidence.map((item) => <option value={item.id} key={item.id}>{item.id} - {item.title}</option>)}
                     </select>
                   </div>
                 </div>
@@ -2030,9 +2831,9 @@ export function AccreditationPage() {
                   <i className="la la-clipboard-check mr-1"></i> Tambah Checklist
                 </button>
               </form>
-              {summary.submissionChecks.length === 0 ? (
+              {activePeriodSubmissionChecks.length === 0 ? (
                 <p className="text-muted">Checklist submit belum tersedia.</p>
-              ) : summary.submissionChecks.map((item) => (
+              ) : activePeriodSubmissionChecks.map((item) => (
                 <div className="border rounded p-3 mb-3" key={item.id}>
                   <div className="d-flex justify-content-between">
                     <strong>{item.title}</strong>
@@ -2047,12 +2848,324 @@ export function AccreditationPage() {
                 </div>
               ))}
               <hr />
-              <h5>Export Paket Akreditasi</h5>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <h5 className="mb-0">Export Paket Akreditasi</h5>
+                <div>
+                  <button className="btn btn-outline-primary btn-sm mr-2" type="button" disabled={saving || visibleNewIssueChecklistCount === 0} onClick={createVisibleIssueChecklists}>
+                    <i className="la la-clipboard-check mr-1"></i> Checklist Terlihat ({visibleNewIssueChecklistCount})
+                  </button>
+                  {shouldShowPackageSection("action_plan") ? (
+                    <button className="btn btn-outline-primary btn-sm mr-2" type="button" disabled={saving || visibleNewActionPlanCount === 0} onClick={createVisibleActionPlans}>
+                      <i className="la la-tools mr-1"></i> Rencana Terlihat ({visibleNewActionPlanCount})
+                    </button>
+                  ) : null}
+                  {packageIssueCategory !== "all" ? (
+                    <button className="btn btn-outline-secondary btn-sm mr-2" type="button" onClick={() => setPackageIssueCategory("all")}>
+                      <i className="la la-th-list mr-1"></i> Semua Kategori
+                    </button>
+                  ) : null}
+                  <button className="btn btn-outline-secondary btn-sm" type="button" onClick={() => setShowOnlyPackageIssues((value) => !value)}>
+                    <i className={`la ${showOnlyPackageIssues ? "la-list" : "la-filter"} mr-1`}></i>
+                    {showOnlyPackageIssues ? "Semua Cek" : "Issue Saja"}
+                  </button>
+                </div>
+              </div>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <small className="text-muted">
+                  Checklist terlihat: {visibleNewIssueChecklistCount} baru, {visibleExistingIssueChecklistCount} sudah ada.
+                </small>
+                {shouldShowPackageSection("action_plan") ? (
+                  <small className="text-muted">
+                    Rencana terlihat: {visibleNewActionPlanCount} baru, {visibleExistingActionPlanCount} sudah ada.
+                  </small>
+                ) : null}
+              </div>
+              <div className="row mb-3">
+                {packageIssueSummary.map((item) => (
+                  <div className="col-md-2 col-6" key={item.label}>
+                    <button
+                      className={`btn btn-block ${packageIssueCategory === item.key ? "btn-primary" : "btn-outline-secondary"} p-2`}
+                      type="button"
+                      onClick={() => {
+                        setPackageIssueCategory((current) => current === item.key ? "all" : item.key);
+                        setShowOnlyPackageIssues(true);
+                      }}
+                    >
+                      <strong>{item.count}</strong>
+                      <br />
+                      <small>{item.label}</small>
+                      <br />
+                      <small>{packageIssueActionSummary[item.key]?.new || 0} baru / {packageIssueActionSummary[item.key]?.existing || 0} ada</small>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {shouldShowPackageSection("readiness") ? (
+              <div className="border rounded p-3 mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <strong>Kesiapan Paket</strong>
+                  <span className={`badge ${statusBadge(packageReadiness.riskCount ? "risk" : packageReadiness.warningCount ? "warning" : "ready")}`}>
+                    {packageReadiness.riskCount ? `${packageReadiness.riskCount} risk` : packageReadiness.warningCount ? `${packageReadiness.warningCount} warning` : "ready"}
+                  </span>
+                </div>
+                <div className="row text-center mb-3">
+                  <div className="col-3">
+                    <strong>{packageReadiness.evidence.total}</strong>
+                    <br />
+                    <small>Total Bukti</small>
+                  </div>
+                  <div className="col-3">
+                    <strong>{packageReadiness.evidence.valid}</strong>
+                    <br />
+                    <small>Valid</small>
+                  </div>
+                  <div className="col-3">
+                    <strong>{packageReadiness.evidence.draft}</strong>
+                    <br />
+                    <small>Draft</small>
+                  </div>
+                  <div className="col-3">
+                    <strong>{packageReadiness.evidence.revision}</strong>
+                    <br />
+                    <small>Revisi</small>
+                  </div>
+                </div>
+                {visiblePackageReadinessItems.length === 0 ? (
+                  <p className="text-muted mb-0">Tidak ada issue readiness.</p>
+                ) : visiblePackageReadinessItems.map((item) => (
+                  <div className="d-flex justify-content-between align-items-center border-bottom py-1" key={item.key}>
+                    <small>{item.label}</small>
+                    <div className="d-flex align-items-center">
+                      <small className="mr-2">{item.count || 0}{item.open ? ` / ${item.open} open` : ""}</small>
+                      <span className={`badge ${statusBadge(item.status)} mr-2`}>{item.status}</span>
+                      {item.status !== "ready" ? (
+                        <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenSubmissionCheck(readinessCheckIdentity(item))} onClick={() => createSubmissionCheckFromReadiness(item)}>
+                          <i className={`la ${hasOpenSubmissionCheck(readinessCheckIdentity(item)) ? "la-check" : "la-plus"} mr-1`}></i>
+                          {hasOpenSubmissionCheck(readinessCheckIdentity(item)) ? "Sudah Ada" : "Checklist"}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              ) : null}
+              {shouldShowPackageSection("evidence") ? (
+              <div className="table-responsive mb-4">
+                <table className="table table-sm table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Kriteria</th>
+                      <th>Bukti</th>
+                      <th>Status</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleEvidenceCoverage.length === 0 ? (
+                      <tr><td colSpan={4} className="text-center">{showOnlyPackageIssues ? "Tidak ada issue bukti." : "Coverage bukti belum tersedia."}</td></tr>
+                    ) : visibleEvidenceCoverage.map((item) => (
+                      <tr key={item.code}>
+                        <td>
+                          <strong>{item.code}</strong>
+                          <br />
+                          <small>{item.title}</small>
+                        </td>
+                        <td>
+                          <strong>{item.valid}/{item.required}</strong> valid
+                          <br />
+                          <small>{item.total} total{item.open ? `, ${item.open} open` : ""}</small>
+                        </td>
+                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td>
+                          {item.status !== "ready" ? (
+                            <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenSubmissionCheck(evidenceCheckIdentity(item))} onClick={() => createSubmissionCheckFromCoverage(item)}>
+                              <i className={`la ${hasOpenSubmissionCheck(evidenceCheckIdentity(item)) ? "la-check" : "la-plus"} mr-1`}></i>
+                              {hasOpenSubmissionCheck(evidenceCheckIdentity(item)) ? "Sudah Ada" : "Checklist"}
+                            </button>
+                          ) : <span className="text-muted">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              ) : null}
+              {shouldShowPackageSection("led") ? (
+              <div className="table-responsive mb-4">
+                <table className="table table-sm table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Section LED</th>
+                      <th>Draft</th>
+                      <th>Status</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleLedCoverage.length === 0 ? (
+                      <tr><td colSpan={4} className="text-center">{showOnlyPackageIssues ? "Tidak ada issue LED." : "Coverage LED belum tersedia."}</td></tr>
+                    ) : visibleLedCoverage.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <strong>{item.criteriaCode}</strong>
+                          <br />
+                          <small>{item.title}</small>
+                        </td>
+                        <td>
+                          <strong>{item.ready}/{item.total}</strong> reviewed
+                          <br />
+                          <small>Status terakhir {item.latestStatus}</small>
+                        </td>
+                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td>
+                          {item.status !== "ready" ? (
+                            <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenSubmissionCheck(ledCheckIdentity(item))} onClick={() => createSubmissionCheckFromLedCoverage(item)}>
+                              <i className={`la ${hasOpenSubmissionCheck(ledCheckIdentity(item)) ? "la-check" : "la-plus"} mr-1`}></i>
+                              {hasOpenSubmissionCheck(ledCheckIdentity(item)) ? "Sudah Ada" : "Checklist"}
+                            </button>
+                          ) : <span className="text-muted">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              ) : null}
+              {shouldShowPackageSection("self_score") ? (
+              <div className="table-responsive mb-4">
+                <table className="table table-sm table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Kriteria</th>
+                      <th>Skor</th>
+                      <th>Status</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleSelfScoreCoverage.length === 0 ? (
+                      <tr><td colSpan={4} className="text-center">{showOnlyPackageIssues ? "Tidak ada issue self-assessment." : "Coverage self-assessment belum tersedia."}</td></tr>
+                    ) : visibleSelfScoreCoverage.map((item) => (
+                      <tr key={item.code}>
+                        <td>
+                          <strong>{item.code}</strong>
+                          <br />
+                          <small>{item.title}</small>
+                        </td>
+                        <td>
+                          <strong>{item.score === null ? "-" : item.score}/{item.target}</strong>
+                          <br />
+                          <small>Gap {item.gap === null ? "-" : item.gap} | {item.reviewer}</small>
+                        </td>
+                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td>
+                          {item.status !== "ready" ? (
+                            <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenSubmissionCheck(selfScoreCheckIdentity(item))} onClick={() => createSubmissionCheckFromSelfScoreCoverage(item)}>
+                              <i className={`la ${hasOpenSubmissionCheck(selfScoreCheckIdentity(item)) ? "la-check" : "la-plus"} mr-1`}></i>
+                              {hasOpenSubmissionCheck(selfScoreCheckIdentity(item)) ? "Sudah Ada" : "Checklist"}
+                            </button>
+                          ) : <span className="text-muted">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              ) : null}
+              {shouldShowPackageSection("action_plan") ? (
+              <div className="table-responsive mb-4">
+                <table className="table table-sm table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Kriteria</th>
+                      <th>Rencana</th>
+                      <th>Status</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleActionPlanCoverage.length === 0 ? (
+                      <tr><td colSpan={4} className="text-center">{showOnlyPackageIssues ? "Tidak ada issue rencana perbaikan." : "Coverage rencana perbaikan belum tersedia."}</td></tr>
+                    ) : visibleActionPlanCoverage.map((item) => (
+                      <tr key={item.code}>
+                        <td>
+                          <strong>{item.code}</strong>
+                          <br />
+                          <small>{item.title}</small>
+                        </td>
+                        <td>
+                          <strong>{item.done}/{item.total}</strong> selesai
+                          <br />
+                          <small>Gap {item.gap}{item.open ? `, ${item.open} open` : ""}</small>
+                        </td>
+                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td>
+                          {item.status !== "ready" ? (
+                            <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenActionPlan(actionPlanIdentity(item))} onClick={() => createActionPlanFromCoverage(item)}>
+                              <i className={`la ${hasOpenActionPlan(actionPlanIdentity(item)) ? "la-check" : "la-plus"} mr-1`}></i>
+                              {hasOpenActionPlan(actionPlanIdentity(item)) ? "Sudah Ada" : "Rencana"}
+                            </button>
+                          ) : <span className="text-muted">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              ) : null}
+              {shouldShowPackageSection("review") ? (
+              <div className="table-responsive mb-4">
+                <table className="table table-sm table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Entitas</th>
+                      <th>Review</th>
+                      <th>Status</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleReviewCoverage.length === 0 ? (
+                      <tr><td colSpan={4} className="text-center">{showOnlyPackageIssues ? "Tidak ada issue review." : "Coverage review belum tersedia."}</td></tr>
+                    ) : visibleReviewCoverage.map((item) => (
+                      <tr key={item.key}>
+                        <td>
+                          <strong>{item.label}</strong>
+                          <br />
+                          <small>{item.total} item</small>
+                        </td>
+                        <td>
+                          <strong>{item.approved}/{item.total}</strong> approved
+                          <br />
+                          <small>{item.open} open, {item.missing} belum direview</small>
+                        </td>
+                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td>
+                          {item.status !== "ready" ? (
+                            <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenSubmissionCheck(reviewCheckIdentity(item))} onClick={() => createSubmissionCheckFromReviewCoverage(item)}>
+                              <i className={`la ${hasOpenSubmissionCheck(reviewCheckIdentity(item)) ? "la-check" : "la-plus"} mr-1`}></i>
+                              {hasOpenSubmissionCheck(reviewCheckIdentity(item)) ? "Sudah Ada" : "Checklist"}
+                            </button>
+                          ) : <span className="text-muted">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              ) : null}
               <form className="mb-4" onSubmit={createExport}>
+                <div className={`alert ${packageGate.status === "ready" ? "alert-outline-success" : packageGate.status === "warning" ? "alert-outline-warning" : "alert-outline-danger"}`}>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <strong>{packageGate.label}</strong>
+                    <span className={`badge ${statusBadge(packageGate.status)}`}>{packageGate.status}</span>
+                  </div>
+                  <small>{packageGate.riskCount} risk, {packageGate.warningCount} warning dari seluruh cek kesiapan paket.</small>
+                </div>
                 <div className="form-row">
                   <div className="form-group col-md-7">
                     <label>Periode</label>
-                    <select className="form-control" name="period_id" defaultValue={firstPeriodId}>
+                    <select className="form-control" name="period_id" value={activePackagePeriodId} onChange={(event) => setPackagePeriodId(event.target.value)}>
                       {summary.periods.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
                     </select>
                   </div>
@@ -2065,13 +3178,13 @@ export function AccreditationPage() {
                     </select>
                   </div>
                 </div>
-                <button className="btn btn-outline-primary" type="submit" disabled={saving}>
-                  <i className="la la-file-export mr-1"></i> Generate Paket
+                <button className={`btn ${packageGate.status === "ready" ? "btn-primary" : "btn-outline-primary"}`} type="submit" disabled={saving}>
+                  <i className="la la-file-export mr-1"></i> {packageGate.label}
                 </button>
               </form>
-              {summary.exports.length === 0 ? (
+              {activePeriodExports.length === 0 ? (
                 <p className="text-muted">Paket export belum tersedia.</p>
-              ) : summary.exports.map((item) => (
+              ) : activePeriodExports.map((item) => (
                 <div className="border rounded p-3 mb-3" key={item.id}>
                   <div className="d-flex justify-content-between">
                     <strong>{item.file_name}</strong>
@@ -2102,11 +3215,11 @@ export function AccreditationPage() {
               ))}
               <hr />
               <h5>Bukti Fisik</h5>
-              <form className="mb-4" onSubmit={createEvidence}>
+              <form className="mb-4" key={`evidence-${activePackagePeriodId}`} onSubmit={createEvidence}>
                 <div className="form-row">
                   <div className="form-group col-md-6">
                     <label>Periode</label>
-                    <select className="form-control" name="period_id" defaultValue={firstPeriodId}>
+                    <select className="form-control" name="period_id" value={activePackagePeriodId} onChange={(event) => setPackagePeriodId(event.target.value)}>
                       {summary.periods.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
                     </select>
                   </div>
@@ -2147,22 +3260,26 @@ export function AccreditationPage() {
                   </div>
                 </div>
                 <div className="form-group">
+                  <label>Upload File</label>
+                  <input className="form-control" name="file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,image/png,image/jpeg,image/webp" />
+                </div>
+                <div className="form-group">
                   <label>Link File</label>
                   <input className="form-control" name="file_url" placeholder="https://repository/bukti.pdf" />
                 </div>
                 <div className="form-row">
                   <div className="form-group col-md-6">
                     <label>Relasi LKPS</label>
-                    <select className="form-control" name="linked_lkps_entry_id" defaultValue={firstLkpsEntryId}>
+                    <select className="form-control" name="linked_lkps_entry_id" defaultValue="">
                       <option value="">Tidak ditautkan</option>
-                      {summary.lkpsEntries.map((item) => <option value={item.id} key={item.id}>{item.section?.code || item.section_id} - {item.label}</option>)}
+                      {activePeriodLkpsEntries.map((item) => <option value={item.id} key={item.id}>{item.section?.code || item.section_id} - {item.label}</option>)}
                     </select>
                   </div>
                   <div className="form-group col-md-6">
                     <label>Relasi LED</label>
-                    <select className="form-control" name="linked_led_content_id" defaultValue={firstLedContentId}>
+                    <select className="form-control" name="linked_led_content_id" defaultValue="">
                       <option value="">Tidak ditautkan</option>
-                      {summary.ledContents.map((item) => <option value={item.id} key={item.id}>{item.section?.criteria_code || item.section_id} - v{item.version}</option>)}
+                      {activePeriodLedContents.map((item) => <option value={item.id} key={item.id}>{item.section?.criteria_code || item.section_id} - v{item.version}</option>)}
                     </select>
                   </div>
                 </div>
@@ -2174,7 +3291,7 @@ export function AccreditationPage() {
                   <i className="la la-paperclip mr-1"></i> Simpan Bukti
                 </button>
               </form>
-              {summary.evidence.map((item) => (
+              {activePeriodEvidence.map((item) => (
                 <div className="border-bottom py-2" key={item.id}>
                   <div className="d-flex justify-content-between">
                     <strong>{item.criteria_code} - {item.title}</strong>
@@ -2186,6 +3303,11 @@ export function AccreditationPage() {
                     {item.lkps_entry ? ` | LKPS: ${item.lkps_entry.label}` : ""}
                     {item.led_content ? ` | LED: ${item.led_content.section?.criteria_code || item.led_content.section_id} v${item.led_content.version}` : ""}
                   </small>
+                  {item.file_url ? (
+                    <p className="mb-0 mt-1">
+                      <a href={item.file_url} target="_blank" rel="noreferrer">{item.file_url}</a>
+                    </p>
+                  ) : null}
                   {item.notes ? <p className="mb-0 mt-1">{item.notes}</p> : null}
                 </div>
               ))}
