@@ -13,6 +13,7 @@ Dokumen ini dipakai untuk menjalankan UAT pilot sebelum sistem dibuka ke seluruh
 
 - Akreditasi end-to-end: [Accreditation UAT 50-Step Runbook](./accreditation-uat-50-step-runbook.md)
 - Template hasil UAT akreditasi: [Accreditation UAT Execution Report](./accreditation-uat-execution-report.md)
+- Triage defect UAT akreditasi: [Accreditation UAT Defect Triage 40-Step Playbook](./accreditation-uat-defect-triage-40-step.md)
 
 ## Akun Role UAT
 

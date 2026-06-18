@@ -2,6 +2,8 @@
 
 Gunakan dokumen ini saat menjalankan [Accreditation UAT 50-Step Runbook](./accreditation-uat-50-step-runbook.md). Satu file ini menjadi bukti hasil sesi UAT, daftar defect, dan dasar keputusan go/no-go.
 
+Setelah defect terkumpul, gunakan [Accreditation UAT Defect Triage 40-Step Playbook](./accreditation-uat-defect-triage-40-step.md) untuk menentukan prioritas, owner, verifikasi fix, dan keputusan release.
+
 ## Identitas Sesi
 
 | Item | Nilai |
