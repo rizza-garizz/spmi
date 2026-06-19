@@ -12,6 +12,7 @@ Dokumen ini menjadi pintu masuk untuk seluruh runbook akreditasi. Gunakan urutan
 | 4 | [Accreditation Go-Live 50-Step Checklist](./accreditation-go-live-50-step-checklist.md) | Menyiapkan pilot/production rollout | Go-live sign-off |
 | 5 | [Accreditation Hypercare 50-Step Checklist](./accreditation-hypercare-50-step-checklist.md) | Monitoring dan stabilisasi setelah go-live | Hypercare closure dan handover operasi |
 | 6 | [Accreditation Scale-Up 100-Step Roadmap](./accreditation-scale-up-100-step-roadmap.md) | Memperluas adopsi ke batch prodi/unit berikutnya | Scale-up tracker dan KPI |
+| 7 | [Accreditation Routine Operations 50-Step Checklist](./accreditation-routine-operations-50-step-checklist.md) | Menjalankan kontrol bulanan setelah scale-up | Laporan operasi rutin |
 
 ## Role Pengguna
 
@@ -33,6 +34,7 @@ Dokumen ini menjadi pintu masuk untuk seluruh runbook akreditasi. Gunakan urutan
 | Go-Live Complete | Health check, smoke, export manifest pass | Hypercare |
 | Hypercare Complete | Tidak ada Critical incident terbuka | Scale-up |
 | Scale-Up Complete | Batch target selesai dan handover operasi diterima | Operasi rutin |
+| Monthly Operations Complete | Manifest, backup, audit akses, dan issue review selesai | Siklus operasi bulan berikutnya |
 
 ## Artefak Wajib
 
@@ -44,6 +46,7 @@ Dokumen ini menjadi pintu masuk untuk seluruh runbook akreditasi. Gunakan urutan
 | Evidence fix | Defect triage | Owner defect |
 | Daily hypercare log | Hypercare checklist | PIC support |
 | Batch tracker | Scale-up roadmap | Koordinator scale-up |
+| Laporan operasi bulanan | Routine operations checklist | LPM/BPM |
 
 ## Aturan Ringkas
 

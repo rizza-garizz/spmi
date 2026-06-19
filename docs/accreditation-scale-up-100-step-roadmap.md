@@ -2,6 +2,8 @@
 
 Roadmap ini dipakai setelah [Accreditation Hypercare 50-Step Checklist](./accreditation-hypercare-50-step-checklist.md) selesai. Fokusnya memperluas penggunaan modul akreditasi dari pilot ke seluruh prodi/unit dengan tata kelola, data, training, support, dan perbaikan berkelanjutan yang terukur.
 
+Setelah scale-up selesai, lanjutkan kontrol bulanan dengan [Accreditation Routine Operations 50-Step Checklist](./accreditation-routine-operations-50-step-checklist.md).
+
 ## Prinsip Scale-Up
 
 - Scale-up dilakukan bertahap per batch unit/prodi.
