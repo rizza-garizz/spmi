@@ -19,6 +19,7 @@ Dokumen ini dipakai untuk menjalankan UAT pilot sebelum sistem dibuka ke seluruh
 - Hypercare akreditasi: [Accreditation Hypercare 50-Step Checklist](./accreditation-hypercare-50-step-checklist.md)
 - Scale-up akreditasi: [Accreditation Scale-Up 100-Step Roadmap](./accreditation-scale-up-100-step-roadmap.md)
 - Operasi rutin akreditasi: [Accreditation Routine Operations 50-Step Checklist](./accreditation-routine-operations-50-step-checklist.md)
+- Review periodik akreditasi: [Accreditation Periodic Review 50-Step Checklist](./accreditation-periodic-review-50-step-checklist.md)
 
 ## Akun Role UAT
 

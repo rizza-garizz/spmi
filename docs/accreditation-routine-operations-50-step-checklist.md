@@ -2,6 +2,8 @@
 
 Checklist ini dipakai setelah [Accreditation Scale-Up 100-Step Roadmap](./accreditation-scale-up-100-step-roadmap.md) selesai atau saat modul akreditasi sudah masuk operasi harian. Fokusnya menjaga data, akses, export, support, dan improvement cycle tetap stabil.
 
+Untuk evaluasi semester/tahunan, lanjutkan dengan [Accreditation Periodic Review 50-Step Checklist](./accreditation-periodic-review-50-step-checklist.md).
+
 ## Prinsip Operasi Rutin
 
 - Operasi rutin dijalankan bulanan oleh LPM/BPM bersama PIC teknis dan PIC data.
