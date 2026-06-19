@@ -2,6 +2,8 @@
 
 Checklist ini dipakai setiap akhir semester atau akhir tahun setelah operasi rutin berjalan. Fokusnya mengevaluasi kesehatan siklus akreditasi, kualitas data, efektivitas tindak lanjut, dan kesiapan siklus akreditasi berikutnya.
 
+Setelah review selesai, ubah action item menjadi program terukur dengan [Accreditation Continuous Improvement 100-Step Roadmap](./accreditation-continuous-improvement-100-step-roadmap.md).
+
 ## Prinsip Review Periodik
 
 - Review periodik dipimpin LPM/BPM dengan data dari prodi/unit, reviewer, dan tim teknis.

@@ -14,6 +14,7 @@ Dokumen ini menjadi pintu masuk untuk seluruh runbook akreditasi. Gunakan urutan
 | 6 | [Accreditation Scale-Up 100-Step Roadmap](./accreditation-scale-up-100-step-roadmap.md) | Memperluas adopsi ke batch prodi/unit berikutnya | Scale-up tracker dan KPI |
 | 7 | [Accreditation Routine Operations 50-Step Checklist](./accreditation-routine-operations-50-step-checklist.md) | Menjalankan kontrol bulanan setelah scale-up | Laporan operasi rutin |
 | 8 | [Accreditation Periodic Review 50-Step Checklist](./accreditation-periodic-review-50-step-checklist.md) | Mengevaluasi semester/tahunan dan merencanakan siklus berikutnya | Laporan review periodik |
+| 9 | [Accreditation Continuous Improvement 100-Step Roadmap](./accreditation-continuous-improvement-100-step-roadmap.md) | Mengubah hasil review periodik menjadi program peningkatan | Improvement cycle dan backlog prioritas |
 
 ## Role Pengguna
 
@@ -37,6 +38,7 @@ Dokumen ini menjadi pintu masuk untuk seluruh runbook akreditasi. Gunakan urutan
 | Scale-Up Complete | Batch target selesai dan handover operasi diterima | Operasi rutin |
 | Monthly Operations Complete | Manifest, backup, audit akses, dan issue review selesai | Siklus operasi bulan berikutnya |
 | Periodic Review Complete | Action item, backlog, dan compliance gap disetujui | Siklus improvement berikutnya |
+| Improvement Cycle Complete | Acceptance criteria, evidence, dan sign-off terpenuhi | Review periodik berikutnya |
 
 ## Artefak Wajib
 
@@ -50,6 +52,7 @@ Dokumen ini menjadi pintu masuk untuk seluruh runbook akreditasi. Gunakan urutan
 | Batch tracker | Scale-up roadmap | Koordinator scale-up |
 | Laporan operasi bulanan | Routine operations checklist | LPM/BPM |
 | Laporan review periodik | Periodic review checklist | LPM/BPM |
+| Improvement cycle tracker | Continuous improvement roadmap | Tim governance |
 
 ## Aturan Ringkas
 
