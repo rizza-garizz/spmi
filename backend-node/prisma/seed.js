@@ -1,7 +1,6 @@
 const bcrypt = require("bcryptjs");
-const { PrismaClient } = require("@prisma/client");
-
-const prisma = new PrismaClient();
+const prisma = require("../src/lib/prisma");
+const { ensureDatabaseSeeded: ensureAccreditationSeeded } = require("../src/services/accreditationService");
 
 async function main() {
   const institution = await prisma.institution.upsert({
@@ -395,6 +394,8 @@ async function main() {
       createdById: admin.id,
     },
   });
+
+  await ensureAccreditationSeeded();
 
   console.log("Seed selesai dijalankan.");
 }

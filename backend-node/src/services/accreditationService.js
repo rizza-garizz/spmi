@@ -1455,6 +1455,7 @@ async function getAccreditationExportById(id) {
 }
 
 module.exports = {
+  ensureDatabaseSeeded,
   getAccreditationSummary,
   getAccreditationPeriods,
   addAccreditationPeriod,
