@@ -49,6 +49,20 @@ Wajib ganti:
 
 ## 3. Build dan Jalankan
 
+Cara cepat production:
+
+```bash
+HEALTH_URL=https://api.spmi.example.com/health ./scripts/launch-production.sh
+```
+
+Script ini menjalankan preflight, backup production jika database lama sudah berjalan, build/deploy container, seed database, dan health check publik. Untuk sekaligus menjalankan preview UAT SIAKAD setelah deploy:
+
+```bash
+HEALTH_URL=https://api.spmi.example.com/health RUN_SIAKAD_UAT=true ./scripts/launch-production.sh
+```
+
+Cara manual:
+
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 ```
@@ -141,6 +155,18 @@ docker compose -f docker-compose.prod.yml --env-file .env exec \
 ```
 
 ## 6. Operasi Harian
+
+Status production cepat:
+
+```bash
+HEALTH_URL=https://api.spmi.example.com/health ./scripts/status-production.sh
+```
+
+Backup production manual:
+
+```bash
+./scripts/backup-production.sh
+```
 
 Lihat log:
 
