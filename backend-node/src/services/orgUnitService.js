@@ -44,11 +44,11 @@ function toApiOrgUnit(row) {
 
 function normalizeSourceUnit(item = {}) {
   return {
-    code: String(item.code || item.kode || item.internal_code || "").trim().toUpperCase(),
-    siakad_code: String(item.siakad_code || item.siakadCode || item.kode_siakad || item.kodeSIAKAD || item.code || "").trim(),
-    name: String(item.name || item.nama || item.nama_unit || "").trim(),
-    type: String(item.type || item.jenis || item.level || "unit").trim().toLowerCase(),
-    parent_code: String(item.parent_code || item.parentCode || item.parent || "").trim().toUpperCase() || null,
+    code: String(item.code || item.kode || item.kode_unit || item.kodeUnit || item.internal_code || item.internalCode || item.unit_code || "").trim().toUpperCase(),
+    siakad_code: String(item.siakad_code || item.siakadCode || item.kode_siakad || item.kodeSIAKAD || item.id_siakad || item.idSiakad || item.code || "").trim(),
+    name: String(item.name || item.nama || item.nama_unit || item.namaUnit || item.nama_prodi || item.nama_fakultas || item.label || "").trim(),
+    type: String(item.type || item.jenis || item.level || item.tipe || item.unit_type || item.unitType || "unit").trim().toLowerCase(),
+    parent_code: String(item.parent_code || item.parentCode || item.kode_parent || item.kodeParent || item.parent_unit_code || item.parentUnitCode || item.parent || "").trim().toUpperCase() || null,
     metadata: item.metadata || {},
   };
 }

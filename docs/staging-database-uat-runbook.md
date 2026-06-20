@@ -31,6 +31,8 @@ Untuk UAT mock SIAKAD internal, biarkan:
 ```env
 SIAKAD_SYNC_ENABLED=true
 SIAKAD_BASE_URL=http://127.0.0.1:4555/api
+SIAKAD_API_KEY_HEADER=X-API-Key
+SIAKAD_HEALTH_PATH=
 SIAKAD_ORG_UNITS_PATH=/org-units
 ```
 
@@ -97,7 +99,9 @@ Edit `.env`:
 SIAKAD_SYNC_ENABLED=true
 SIAKAD_BASE_URL=https://siakad.kampus.ac.id/api
 SIAKAD_AUTH_TYPE=bearer
+SIAKAD_API_KEY_HEADER=X-API-Key
 SIAKAD_API_TOKEN=token-service-account
+SIAKAD_HEALTH_PATH=/health
 SIAKAD_ORG_UNITS_PATH=/org-units
 ```
 

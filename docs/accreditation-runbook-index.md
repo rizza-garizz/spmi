@@ -53,6 +53,7 @@ Dokumen ini menjadi pintu masuk untuk seluruh runbook akreditasi. Gunakan urutan
 | Laporan operasi bulanan | Routine operations checklist | LPM/BPM |
 | Laporan review periodik | Periodic review checklist | LPM/BPM |
 | Improvement cycle tracker | Continuous improvement roadmap | Tim governance |
+| Handoff integrasi SIAKAD | [siakad-developer-handoff.md](./siakad-developer-handoff.md) | Tim teknis dan developer SIAKAD |
 
 ## Aturan Ringkas
 

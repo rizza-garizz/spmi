@@ -2,11 +2,11 @@ const env = require("../config/env");
 const { getCatalogSnapshot } = require("./catalogStore");
 
 function normalizeOrgUnit(item = {}) {
-  const code = String(item.code || item.kode || item.kode_unit || item.internal_code || "").trim().toUpperCase();
-  const siakadCode = String(item.siakad_code || item.siakadCode || item.kode_siakad || item.kodeSIAKAD || item.kode || item.code || "").trim();
-  const name = String(item.name || item.nama || item.nama_unit || item.nama_prodi || item.nama_fakultas || "").trim();
-  const type = String(item.type || item.jenis || item.level || item.tipe || "unit").trim().toLowerCase();
-  const parentCode = String(item.parent_code || item.parentCode || item.kode_parent || item.parent || "").trim().toUpperCase();
+  const code = String(item.code || item.kode || item.kode_unit || item.kodeUnit || item.internal_code || item.internalCode || item.unit_code || "").trim().toUpperCase();
+  const siakadCode = String(item.siakad_code || item.siakadCode || item.kode_siakad || item.kodeSIAKAD || item.id_siakad || item.idSiakad || item.kode || item.code || "").trim();
+  const name = String(item.name || item.nama || item.nama_unit || item.namaUnit || item.nama_prodi || item.nama_fakultas || item.label || "").trim();
+  const type = String(item.type || item.jenis || item.level || item.tipe || item.unit_type || item.unitType || "unit").trim().toLowerCase();
+  const parentCode = String(item.parent_code || item.parentCode || item.kode_parent || item.kodeParent || item.parent_unit_code || item.parentUnitCode || item.parent || "").trim().toUpperCase();
   const activeValue = item.is_active ?? item.active ?? item.aktif ?? item.status;
 
   return {
@@ -54,7 +54,7 @@ function buildHeaders() {
   }
 
   if (env.siakad.authType === "api-key") {
-    headers["X-API-Key"] = env.siakad.apiToken;
+    headers[env.siakad.apiKeyHeader] = env.siakad.apiToken;
     return headers;
   }
 
@@ -111,13 +111,14 @@ async function checkConnection() {
   }
 
   try {
-    const payload = await fetchJson(env.siakad.orgUnitsPath);
+    const payload = await fetchJson(env.siakad.healthPath || env.siakad.orgUnitsPath);
     const rows = extractRows(payload);
     return {
       status: "online",
       configured: true,
       message: "Koneksi SIAKAD berhasil.",
       base_url: env.siakad.baseUrl,
+      health_path: env.siakad.healthPath || null,
       org_units_path: env.siakad.orgUnitsPath,
       sample_count: rows.length,
     };
@@ -127,6 +128,7 @@ async function checkConnection() {
       configured: true,
       message: error.message || "Koneksi SIAKAD gagal.",
       base_url: env.siakad.baseUrl,
+      health_path: env.siakad.healthPath || null,
       org_units_path: env.siakad.orgUnitsPath,
       sample_count: 0,
     };

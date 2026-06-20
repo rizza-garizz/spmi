@@ -234,6 +234,45 @@ test("enterprise read endpoints reject anonymous access", async () => {
   assert.equal(responses.every((response) => response.status === 401), true);
 });
 
+test("SIAKAD preview accepts common external developer field aliases", async () => {
+  const token = await loginAs("admin@spmi.local");
+  const response = await fetch(`${baseUrl}/integrations/siakad/org-units/preview`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      units: [
+        {
+          kodeUnit: "FT",
+          idSiakad: "FK-TEKNIK",
+          namaUnit: "Fakultas Teknik",
+          unitType: "fakultas",
+          aktif: true,
+        },
+        {
+          kode_unit: "TI",
+          kode_siakad: "55202",
+          nama_prodi: "Teknik Informatika",
+          tipe: "prodi",
+          kodeParent: "FT",
+          status: "aktif",
+        },
+      ],
+    }),
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.success, true);
+  assert.equal(payload.data.summary.incoming, 2);
+  assert.equal(payload.data.summary.conflict, 0);
+  assert.equal(payload.data.rows[0].incoming.code, "FT");
+  assert.equal(payload.data.rows[0].incoming.siakad_code, "FK-TEKNIK");
+  assert.equal(payload.data.rows[1].incoming.parent_code, "FT");
+});
+
 test("local seed users carry perguruan tinggi role scopes", async () => {
   const cases = [
     ["admin@spmi.local", "super_admin", "LPM"],

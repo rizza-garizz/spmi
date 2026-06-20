@@ -20,7 +20,9 @@ Tambahkan konfigurasi berikut di `backend-node/.env`.
 SIAKAD_SYNC_ENABLED=true
 SIAKAD_BASE_URL=https://siakad.kampus.ac.id/api
 SIAKAD_AUTH_TYPE=bearer
+SIAKAD_API_KEY_HEADER=X-API-Key
 SIAKAD_API_TOKEN=isi-token-service-account
+SIAKAD_HEALTH_PATH=/health
 SIAKAD_ORG_UNITS_PATH=/org-units
 SIAKAD_TIMEOUT_MS=10000
 SIAKAD_SYNC_MODE=manual
@@ -29,7 +31,9 @@ SIAKAD_SYNC_MODE=manual
 `SIAKAD_AUTH_TYPE` mendukung:
 
 - `bearer`: header `Authorization: Bearer <token>`
-- `api-key`: header `X-API-Key: <token>`
+- `api-key`: header sesuai `SIAKAD_API_KEY_HEADER`, default `X-API-Key: <token>`
+
+`SIAKAD_HEALTH_PATH` opsional. Jika diisi, endpoint check koneksi memakai path ini. Jika kosong, SPMI memakai `SIAKAD_ORG_UNITS_PATH` untuk check koneksi sekaligus sample count.
 
 ## Endpoint Minimum Dari SIAKAD
 
@@ -84,11 +88,14 @@ Contoh response yang direkomendasikan:
 Connector juga menerima alias field umum:
 
 - `kode`, `kode_unit`, `internal_code`
-- `kode_siakad`, `kodeSIAKAD`, `siakadCode`
-- `nama`, `nama_unit`, `nama_prodi`, `nama_fakultas`
-- `jenis`, `level`, `tipe`
-- `parentCode`, `kode_parent`, `parent`
+- `kodeUnit`, `unit_code`, `internalCode`
+- `kode_siakad`, `kodeSIAKAD`, `siakadCode`, `id_siakad`, `idSiakad`
+- `nama`, `nama_unit`, `namaUnit`, `nama_prodi`, `nama_fakultas`, `label`
+- `jenis`, `level`, `tipe`, `unit_type`, `unitType`
+- `parentCode`, `kode_parent`, `kodeParent`, `parent_unit_code`, `parentUnitCode`, `parent`
 - `active`, `aktif`, `status`
+
+Nilai `status` dianggap nonaktif jika bernilai `0`, `false`, `nonaktif`, `inactive`, atau `deleted`.
 
 ## Endpoint SPMI Yang Sudah Siap
 
@@ -179,3 +186,7 @@ Status `GET /integrations/siakad/check` akan menampilkan:
 - Commit sync diuji di staging database.
 - Audit trail sync aktif.
 - Jadwal sync manual/terjadwal disepakati dengan operator SIAKAD.
+
+## Paket Handoff Ke Developer SIAKAD
+
+Berikan dokumen [siakad-developer-handoff.md](./siakad-developer-handoff.md) ke tim SIAKAD sebagai ringkasan teknis. Dokumen itu berisi acceptance criteria, sample request/response, dan urutan UAT bersama.
