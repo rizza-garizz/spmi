@@ -8,46 +8,6 @@ const {
   getDataSyncMap,
   getHrisSummary,
   getHrisEmployeeProfile,
-  getAccreditationSummary,
-  getAccreditationPeriods,
-  addAccreditationPeriod,
-  getAccreditationInstruments,
-  addAccreditationInstrument,
-  getAccreditationCriteria,
-  addAccreditationCriterion,
-  getAccreditationAssessments,
-  addAccreditationAssessment,
-  getAccreditationTeamMembers,
-  addAccreditationTeamMember,
-  getAccreditationTasks,
-  addAccreditationTask,
-  getAccreditationMilestones,
-  addAccreditationMilestone,
-  getAccreditationRisks,
-  addAccreditationRisk,
-  updateAccreditationRisk,
-  getAccreditationEvidence,
-  addAccreditationEvidence,
-  getAccreditationLkps,
-  addAccreditationLkpsEntry,
-  getAccreditationLed,
-  addAccreditationLedContent,
-  getAccreditationSelfScores,
-  addAccreditationSelfScore,
-  getAccreditationActionPlans,
-  addAccreditationActionPlan,
-  addAccreditationActionPlansBulk,
-  updateAccreditationActionPlan,
-  getAccreditationReviews,
-  addAccreditationReview,
-  getAccreditationSubmissionChecks,
-  addAccreditationSubmissionCheck,
-  addAccreditationSubmissionChecksBulk,
-  updateAccreditationSubmissionCheck,
-  updateAccreditationPeriodStatus,
-  getAccreditationExports,
-  getAccreditationExportById,
-  generateAccreditationExport,
   getIntegrations,
   getIntegrationReadiness,
   getIntegrationLogs,
@@ -92,6 +52,48 @@ const {
   updateHrisDocument,
   deleteHrisDocument,
 } = require("../services/catalogStore");
+const {
+  getAccreditationSummary,
+  getAccreditationPeriods,
+  addAccreditationPeriod,
+  getAccreditationInstruments,
+  addAccreditationInstrument,
+  getAccreditationCriteria,
+  addAccreditationCriterion,
+  getAccreditationAssessments,
+  addAccreditationAssessment,
+  getAccreditationTeamMembers,
+  addAccreditationTeamMember,
+  getAccreditationTasks,
+  addAccreditationTask,
+  getAccreditationMilestones,
+  addAccreditationMilestone,
+  getAccreditationRisks,
+  addAccreditationRisk,
+  updateAccreditationRisk,
+  getAccreditationEvidence,
+  addAccreditationEvidence,
+  getAccreditationLkps,
+  addAccreditationLkpsEntry,
+  getAccreditationLed,
+  addAccreditationLedContent,
+  getAccreditationSelfScores,
+  addAccreditationSelfScore,
+  getAccreditationActionPlans,
+  addAccreditationActionPlan,
+  addAccreditationActionPlansBulk,
+  updateAccreditationActionPlan,
+  getAccreditationReviews,
+  addAccreditationReview,
+  getAccreditationSubmissionChecks,
+  addAccreditationSubmissionCheck,
+  addAccreditationSubmissionChecksBulk,
+  updateAccreditationSubmissionCheck,
+  updateAccreditationPeriodStatus,
+  getAccreditationExports,
+  getAccreditationExportById,
+  generateAccreditationExport,
+} = require("../services/accreditationService");
 const { listAuditEvents, recordAuditEvent, recordApprovalHistory } = require("../services/auditService");
 const { success, failure } = require("../utils/apiResponse");
 const {
@@ -1059,109 +1061,109 @@ function deleteHrisDocumentRecord(req, res) {
   return success(res, document, "Dokumen HRIS berhasil dihapus di mode lokal.");
 }
 
-function accreditationSummary(_req, res) {
-  return success(res, getAccreditationSummary(), "Ringkasan modul akreditasi");
+async function accreditationSummary(_req, res) {
+  return success(res, await getAccreditationSummary(), "Ringkasan modul akreditasi");
 }
 
-function accreditationPeriods(_req, res) {
-  return success(res, getAccreditationPeriods(), "Daftar periode akreditasi");
+async function accreditationPeriods(_req, res) {
+  return success(res, await getAccreditationPeriods(), "Daftar periode akreditasi");
 }
 
-function createAccreditationPeriod(req, res) {
+async function createAccreditationPeriod(req, res) {
   try {
-    return success(res, addAccreditationPeriod(req.body || {}, req.user), "Periode akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationPeriod(req.body || {}, req.user), "Periode akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Periode akreditasi gagal dibuat.");
   }
 }
 
-function accreditationInstruments(_req, res) {
-  return success(res, getAccreditationInstruments(), "Daftar instrumen akreditasi");
+async function accreditationInstruments(_req, res) {
+  return success(res, await getAccreditationInstruments(), "Daftar instrumen akreditasi");
 }
 
-function createAccreditationInstrument(req, res) {
+async function createAccreditationInstrument(req, res) {
   try {
-    return success(res, addAccreditationInstrument(req.body || {}, req.user), "Instrumen akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationInstrument(req.body || {}, req.user), "Instrumen akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Instrumen akreditasi gagal dibuat.");
   }
 }
 
-function accreditationCriteria(_req, res) {
-  return success(res, getAccreditationCriteria(), "Daftar kriteria akreditasi");
+async function accreditationCriteria(_req, res) {
+  return success(res, await getAccreditationCriteria(), "Daftar kriteria akreditasi");
 }
 
-function createAccreditationCriterion(req, res) {
+async function createAccreditationCriterion(req, res) {
   try {
-    return success(res, addAccreditationCriterion(req.body || {}, req.user), "Kriteria akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationCriterion(req.body || {}, req.user), "Kriteria akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Kriteria akreditasi gagal dibuat.");
   }
 }
 
-function accreditationAssessments(_req, res) {
-  return success(res, getAccreditationAssessments(), "Daftar assessment akreditasi");
+async function accreditationAssessments(_req, res) {
+  return success(res, await getAccreditationAssessments(), "Daftar assessment akreditasi");
 }
 
-function createAccreditationAssessment(req, res) {
+async function createAccreditationAssessment(req, res) {
   try {
-    return success(res, addAccreditationAssessment(req.body || {}, req.user), "Assessment akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationAssessment(req.body || {}, req.user), "Assessment akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Assessment akreditasi gagal dibuat.");
   }
 }
 
-function accreditationTeamMembers(_req, res) {
-  return success(res, getAccreditationTeamMembers(), "Daftar tim akreditasi");
+async function accreditationTeamMembers(_req, res) {
+  return success(res, await getAccreditationTeamMembers(), "Daftar tim akreditasi");
 }
 
-function createAccreditationTeamMember(req, res) {
+async function createAccreditationTeamMember(req, res) {
   try {
-    return success(res, addAccreditationTeamMember(req.body || {}, req.user), "Anggota tim akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationTeamMember(req.body || {}, req.user), "Anggota tim akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Anggota tim akreditasi gagal dibuat.");
   }
 }
 
-function accreditationTasks(_req, res) {
-  return success(res, getAccreditationTasks(), "Daftar task akreditasi");
+async function accreditationTasks(_req, res) {
+  return success(res, await getAccreditationTasks(), "Daftar task akreditasi");
 }
 
-function createAccreditationTask(req, res) {
+async function createAccreditationTask(req, res) {
   try {
-    return success(res, addAccreditationTask(req.body || {}, req.user), "Task akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationTask(req.body || {}, req.user), "Task akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Task akreditasi gagal dibuat.");
   }
 }
 
-function accreditationMilestones(_req, res) {
-  return success(res, getAccreditationMilestones(), "Daftar milestone akreditasi");
+async function accreditationMilestones(_req, res) {
+  return success(res, await getAccreditationMilestones(), "Daftar milestone akreditasi");
 }
 
-function createAccreditationMilestone(req, res) {
+async function createAccreditationMilestone(req, res) {
   try {
-    return success(res, addAccreditationMilestone(req.body || {}, req.user), "Milestone akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationMilestone(req.body || {}, req.user), "Milestone akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Milestone akreditasi gagal dibuat.");
   }
 }
 
-function accreditationRisks(_req, res) {
-  return success(res, getAccreditationRisks(), "Daftar risiko akreditasi");
+async function accreditationRisks(_req, res) {
+  return success(res, await getAccreditationRisks(), "Daftar risiko akreditasi");
 }
 
-function createAccreditationRisk(req, res) {
+async function createAccreditationRisk(req, res) {
   try {
-    return success(res, addAccreditationRisk(req.body || {}, req.user), "Risiko akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationRisk(req.body || {}, req.user), "Risiko akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Risiko akreditasi gagal dibuat.");
   }
 }
 
-function updateAccreditationRiskRecord(req, res) {
+async function updateAccreditationRiskRecord(req, res) {
   try {
-    const item = updateAccreditationRisk(req.params.id, req.body || {}, req.user);
+    const item = await updateAccreditationRisk(req.params.id, req.body || {}, req.user);
     if (!item) return failure(res, "Risiko akreditasi tidak ditemukan.", 404);
     return success(res, item, "Risiko akreditasi berhasil diperbarui.");
   } catch (error) {
@@ -1169,83 +1171,83 @@ function updateAccreditationRiskRecord(req, res) {
   }
 }
 
-function accreditationEvidence(_req, res) {
-  return success(res, getAccreditationEvidence(), "Daftar bukti fisik akreditasi");
+async function accreditationEvidence(_req, res) {
+  return success(res, await getAccreditationEvidence(), "Daftar bukti fisik akreditasi");
 }
 
-function createAccreditationEvidence(req, res) {
+async function createAccreditationEvidence(req, res) {
   try {
     const payload = {
       ...(req.body || {}),
       file_name: req.file?.originalname || req.body?.file_name || req.body?.fileName || null,
       file_url: req.file?.path || req.body?.file_url || req.body?.fileUrl || null,
     };
-    return success(res, addAccreditationEvidence(payload, req.user), "Bukti fisik akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationEvidence(payload, req.user), "Bukti fisik akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Bukti fisik akreditasi gagal dibuat.");
   }
 }
 
-function accreditationLkps(_req, res) {
-  return success(res, getAccreditationLkps(), "Data LKPS akreditasi");
+async function accreditationLkps(_req, res) {
+  return success(res, await getAccreditationLkps(), "Data LKPS akreditasi");
 }
 
-function createAccreditationLkpsEntry(req, res) {
+async function createAccreditationLkpsEntry(req, res) {
   try {
-    return success(res, addAccreditationLkpsEntry(req.body || {}, req.user), "Entry LKPS berhasil dibuat.", 201);
+    return success(res, await addAccreditationLkpsEntry(req.body || {}, req.user), "Entry LKPS berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Entry LKPS gagal dibuat.");
   }
 }
 
-function accreditationLed(_req, res) {
-  return success(res, getAccreditationLed(), "Data LED akreditasi");
+async function accreditationLed(_req, res) {
+  return success(res, await getAccreditationLed(), "Data LED akreditasi");
 }
 
-function createAccreditationLedContent(req, res) {
+async function createAccreditationLedContent(req, res) {
   try {
-    return success(res, addAccreditationLedContent(req.body || {}, req.user), "Konten LED berhasil disimpan.", 201);
+    return success(res, await addAccreditationLedContent(req.body || {}, req.user), "Konten LED berhasil disimpan.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Konten LED gagal disimpan.");
   }
 }
 
-function accreditationSelfScores(_req, res) {
-  return success(res, getAccreditationSelfScores(), "Data penilaian mandiri akreditasi");
+async function accreditationSelfScores(_req, res) {
+  return success(res, await getAccreditationSelfScores(), "Data penilaian mandiri akreditasi");
 }
 
-function createAccreditationSelfScore(req, res) {
+async function createAccreditationSelfScore(req, res) {
   try {
-    return success(res, addAccreditationSelfScore(req.body || {}, req.user), "Skor penilaian mandiri berhasil disimpan.", 201);
+    return success(res, await addAccreditationSelfScore(req.body || {}, req.user), "Skor penilaian mandiri berhasil disimpan.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Skor penilaian mandiri gagal disimpan.");
   }
 }
 
-function accreditationActionPlans(_req, res) {
-  return success(res, getAccreditationActionPlans(), "Daftar rencana perbaikan akreditasi");
+async function accreditationActionPlans(_req, res) {
+  return success(res, await getAccreditationActionPlans(), "Daftar rencana perbaikan akreditasi");
 }
 
-function createAccreditationActionPlan(req, res) {
+async function createAccreditationActionPlan(req, res) {
   try {
-    return success(res, addAccreditationActionPlan(req.body || {}, req.user), "Rencana perbaikan akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationActionPlan(req.body || {}, req.user), "Rencana perbaikan akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Rencana perbaikan akreditasi gagal dibuat.");
   }
 }
 
-function createAccreditationActionPlansBulk(req, res) {
+async function createAccreditationActionPlansBulk(req, res) {
   try {
     const rows = Array.isArray(req.body?.items) ? req.body.items : [];
-    return success(res, addAccreditationActionPlansBulk(rows, req.user), "Bulk rencana perbaikan akreditasi selesai diproses.", 201);
+    return success(res, await addAccreditationActionPlansBulk(rows, req.user), "Bulk rencana perbaikan akreditasi selesai diproses.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Bulk rencana perbaikan akreditasi gagal diproses.");
   }
 }
 
-function updateAccreditationActionPlanRecord(req, res) {
+async function updateAccreditationActionPlanRecord(req, res) {
   try {
-    const item = updateAccreditationActionPlan(req.params.id, req.body || {}, req.user);
+    const item = await updateAccreditationActionPlan(req.params.id, req.body || {}, req.user);
     if (!item) return failure(res, "Rencana perbaikan akreditasi tidak ditemukan.", 404);
     return success(res, item, "Rencana perbaikan akreditasi berhasil diperbarui.");
   } catch (error) {
@@ -1253,42 +1255,42 @@ function updateAccreditationActionPlanRecord(req, res) {
   }
 }
 
-function accreditationReviews(_req, res) {
-  return success(res, getAccreditationReviews(), "Daftar review internal akreditasi");
+async function accreditationReviews(_req, res) {
+  return success(res, await getAccreditationReviews(), "Daftar review internal akreditasi");
 }
 
-function createAccreditationReview(req, res) {
+async function createAccreditationReview(req, res) {
   try {
-    return success(res, addAccreditationReview(req.body || {}, req.user), "Review internal akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationReview(req.body || {}, req.user), "Review internal akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Review internal akreditasi gagal dibuat.");
   }
 }
 
-function accreditationSubmissionChecks(_req, res) {
-  return success(res, getAccreditationSubmissionChecks(), "Daftar checklist submit akreditasi");
+async function accreditationSubmissionChecks(_req, res) {
+  return success(res, await getAccreditationSubmissionChecks(), "Daftar checklist submit akreditasi");
 }
 
-function createAccreditationSubmissionCheck(req, res) {
+async function createAccreditationSubmissionCheck(req, res) {
   try {
-    return success(res, addAccreditationSubmissionCheck(req.body || {}, req.user), "Checklist submit akreditasi berhasil dibuat.", 201);
+    return success(res, await addAccreditationSubmissionCheck(req.body || {}, req.user), "Checklist submit akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Checklist submit akreditasi gagal dibuat.");
   }
 }
 
-function createAccreditationSubmissionChecksBulk(req, res) {
+async function createAccreditationSubmissionChecksBulk(req, res) {
   try {
     const rows = Array.isArray(req.body?.items) ? req.body.items : [];
-    return success(res, addAccreditationSubmissionChecksBulk(rows, req.user), "Bulk checklist submit akreditasi selesai diproses.", 201);
+    return success(res, await addAccreditationSubmissionChecksBulk(rows, req.user), "Bulk checklist submit akreditasi selesai diproses.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Bulk checklist submit akreditasi gagal diproses.");
   }
 }
 
-function updateAccreditationSubmissionCheckRecord(req, res) {
+async function updateAccreditationSubmissionCheckRecord(req, res) {
   try {
-    const item = updateAccreditationSubmissionCheck(req.params.id, req.body || {}, req.user);
+    const item = await updateAccreditationSubmissionCheck(req.params.id, req.body || {}, req.user);
     if (!item) return failure(res, "Checklist submit akreditasi tidak ditemukan.", 404);
     return success(res, item, "Checklist submit akreditasi berhasil diperbarui.");
   } catch (error) {
@@ -1296,26 +1298,26 @@ function updateAccreditationSubmissionCheckRecord(req, res) {
   }
 }
 
-function updateAccreditationPeriodStatusRecord(req, res) {
-  const period = updateAccreditationPeriodStatus(req.params.id, req.body || {}, req.user);
+async function updateAccreditationPeriodStatusRecord(req, res) {
+  const period = await updateAccreditationPeriodStatus(req.params.id, req.body || {}, req.user);
   if (!period) return failure(res, "Periode akreditasi tidak ditemukan.", 404);
   return success(res, period, "Status periode akreditasi berhasil diperbarui.");
 }
 
-function accreditationExports(_req, res) {
-  return success(res, getAccreditationExports(), "Daftar paket export akreditasi");
+async function accreditationExports(_req, res) {
+  return success(res, await getAccreditationExports(), "Daftar paket export akreditasi");
 }
 
-function createAccreditationExport(req, res) {
+async function createAccreditationExport(req, res) {
   try {
-    return success(res, generateAccreditationExport(req.body || {}, req.user), "Paket export akreditasi berhasil dibuat.", 201);
+    return success(res, await generateAccreditationExport(req.body || {}, req.user), "Paket export akreditasi berhasil dibuat.", 201);
   } catch (error) {
     return mutationFailure(res, error, "Paket export akreditasi gagal dibuat.");
   }
 }
 
-function downloadAccreditationExport(req, res) {
-  const item = getAccreditationExportById(req.params.id);
+async function downloadAccreditationExport(req, res) {
+  const item = await getAccreditationExportById(req.params.id);
   if (!item) return failure(res, "Paket export akreditasi tidak ditemukan.", 404);
 
   const fileName = item.file_name || `${item.id}.json`;
