@@ -52,6 +52,8 @@ GitHub Actions can also run production deploy manually through `Deploy Productio
 - `PRODUCTION_SMOKE_ADMIN_PASSWORD` if `run_smoke` is enabled
 - `PRODUCTION_SMOKE_ADMIN_EMAIL` optional, defaults to `admin@spmi.local`
 
+Pre-workflow checklist: [production-github-actions-deploy-checklist.md](./production-github-actions-deploy-checklist.md).
+
 For launch with real SIAKAD preview UAT:
 
 ```bash

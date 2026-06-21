@@ -76,6 +76,8 @@ Deploy production juga bisa dijalankan manual dari GitHub Actions workflow `Depl
 - `PRODUCTION_SMOKE_ADMIN_PASSWORD` jika smoke test workflow diaktifkan
 - `PRODUCTION_SMOKE_ADMIN_EMAIL` opsional
 
+Checklist detail tersedia di [production-github-actions-deploy-checklist.md](./production-github-actions-deploy-checklist.md).
+
 Backend otomatis menjalankan:
 
 ```bash
