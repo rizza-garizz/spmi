@@ -73,6 +73,8 @@ Deploy production juga bisa dijalankan manual dari GitHub Actions workflow `Depl
 - `PRODUCTION_PORT` opsional
 - `PRODUCTION_USER`
 - `PRODUCTION_SSH_KEY`
+- `PRODUCTION_SMOKE_ADMIN_PASSWORD` jika smoke test workflow diaktifkan
+- `PRODUCTION_SMOKE_ADMIN_EMAIL` opsional
 
 Backend otomatis menjalankan:
 

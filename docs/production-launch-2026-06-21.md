@@ -49,6 +49,8 @@ GitHub Actions can also run production deploy manually through `Deploy Productio
 - `PRODUCTION_PORT` optional, defaults to `22`
 - `PRODUCTION_USER`
 - `PRODUCTION_SSH_KEY`
+- `PRODUCTION_SMOKE_ADMIN_PASSWORD` if `run_smoke` is enabled
+- `PRODUCTION_SMOKE_ADMIN_EMAIL` optional, defaults to `admin@spmi.local`
 
 For launch with real SIAKAD preview UAT:
 
