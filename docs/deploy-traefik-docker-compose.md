@@ -162,6 +162,16 @@ Status production cepat:
 HEALTH_URL=https://api.spmi.example.com/health ./scripts/status-production.sh
 ```
 
+Smoke test production:
+
+```bash
+BASE_URL=https://api.spmi.example.com \
+FRONTEND_URL=https://spmi.example.com \
+ADMIN_EMAIL=admin@spmi.local \
+ADMIN_PASSWORD='Password123!' \
+node scripts/smoke-production.js
+```
+
 Backup production manual:
 
 ```bash

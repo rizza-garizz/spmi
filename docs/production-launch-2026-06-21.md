@@ -75,6 +75,16 @@ The launch script runs:
 HEALTH_URL=https://api.example.ac.id/health ./scripts/status-production.sh
 ```
 
+Run smoke test:
+
+```bash
+BASE_URL=https://api.example.ac.id \
+FRONTEND_URL=https://spmi.example.ac.id \
+ADMIN_EMAIL=admin@spmi.local \
+ADMIN_PASSWORD='Password123!' \
+node scripts/smoke-production.js
+```
+
 Review:
 
 - backend logs
