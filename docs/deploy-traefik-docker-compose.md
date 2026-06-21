@@ -67,6 +67,13 @@ Cara manual:
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 ```
 
+Deploy production juga bisa dijalankan manual dari GitHub Actions workflow `Deploy Production` setelah secret server production disiapkan:
+
+- `PRODUCTION_HOST`
+- `PRODUCTION_PORT` opsional
+- `PRODUCTION_USER`
+- `PRODUCTION_SSH_KEY`
+
 Backend otomatis menjalankan:
 
 ```bash

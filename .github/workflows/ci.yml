@@ -7,11 +7,14 @@ on:
   push:
     branches:
       - master
+      - codex-spmi-ready
     tags:
       - "staging-*"
+      - "launch-candidate-*"
   pull_request:
     branches:
       - master
+      - codex-spmi-ready
 
 jobs:
   backend:
@@ -64,3 +67,30 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  operations:
+    name: Operations Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate shell scripts
+        run: |
+          bash -n scripts/preflight-staging.sh
+          bash -n scripts/deploy-staging.sh
+          bash -n scripts/status-staging.sh
+          bash -n scripts/backup-staging.sh
+          bash -n scripts/bootstrap-ubuntu-staging.sh
+          bash -n scripts/preflight-production.sh
+          bash -n scripts/launch-production.sh
+          bash -n scripts/status-production.sh
+          bash -n scripts/backup-production.sh
+
+      - name: Validate production smoke script
+        run: node -c scripts/smoke-production.js

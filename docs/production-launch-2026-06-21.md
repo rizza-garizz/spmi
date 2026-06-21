@@ -43,6 +43,13 @@ HEALTH_URL=https://api.example.ac.id/health ./scripts/launch-production.sh
 
 Replace `https://api.example.ac.id/health` with the real API health URL.
 
+GitHub Actions can also run production deploy manually through `Deploy Production`. Required repository or environment secrets:
+
+- `PRODUCTION_HOST`
+- `PRODUCTION_PORT` optional, defaults to `22`
+- `PRODUCTION_USER`
+- `PRODUCTION_SSH_KEY`
+
 For launch with real SIAKAD preview UAT:
 
 ```bash

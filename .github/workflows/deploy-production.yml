@@ -1,0 +1,98 @@
+name: Deploy Production
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_ref:
+        description: "Git branch, tag, or commit to deploy"
+        required: true
+        default: "launch-candidate-2026-06-21-r2"
+      app_dir:
+        description: "Application directory on the production server"
+        required: true
+        default: "/opt/spmi"
+      health_url:
+        description: "Public API health URL"
+        required: true
+        default: "https://api.example.ac.id/health"
+      run_backup:
+        description: "Run production backup before deploy. Use auto for first launch."
+        required: true
+        type: choice
+        options:
+          - auto
+          - "true"
+          - "false"
+        default: auto
+      run_seed:
+        description: "Run backend seed after deploy"
+        required: true
+        type: boolean
+        default: true
+      run_siakad_uat:
+        description: "Run SIAKAD preview UAT after deploy"
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    name: Deploy to production server
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Configure SSH key
+        env:
+          PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+        run: |
+          test -n "$PRODUCTION_SSH_KEY"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$PRODUCTION_SSH_KEY" > ~/.ssh/production_key
+          chmod 600 ~/.ssh/production_key
+
+      - name: Trust production host
+        env:
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_PORT: ${{ secrets.PRODUCTION_PORT }}
+        run: |
+          test -n "$PRODUCTION_HOST"
+          ssh-keyscan -p "${PRODUCTION_PORT:-22}" "$PRODUCTION_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy release
+        env:
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_PORT: ${{ secrets.PRODUCTION_PORT }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          RELEASE_REF: ${{ inputs.release_ref }}
+          APP_DIR: ${{ inputs.app_dir }}
+          HEALTH_URL: ${{ inputs.health_url }}
+          RUN_BACKUP: ${{ inputs.run_backup }}
+          RUN_SEED: ${{ inputs.run_seed }}
+          RUN_SIAKAD_UAT: ${{ inputs.run_siakad_uat }}
+        run: |
+          test -n "$PRODUCTION_HOST"
+          test -n "$PRODUCTION_USER"
+          test -n "$HEALTH_URL"
+
+          ssh -i ~/.ssh/production_key -p "${PRODUCTION_PORT:-22}" "$PRODUCTION_USER@$PRODUCTION_HOST" \
+            "RELEASE_REF='$RELEASE_REF' APP_DIR='$APP_DIR' HEALTH_URL='$HEALTH_URL' RUN_BACKUP='$RUN_BACKUP' RUN_SEED='$RUN_SEED' RUN_SIAKAD_UAT='$RUN_SIAKAD_UAT' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd "$APP_DIR"
+          git fetch --all --tags
+          git checkout "$RELEASE_REF"
+
+          if [[ ! -f .env ]]; then
+            echo ".env not found in $APP_DIR"
+            exit 1
+          fi
+
+          ./scripts/launch-production.sh
+          REMOTE
