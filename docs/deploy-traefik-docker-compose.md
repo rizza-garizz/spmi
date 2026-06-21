@@ -10,6 +10,13 @@ Dokumen ini memakai backend resmi `backend-node/` dan frontend resmi `frontend/`
 - Port publik terbuka: `80` dan `443`.
 - Docker dan Docker Compose plugin sudah terpasang.
 
+Untuk server Ubuntu baru, bootstrap Docker dan repo production:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/codex-spmi-ready/scripts/bootstrap-ubuntu-production.sh -o bootstrap-ubuntu-production.sh
+sudo RELEASE_REF=launch-candidate-2026-06-21-r6 bash bootstrap-ubuntu-production.sh
+```
+
 Contoh install di Ubuntu:
 
 ```bash

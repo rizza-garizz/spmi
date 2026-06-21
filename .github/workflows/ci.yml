@@ -91,6 +91,7 @@ jobs:
           bash -n scripts/launch-production.sh
           bash -n scripts/status-production.sh
           bash -n scripts/backup-production.sh
+          bash -n scripts/bootstrap-ubuntu-production.sh
 
       - name: Validate production smoke script
         run: node -c scripts/smoke-production.js

@@ -9,7 +9,7 @@ on:
       release_ref:
         description: "Git branch, tag, or commit to deploy"
         required: true
-        default: "launch-candidate-2026-06-21-r5"
+        default: "launch-candidate-2026-06-21-r6"
       app_dir:
         description: "Application directory on the production server"
         required: true
