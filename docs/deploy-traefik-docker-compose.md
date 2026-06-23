@@ -14,7 +14,7 @@ Untuk server Ubuntu baru, bootstrap Docker dan repo production:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/codex-spmi-ready/scripts/bootstrap-ubuntu-production.sh -o bootstrap-ubuntu-production.sh
-sudo RELEASE_REF=launch-candidate-2026-06-21-r6 bash bootstrap-ubuntu-production.sh
+sudo RELEASE_REF=launch-candidate-2026-06-21-r7 bash bootstrap-ubuntu-production.sh
 ```
 
 Contoh install di Ubuntu:
@@ -188,6 +188,16 @@ FRONTEND_URL=https://spmi.example.com \
 ADMIN_EMAIL=admin@spmi.local \
 ADMIN_PASSWORD='Password123!' \
 node scripts/smoke-production.js
+```
+
+UAT modul akreditasi:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env exec \
+  -e UAT_BASE_URL=https://api.spmi.example.com \
+  -e UAT_ADMIN_EMAIL=admin@spmi.local \
+  -e UAT_ADMIN_PASSWORD='Password123!' \
+  backend npm run uat:accreditation
 ```
 
 Backup production manual:

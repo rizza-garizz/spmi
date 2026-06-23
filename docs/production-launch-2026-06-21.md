@@ -23,7 +23,7 @@ Fresh Ubuntu bootstrap:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/codex-spmi-ready/scripts/bootstrap-ubuntu-production.sh -o bootstrap-ubuntu-production.sh
-sudo RELEASE_REF=launch-candidate-2026-06-21-r6 bash bootstrap-ubuntu-production.sh
+sudo RELEASE_REF=launch-candidate-2026-06-21-r7 bash bootstrap-ubuntu-production.sh
 ```
 
 Required `.env` values:
@@ -101,6 +101,16 @@ FRONTEND_URL=https://spmi.example.ac.id \
 ADMIN_EMAIL=admin@spmi.local \
 ADMIN_PASSWORD='Password123!' \
 node scripts/smoke-production.js
+```
+
+Run accreditation launch UAT:
+
+```bash
+cd backend-node
+UAT_BASE_URL=https://api.example.ac.id \
+UAT_ADMIN_EMAIL=admin@spmi.local \
+UAT_ADMIN_PASSWORD='Password123!' \
+npm run uat:accreditation
 ```
 
 Review:

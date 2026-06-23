@@ -94,4 +94,6 @@ jobs:
           bash -n scripts/bootstrap-ubuntu-production.sh
 
       - name: Validate production smoke script
-        run: node -c scripts/smoke-production.js
+        run: |
+          node -c scripts/smoke-production.js
+          node -c backend-node/scripts/uat-accreditation.js
