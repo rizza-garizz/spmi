@@ -23,7 +23,7 @@ Fresh Ubuntu bootstrap:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/codex-spmi-ready/scripts/bootstrap-ubuntu-production.sh -o bootstrap-ubuntu-production.sh
-sudo RELEASE_REF=launch-candidate-2026-06-21-r7 bash bootstrap-ubuntu-production.sh
+sudo RELEASE_REF=launch-candidate-2026-06-21-r8 bash bootstrap-ubuntu-production.sh
 ```
 
 Required `.env` values:
@@ -58,6 +58,8 @@ GitHub Actions can also run production deploy manually through `Deploy Productio
 - `PRODUCTION_SSH_KEY`
 - `PRODUCTION_SMOKE_ADMIN_PASSWORD` if `run_smoke` is enabled
 - `PRODUCTION_SMOKE_ADMIN_EMAIL` optional, defaults to `admin@spmi.local`
+
+The same smoke admin secret is used when `run_accreditation_uat` is enabled.
 
 Pre-workflow checklist: [production-github-actions-deploy-checklist.md](./production-github-actions-deploy-checklist.md).
 

@@ -9,7 +9,7 @@ on:
       release_ref:
         description: "Git branch, tag, or commit to deploy"
         required: true
-        default: "launch-candidate-2026-06-21-r7"
+        default: "launch-candidate-2026-06-21-r8"
       app_dir:
         description: "Application directory on the production server"
         required: true
@@ -46,6 +46,11 @@ on:
         required: true
         type: boolean
         default: true
+      run_accreditation_uat:
+        description: "Run accreditation launch UAT after deploy"
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   deploy:
@@ -123,3 +128,26 @@ jobs:
             ADMIN_EMAIL="${ADMIN_EMAIL:-admin@spmi.local}" \
             ADMIN_PASSWORD="$ADMIN_PASSWORD" \
             node scripts/smoke-production.js
+
+      - name: Run accreditation launch UAT
+        if: ${{ inputs.run_accreditation_uat }}
+        env:
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_PORT: ${{ secrets.PRODUCTION_PORT }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          APP_DIR: ${{ inputs.app_dir }}
+          HEALTH_URL: ${{ inputs.health_url }}
+          UAT_ADMIN_EMAIL: ${{ secrets.PRODUCTION_SMOKE_ADMIN_EMAIL }}
+          UAT_ADMIN_PASSWORD: ${{ secrets.PRODUCTION_SMOKE_ADMIN_PASSWORD }}
+        run: |
+          test -n "$PRODUCTION_HOST"
+          test -n "$PRODUCTION_USER"
+          test -n "$UAT_ADMIN_PASSWORD"
+
+          ssh -i ~/.ssh/production_key -p "${PRODUCTION_PORT:-22}" "$PRODUCTION_USER@$PRODUCTION_HOST" \
+            "APP_DIR='$APP_DIR' UAT_BASE_URL='${HEALTH_URL%/health}' UAT_ADMIN_EMAIL='${UAT_ADMIN_EMAIL:-admin@spmi.local}' UAT_ADMIN_PASSWORD='$UAT_ADMIN_PASSWORD' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd "$APP_DIR/backend-node"
+          npm run uat:accreditation
+          REMOTE
