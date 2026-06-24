@@ -23,7 +23,7 @@ Fresh Ubuntu bootstrap:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/codex-spmi-ready/scripts/bootstrap-ubuntu-production.sh -o bootstrap-ubuntu-production.sh
-sudo RELEASE_REF=launch-candidate-2026-06-21-r8 bash bootstrap-ubuntu-production.sh
+sudo RELEASE_REF=launch-candidate-2026-06-21-r9 bash bootstrap-ubuntu-production.sh
 ```
 
 Required `.env` values:
@@ -62,6 +62,7 @@ GitHub Actions can also run production deploy manually through `Deploy Productio
 The same smoke admin secret is used when `run_accreditation_uat` is enabled.
 
 Pre-workflow checklist: [production-github-actions-deploy-checklist.md](./production-github-actions-deploy-checklist.md).
+Parameter sheet: [production-launch-parameters.md](./production-launch-parameters.md).
 
 For launch with real SIAKAD preview UAT:
 

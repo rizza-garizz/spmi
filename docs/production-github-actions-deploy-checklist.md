@@ -2,6 +2,8 @@
 
 Use this checklist before running the `Deploy Production` workflow.
 
+Default launch parameters are listed in [production-launch-parameters.md](./production-launch-parameters.md).
+
 ## 1. GitHub Environment
 
 Create or verify the `production` environment in GitHub:
@@ -29,7 +31,7 @@ On the production server:
 ```bash
 cd /opt/spmi
 git fetch origin --tags
-git checkout launch-candidate-2026-06-21-r8
+git checkout launch-candidate-2026-06-21-r9
 test -f .env
 ./scripts/preflight-production.sh
 ```
@@ -38,7 +40,7 @@ For a fresh Ubuntu server, bootstrap Docker and the repository first:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/codex-spmi-ready/scripts/bootstrap-ubuntu-production.sh -o bootstrap-ubuntu-production.sh
-sudo RELEASE_REF=launch-candidate-2026-06-21-r8 bash bootstrap-ubuntu-production.sh
+sudo RELEASE_REF=launch-candidate-2026-06-21-r9 bash bootstrap-ubuntu-production.sh
 ```
 
 Confirm `.env` has real values for:
@@ -65,7 +67,7 @@ Confirm:
 
 GitHub > Actions > `Deploy Production` > Run workflow:
 
-- `release_ref`: `launch-candidate-2026-06-21-r8`
+- `release_ref`: `launch-candidate-2026-06-21-r9`
 - `app_dir`: `/opt/spmi` or the real server path
 - `health_url`: `https://api.example.ac.id/health`
 - `frontend_url`: `https://spmi.example.ac.id`
