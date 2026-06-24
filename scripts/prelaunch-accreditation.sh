@@ -30,10 +30,6 @@ echo
 echo "==> Backend tests"
 (cd backend-node && npm test)
 
-echo
-echo "==> Frontend production build"
-(cd frontend && npm run build)
-
 if [[ "$RUN_LOCAL_E2E" == "true" ]]; then
   echo
   echo "==> Local smoke test"
@@ -55,6 +51,10 @@ else
   echo
   echo "Skipping local E2E. Set RUN_LOCAL_E2E=true when local frontend/backend are running."
 fi
+
+echo
+echo "==> Frontend production build"
+(cd frontend && npm run build)
 
 echo
 echo "Prelaunch accreditation check passed."

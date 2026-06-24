@@ -7,7 +7,7 @@ Use these parameters for the first production launch of the accreditation module
 Workflow: `Deploy Production`
 
 ```text
-release_ref = launch-candidate-2026-06-21-r11
+release_ref = launch-candidate-2026-06-21-r12
 app_dir = /opt/spmi
 health_url = https://api-spmi.CHANGE_ME_DOMAIN/health
 frontend_url = https://spmi.CHANGE_ME_DOMAIN
@@ -84,7 +84,7 @@ SPMI_API_DOMAIN = api-spmi.your-campus.ac.id
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/codex-spmi-ready/scripts/bootstrap-ubuntu-production.sh -o bootstrap-ubuntu-production.sh
-sudo RELEASE_REF=launch-candidate-2026-06-21-r11 bash bootstrap-ubuntu-production.sh
+sudo RELEASE_REF=launch-candidate-2026-06-21-r12 bash bootstrap-ubuntu-production.sh
 ```
 
 ## Production Gate
