@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FRONTEND_DOMAIN="${FRONTEND_DOMAIN:-spmi.CHANGE_ME_DOMAIN}"
+API_DOMAIN="${API_DOMAIN:-api-spmi.CHANGE_ME_DOMAIN}"
+ACME_EMAIL="${ACME_EMAIL:-admin@CHANGE_ME_DOMAIN}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@spmi.local}"
+PRODUCTION_HOST="${PRODUCTION_HOST:-CHANGE_ME_SERVER_IP_OR_HOST}"
+PRODUCTION_USER="${PRODUCTION_USER:-CHANGE_ME_SSH_USER}"
+PRODUCTION_PORT="${PRODUCTION_PORT:-22}"
+
+random_base64() {
+  openssl rand -base64 32 | tr -d '\n'
+}
+
+random_hex() {
+  openssl rand -hex 32 | tr -d '\n'
+}
+
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-$(random_base64)}"
+JWT_SECRET="${JWT_SECRET:-$(random_hex)}"
+SMOKE_PASSWORD="${SMOKE_PASSWORD:-Password123!}"
+
+cat <<EOF
+== .env production values ==
+
+TRAEFIK_ACME_EMAIL=${ACME_EMAIL}
+SPMI_FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
+SPMI_API_DOMAIN=${API_DOMAIN}
+
+POSTGRES_DB=spmi_command_center
+POSTGRES_USER=spmi
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+JWT_SECRET=${JWT_SECRET}
+JWT_EXPIRES_IN=1d
+
+ENABLE_API_DOCS=false
+PASSWORD_MIN_LENGTH=8
+AUTH_RATE_LIMIT_MAX=20
+MUTATION_RATE_LIMIT_MAX=120
+
+SIAKAD_SYNC_ENABLED=false
+SIAKAD_BASE_URL=
+SIAKAD_AUTH_TYPE=bearer
+SIAKAD_API_KEY_HEADER=X-API-Key
+SIAKAD_API_TOKEN=
+SIAKAD_HEALTH_PATH=
+SIAKAD_ORG_UNITS_PATH=/org-units
+SIAKAD_TIMEOUT_MS=10000
+SIAKAD_SYNC_MODE=manual
+
+== GitHub production secrets ==
+
+PRODUCTION_HOST=${PRODUCTION_HOST}
+PRODUCTION_PORT=${PRODUCTION_PORT}
+PRODUCTION_USER=${PRODUCTION_USER}
+PRODUCTION_SSH_KEY=<paste private deploy key>
+PRODUCTION_SMOKE_ADMIN_EMAIL=${ADMIN_EMAIL}
+PRODUCTION_SMOKE_ADMIN_PASSWORD=${SMOKE_PASSWORD}
+
+== GitHub Actions Deploy Production inputs ==
+
+release_ref=launch-candidate-2026-06-21-r10
+app_dir=/opt/spmi
+health_url=https://${API_DOMAIN}/health
+frontend_url=https://${FRONTEND_DOMAIN}
+run_backup=auto
+run_seed=true
+run_siakad_uat=false
+run_smoke=true
+run_accreditation_uat=true
+EOF
