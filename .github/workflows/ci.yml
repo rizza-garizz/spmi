@@ -93,6 +93,7 @@ jobs:
           bash -n scripts/backup-production.sh
           bash -n scripts/bootstrap-ubuntu-production.sh
           bash -n scripts/generate-production-launch-secrets.sh
+          bash -n scripts/prelaunch-accreditation.sh
 
       - name: Validate production smoke script
         run: |

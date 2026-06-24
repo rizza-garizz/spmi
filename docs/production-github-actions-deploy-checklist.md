@@ -31,7 +31,7 @@ On the production server:
 ```bash
 cd /opt/spmi
 git fetch origin --tags
-git checkout launch-candidate-2026-06-21-r10
+git checkout launch-candidate-2026-06-21-r11
 test -f .env
 ./scripts/preflight-production.sh
 ```
@@ -40,7 +40,7 @@ For a fresh Ubuntu server, bootstrap Docker and the repository first:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rizza-garizz/spmi/codex-spmi-ready/scripts/bootstrap-ubuntu-production.sh -o bootstrap-ubuntu-production.sh
-sudo RELEASE_REF=launch-candidate-2026-06-21-r10 bash bootstrap-ubuntu-production.sh
+sudo RELEASE_REF=launch-candidate-2026-06-21-r11 bash bootstrap-ubuntu-production.sh
 ```
 
 Confirm `.env` has real values for:
@@ -67,7 +67,7 @@ Confirm:
 
 GitHub > Actions > `Deploy Production` > Run workflow:
 
-- `release_ref`: `launch-candidate-2026-06-21-r10`
+- `release_ref`: `launch-candidate-2026-06-21-r11`
 - `app_dir`: `/opt/spmi` or the real server path
 - `health_url`: `https://api.example.ac.id/health`
 - `frontend_url`: `https://spmi.example.ac.id`
