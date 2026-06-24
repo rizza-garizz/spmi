@@ -61,7 +61,7 @@ PRODUCTION_SMOKE_ADMIN_PASSWORD=${SMOKE_PASSWORD}
 
 == GitHub Actions Deploy Production inputs ==
 
-release_ref=launch-candidate-2026-06-21-r12
+release_ref=launch-candidate-2026-06-21-r13
 app_dir=/opt/spmi
 health_url=https://${API_DOMAIN}/health
 frontend_url=https://${FRONTEND_DOMAIN}

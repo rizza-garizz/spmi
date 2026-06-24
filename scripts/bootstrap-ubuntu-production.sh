@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_URL="${REPO_URL:-git@github.com:rizza-garizz/spmi.git}"
 APP_DIR="${APP_DIR:-/opt/spmi}"
-RELEASE_REF="${RELEASE_REF:-launch-candidate-2026-06-21-r12}"
+RELEASE_REF="${RELEASE_REF:-launch-candidate-2026-06-21-r13}"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "Run this script as root or with sudo."
