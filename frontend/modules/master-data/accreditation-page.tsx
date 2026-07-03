@@ -1,6 +1,9 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { MetricCard } from "@/components/support/MetricCard";
+import { SectionCard } from "@/components/support/SectionCard";
+import { StatusBadge } from "@/components/support/StatusBadge";
 import { clientApiRequest, parseApiPayload } from "@/lib/spmi-session-client";
 
 type AccreditationMetric = {
@@ -437,13 +440,6 @@ const emptySummary: AccreditationSummary = {
   exports: [],
   integrations: [],
 };
-
-function statusBadge(status: string) {
-  const normalized = status.toLowerCase();
-  if (["ready", "valid", "selesai", "final", "aktif", "approved", "generated", "done", "closed", "resolved", "low", "verified"].includes(normalized)) return "badge-success";
-  if (["warning", "kuning", "berjalan", "review", "perlu_revisi", "revision_required", "in_review", "needs_attention", "todo", "in_progress", "blocked", "mitigating", "medium", "pending"].includes(normalized)) return "badge-warning";
-  return "badge-danger";
-}
 
 function progressWidth(value: number) {
   return `${Math.max(0, Math.min(100, value))}%`;
@@ -1591,34 +1587,23 @@ export function AccreditationPage() {
 
       <div className="row" id="dashboard-akreditasi">
         <div className="col-xl-3 col-sm-6">
-          <div className="card">
-            <div className="card-body">
-              <span className={`badge ${statusBadge(summary.readiness.status)}`}>Readiness</span>
-              <h2 className="mt-3 mb-1">{summary.readiness.average_progress}%</h2>
-              <p className="mb-0">Rata-rata kesiapan akreditasi aktif.</p>
-            </div>
-          </div>
+          <MetricCard
+            label="Readiness"
+            value={`${summary.readiness.average_progress}%`}
+            description="Rata-rata kesiapan akreditasi aktif."
+            status={summary.readiness.status}
+          />
         </div>
         {(loading ? [{ label: "Memuat", value: 0 }] : summary.metrics).map((metric) => (
           <div className="col-xl-3 col-sm-6" key={metric.label}>
-            <div className="card">
-              <div className="card-body">
-                <span className="text-muted">{metric.label}</span>
-                <h2 className="mt-3 mb-1">{metric.value}</h2>
-                <p className="mb-0">Data awal modul akreditasi.</p>
-              </div>
-            </div>
+            <MetricCard label={metric.label} value={metric.value} description="Data awal modul akreditasi." />
           </div>
         ))}
       </div>
 
       <div className="row" id="periode-akreditasi">
         <div className="col-xl-8">
-          <div className="card">
-            <div className="card-header">
-              <h4 className="card-title">Periode & Readiness Prodi</h4>
-            </div>
-            <div className="card-body">
+          <SectionCard title="Periode & Readiness Prodi">
               <div className="table-responsive">
                 <table className="table table-bordered table-responsive-sm">
                   <thead className="thead-primary">
@@ -1650,22 +1635,17 @@ export function AccreditationPage() {
                           </div>
                           <small>LKPS {item.lkps_progress}% | LED {item.led_progress}% | Eviden {item.evidence_progress}%</small>
                         </td>
-                        <td><span className={`badge ${statusBadge(item.readiness_status)}`}>{item.readiness_status}</span></td>
+                        <td><StatusBadge status={item.readiness_status} /></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
+          </SectionCard>
         </div>
 
         <div className="col-xl-4">
-          <div className="card">
-            <div className="card-header">
-              <h4 className="card-title">Buat Periode</h4>
-            </div>
-            <div className="card-body">
+          <SectionCard title="Buat Periode">
               <form onSubmit={createPeriod}>
                 <div className="form-group">
                   <label>Nama Periode</label>
@@ -1711,38 +1691,28 @@ export function AccreditationPage() {
                   <i className="la la-plus-circle mr-1"></i> Simpan Periode
                 </button>
               </form>
-            </div>
-          </div>
+          </SectionCard>
         </div>
       </div>
 
       <div className="row" id="instrumen-kriteria">
         <div className="col-xl-5">
-          <div className="card">
-            <div className="card-header">
-              <h4 className="card-title">Instrumen</h4>
-            </div>
-            <div className="card-body">
+          <SectionCard title="Instrumen">
               {summary.instruments.map((item) => (
                 <div className="media mb-3" key={item.id}>
                   <span className="mr-3"><i className="la la-award text-primary" style={{ fontSize: 28 }}></i></span>
                   <div className="media-body">
                     <h5 className="mb-1">{item.name}</h5>
                     <p className="mb-1">{item.agency} | {item.level}</p>
-                    <span className={`badge ${statusBadge(item.status)}`}>{item.criteria_count} kriteria</span>
+                    <StatusBadge status={item.status}>{item.criteria_count} kriteria</StatusBadge>
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
+          </SectionCard>
         </div>
 
         <div className="col-xl-7">
-          <div className="card">
-            <div className="card-header">
-              <h4 className="card-title">9 Kriteria & Mapping Standar</h4>
-            </div>
-            <div className="card-body">
+          <SectionCard title="9 Kriteria & Mapping Standar">
               <form className="mb-4" onSubmit={createCriterion}>
                 <div className="form-row">
                   <div className="form-group col-md-3">
@@ -1796,18 +1766,13 @@ export function AccreditationPage() {
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
+          </SectionCard>
         </div>
       </div>
 
       <div className="row" id="lkps-led">
         <div className="col-xl-6" id="lkps-akreditasi">
-          <div className="card">
-            <div className="card-header">
-              <h4 className="card-title">LKPS Basic</h4>
-            </div>
-            <div className="card-body">
+          <SectionCard title="LKPS Basic">
               <form className="mb-4" onSubmit={createLkpsEntry}>
                 <div className="form-row">
                   <div className="form-group col-md-6">
@@ -1887,22 +1852,17 @@ export function AccreditationPage() {
                           <small>{item.source_module} | {item.notes || "-"}</small>
                         </td>
                         <td>{item.value} {item.unit}</td>
-                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td><StatusBadge status={item.status} /></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
+          </SectionCard>
         </div>
 
         <div className="col-xl-6" id="led-akreditasi">
-          <div className="card">
-            <div className="card-header">
-              <h4 className="card-title">LED Basic</h4>
-            </div>
-            <div className="card-body">
+          <SectionCard title="LED Basic">
               <form className="mb-4" onSubmit={createLedContent}>
                 <div className="form-row">
                   <div className="form-group col-md-6">
@@ -1948,24 +1908,19 @@ export function AccreditationPage() {
                 <div className="border-bottom py-3" key={item.id}>
                   <div className="d-flex justify-content-between">
                     <strong>{item.section?.criteria_code || item.section_id} - {item.section?.title || "LED"}</strong>
-                    <span className={`badge ${statusBadge(item.status)}`}>v{item.version} {item.status}</span>
+                    <StatusBadge status={item.status}>v{item.version} {item.status}</StatusBadge>
                   </div>
                   <p className="mb-1 mt-2">{item.content}</p>
                   <small>Reviewer: {item.reviewer_note || "-"} | Update: {item.updated_by}</small>
                 </div>
               ))}
-            </div>
-          </div>
+          </SectionCard>
         </div>
       </div>
 
       <div className="row" id="self-assessment-akreditasi">
         <div className="col-xl-5">
-          <div className="card">
-            <div className="card-header">
-              <h4 className="card-title">Penilaian Mandiri</h4>
-            </div>
-            <div className="card-body">
+          <SectionCard title="Penilaian Mandiri">
               <form onSubmit={createSelfScore}>
                 <div className="form-row">
                   <div className="form-group col-md-6">
@@ -2015,25 +1970,20 @@ export function AccreditationPage() {
                   <i className="la la-star-half-alt mr-1"></i> Simpan Skor
                 </button>
               </form>
-            </div>
-          </div>
+          </SectionCard>
         </div>
 
         <div className="col-xl-7">
-          <div className="card">
-            <div className="card-header">
-              <h4 className="card-title">Gap & Proyeksi Skor</h4>
-            </div>
-            <div className="card-body">
+          <SectionCard title="Gap & Proyeksi Skor">
               <div className="row">
                 {summary.scoring.map((item) => (
                   <div className="col-md-6" key={item.period_id}>
                     <div className="border rounded p-3 mb-3">
                       <small>{item.period_name}</small>
                       <h3 className="mb-1">{item.score_projection}</h3>
-                      <span className={`badge ${statusBadge(item.predicate_projection === "UNGGUL" ? "ready" : item.predicate_projection === "BAIK SEKALI" ? "warning" : "risk")}`}>
+                      <StatusBadge status={item.predicate_projection === "UNGGUL" ? "ready" : item.predicate_projection === "BAIK SEKALI" ? "warning" : "risk"}>
                         {item.predicate_projection}
-                      </span>
+                      </StatusBadge>
                       <p className="mb-0 mt-2">Rata-rata {item.average_score}/4 dari {item.criteria_scored} kriteria.</p>
                     </div>
                   </div>
@@ -2063,7 +2013,7 @@ export function AccreditationPage() {
                         <td>
                           {item.score}/{item.target_score}
                           <br />
-                          <span className={`badge ${statusBadge(item.readiness_status)}`}>{item.readiness_status}</span>
+                          <StatusBadge status={item.readiness_status} />
                         </td>
                         <td>{item.gap}</td>
                         <td>
@@ -2076,8 +2026,7 @@ export function AccreditationPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
+          </SectionCard>
         </div>
       </div>
 
@@ -2187,8 +2136,8 @@ export function AccreditationPage() {
                       <small>{item.criteria_code || "-"} | {item.owner} | target {formatDate(item.target_date)}</small>
                     </div>
                     <div className="text-right">
-                      <span className={`badge ${statusBadge(item.priority)}`}>{item.priority}</span>
-                      <span className={`badge ${statusBadge(item.status)} ml-1`}>{item.status}</span>
+                      <StatusBadge status={item.priority} />
+                      <StatusBadge status={item.status} className="ml-1" />
                       {item.overdue ? <span className="badge badge-danger ml-1">overdue</span> : null}
                     </div>
                   </div>
@@ -2336,7 +2285,7 @@ export function AccreditationPage() {
                           <small>{item.entity_id || "-"}</small>
                         </td>
                         <td>{item.reviewer}</td>
-                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td><StatusBadge status={item.status} /></td>
                         <td>
                           <strong>{item.decision}</strong>
                           <br />
@@ -2438,7 +2387,7 @@ export function AccreditationPage() {
                       <small>{item.phase} | {item.owner} | {formatDate(item.start_date)} - {formatDate(item.due_date)}</small>
                     </div>
                     <div className="text-right">
-                      <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                      <StatusBadge status={item.status} />
                       {item.overdue ? <span className="badge badge-danger ml-1">overdue</span> : null}
                     </div>
                   </div>
@@ -2561,13 +2510,13 @@ export function AccreditationPage() {
                       <td>
                         {item.owner}
                         <br />
-                        <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                        <StatusBadge status={item.status} />
                         {item.overdue ? <span className="badge badge-danger ml-1">overdue</span> : null}
                       </td>
                       <td>
                         <strong>{item.score}</strong>
                         <br />
-                        <span className={`badge ${statusBadge(item.level)}`}>{item.level}</span>
+                        <StatusBadge status={item.level} />
                       </td>
                       <td>
                         <small>{formatDate(item.due_date)}</small>
@@ -2691,7 +2640,7 @@ export function AccreditationPage() {
                         <td>
                           {item.assignee}
                           <br />
-                          <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                          <StatusBadge status={item.status} />
                           {item.overdue ? <span className="badge badge-danger ml-1">overdue</span> : null}
                         </td>
                         <td>{formatDate(item.due_date)}</td>
@@ -2780,7 +2729,7 @@ export function AccreditationPage() {
                   <div className="media-body">
                     <h5 className="mb-1">{item.source}</h5>
                     <p className="mb-1">{item.data.join(", ")}</p>
-                    <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                    <StatusBadge status={item.status} />
                   </div>
                 </div>
               ))}
@@ -2855,7 +2804,7 @@ export function AccreditationPage() {
                 <div className="border rounded p-3 mb-3" key={item.id}>
                   <div className="d-flex justify-content-between">
                     <strong>{item.title}</strong>
-                    <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                    <StatusBadge status={item.status} />
                   </div>
                   <small>{item.category} | {item.owner} | verifier {item.verifier}</small>
                   <div className="d-flex justify-content-between mt-2">
@@ -2927,9 +2876,9 @@ export function AccreditationPage() {
               <div className="border rounded p-3 mb-3">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <strong>Kesiapan Paket</strong>
-                  <span className={`badge ${statusBadge(packageReadiness.riskCount ? "risk" : packageReadiness.warningCount ? "warning" : "ready")}`}>
+                  <StatusBadge status={packageReadiness.riskCount ? "risk" : packageReadiness.warningCount ? "warning" : "ready"}>
                     {packageReadiness.riskCount ? `${packageReadiness.riskCount} risk` : packageReadiness.warningCount ? `${packageReadiness.warningCount} warning` : "ready"}
-                  </span>
+                  </StatusBadge>
                 </div>
                 <div className="row text-center mb-3">
                   <div className="col-3">
@@ -2960,7 +2909,7 @@ export function AccreditationPage() {
                     <small>{item.label}</small>
                     <div className="d-flex align-items-center">
                       <small className="mr-2">{item.count || 0}{item.open ? ` / ${item.open} open` : ""}</small>
-                      <span className={`badge ${statusBadge(item.status)} mr-2`}>{item.status}</span>
+                      <StatusBadge status={item.status} className="mr-2" />
                       {item.status !== "ready" ? (
                         <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenSubmissionCheck(readinessCheckIdentity(item))} onClick={() => createSubmissionCheckFromReadiness(item)}>
                           <i className={`la ${hasOpenSubmissionCheck(readinessCheckIdentity(item)) ? "la-check" : "la-plus"} mr-1`}></i>
@@ -2998,7 +2947,7 @@ export function AccreditationPage() {
                           <br />
                           <small>{item.total} total{item.open ? `, ${item.open} open` : ""}</small>
                         </td>
-                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td><StatusBadge status={item.status} /></td>
                         <td>
                           {item.status !== "ready" ? (
                             <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenSubmissionCheck(evidenceCheckIdentity(item))} onClick={() => createSubmissionCheckFromCoverage(item)}>
@@ -3039,7 +2988,7 @@ export function AccreditationPage() {
                           <br />
                           <small>Status terakhir {item.latestStatus}</small>
                         </td>
-                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td><StatusBadge status={item.status} /></td>
                         <td>
                           {item.status !== "ready" ? (
                             <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenSubmissionCheck(ledCheckIdentity(item))} onClick={() => createSubmissionCheckFromLedCoverage(item)}>
@@ -3080,7 +3029,7 @@ export function AccreditationPage() {
                           <br />
                           <small>Gap {item.gap === null ? "-" : item.gap} | {item.reviewer}</small>
                         </td>
-                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td><StatusBadge status={item.status} /></td>
                         <td>
                           {item.status !== "ready" ? (
                             <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenSubmissionCheck(selfScoreCheckIdentity(item))} onClick={() => createSubmissionCheckFromSelfScoreCoverage(item)}>
@@ -3121,7 +3070,7 @@ export function AccreditationPage() {
                           <br />
                           <small>Gap {item.gap}{item.open ? `, ${item.open} open` : ""}</small>
                         </td>
-                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td><StatusBadge status={item.status} /></td>
                         <td>
                           {item.status !== "ready" ? (
                             <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenActionPlan(actionPlanIdentity(item))} onClick={() => createActionPlanFromCoverage(item)}>
@@ -3162,7 +3111,7 @@ export function AccreditationPage() {
                           <br />
                           <small>{item.open} open, {item.missing} belum direview</small>
                         </td>
-                        <td><span className={`badge ${statusBadge(item.status)}`}>{item.status}</span></td>
+                        <td><StatusBadge status={item.status} /></td>
                         <td>
                           {item.status !== "ready" ? (
                             <button className="btn btn-outline-secondary btn-xs" type="button" disabled={saving || hasOpenSubmissionCheck(reviewCheckIdentity(item))} onClick={() => createSubmissionCheckFromReviewCoverage(item)}>
@@ -3181,7 +3130,7 @@ export function AccreditationPage() {
                 <div className={`alert ${packageGate.status === "ready" ? "alert-outline-success" : packageGate.status === "warning" ? "alert-outline-warning" : "alert-outline-danger"}`}>
                   <div className="d-flex justify-content-between align-items-center">
                     <strong>{packageGate.label}</strong>
-                    <span className={`badge ${statusBadge(packageGate.status)}`}>{packageGate.status}</span>
+                    <StatusBadge status={packageGate.status} />
                   </div>
                   <small>{packageGate.riskCount} risk, {packageGate.warningCount} warning dari seluruh cek kesiapan paket.</small>
                 </div>
@@ -3211,7 +3160,7 @@ export function AccreditationPage() {
                 <div className="border rounded p-3 mb-3" key={item.id}>
                   <div className="d-flex justify-content-between">
                     <strong>{item.file_name}</strong>
-                    <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                    <StatusBadge status={item.status} />
                   </div>
                   <small>
                     {item.period?.name || item.period_id} | {item.type} | {formatDate(item.generated_at)}
@@ -3255,7 +3204,7 @@ export function AccreditationPage() {
                     {(item.readiness_items || []).map((readiness) => (
                       <div className="d-flex justify-content-between border-bottom py-1" key={readiness.key}>
                         <small>{readiness.label}</small>
-                        <span className={`badge ${statusBadge(readiness.status)}`}>{readiness.status}</span>
+                        <StatusBadge status={readiness.status} />
                       </div>
                     ))}
                   </div>
@@ -3343,7 +3292,7 @@ export function AccreditationPage() {
                 <div className="border-bottom py-2" key={item.id}>
                   <div className="d-flex justify-content-between">
                     <strong>{item.criteria_code} - {item.title}</strong>
-                    <span className={`badge ${statusBadge(item.status)}`}>{item.status}</span>
+                    <StatusBadge status={item.status} />
                   </div>
                   <small>
                     {item.source_module}
